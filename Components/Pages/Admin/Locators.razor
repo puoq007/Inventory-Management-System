@@ -5,6 +5,7 @@
 @inject IJSRuntime JSRuntime
 @inject Inventory.Services.ExcelImportService ExcelImport
 @using Inventory.Models
+@using Net.Codecrete.QrCodeGenerator
 
 <PageTitle>Admin - Locations | Inventory</PageTitle>
 
@@ -49,6 +50,15 @@ else
                            class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search ID, Site, Cabinet, etc." />
                 </form>
             </div>
+            @if (_selectedLocatorIds.Any())
+            {
+                <div class="flex items-end mb-[2px]">
+                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Print Selected QR (@_selectedLocatorIds.Count)
+                    </button>
+                </div>
+            }
         </div>
     </div>
 
@@ -61,6 +71,11 @@ else
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Site</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cabinet / Shelf / Pos</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-16">
+                            <div class="flex items-center">
+                                <input type="checkbox" class="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" @onchange="ToggleSelectAll" checked="@(_displayLocators.Any() && _selectedLocatorIds.Count == _displayLocators.Count)" />
+                            </div>
+                        </th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -72,9 +87,20 @@ else
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">@loc.Site</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">@loc.Cabinet / @loc.Shelf / @loc.Position</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">@loc.Name</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" 
+                                           checked="@_selectedLocatorIds.Contains(loc.Id)" 
+                                           @onchange="@((e) => ToggleSelection(loc.Id, e.Value))" />
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button @onclick="() => OpenEditModal(loc)" class="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
-                                <button @onclick="() => DeleteLocator(loc)" class="text-red-600 hover:text-red-900">Delete</button>
+                                <button @onclick="() => PrintQR(loc)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                    QR
+                                </button>
+                                <button @onclick="() => OpenEditModal(loc)" class="text-blue-600 hover:text-blue-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
+                                <button @onclick="() => DeleteLocator(loc)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
                             </td>
                         </tr>
                     }
@@ -153,6 +179,7 @@ else
     private string? _originalLocatorId = null;
     private string _errorMessage = "";
     private string _searchQuery = "";
+    private HashSet<string> _selectedLocatorIds = new();
 
     private List<Locator> _allLocators = new();
     private List<Locator> _displayLocators = new();
@@ -307,8 +334,58 @@ else
             context.Locators.Remove(toDelete);
             context.SaveChanges();
         }
+        _selectedLocatorIds.Remove(loc.Id);
         FilterData();
         StateHasChanged();
+    }
+
+    private async Task PrintQR(Locator loc)
+    {
+        var qr = QrCode.EncodeText(loc.Id, QrCode.Ecc.Medium);
+        var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+        await JSRuntime.InvokeVoidAsync("printQR", svgStr, loc.Id);
+    }
+
+    private void ToggleSelection(string locId, object? isChecked)
+    {
+        bool checkedState = isChecked as bool? ?? false;
+        if (checkedState)
+        {
+            _selectedLocatorIds.Add(locId);
+        }
+        else
+        {
+            _selectedLocatorIds.Remove(locId);
+        }
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        bool selectAll = (bool)(e.Value ?? false);
+        _selectedLocatorIds.Clear();
+        if (selectAll && _displayLocators != null)
+        {
+            foreach (var loc in _displayLocators)
+            {
+                _selectedLocatorIds.Add(loc.Id);
+            }
+        }
+    }
+
+    private async Task PrintSelectedQRs()
+    {
+        if (!_selectedLocatorIds.Any()) return;
+
+        var qrList = new List<object>();
+        foreach (var id in _selectedLocatorIds)
+        {
+            var qr = QrCode.EncodeText(id, QrCode.Ecc.Medium);
+            var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+            qrList.Add(new { svg = svgStr, id = id });
+        }
+
+        await JSRuntime.InvokeVoidAsync("printQRs", qrList);
+        _selectedLocatorIds.Clear();
     }
 
     private async Task ImportExcel(InputFileChangeEventArgs e)
