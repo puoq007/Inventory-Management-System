@@ -1,0 +1,42 @@
+@using Inventory.Services
+@inject AuthService Auth
+@inject NavigationManager NavManager
+
+@if (_isReady && _isAuthorized)
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string[] AllowedRoles { get; set; } = Array.Empty<string>();
+
+    private bool _isReady;
+    private bool _isAuthorized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            if (string.IsNullOrEmpty(auth.EmployeeId))
+            {
+                NavManager.NavigateTo("/login");
+                return;
+            }
+
+            if (AllowedRoles.Length == 0 || AllowedRoles.Contains(auth.Role))
+            {
+                _isAuthorized = true;
+            }
+            else
+            {
+                // Optional: Handle unauthorized
+                NavManager.NavigateTo("/"); 
+            }
+
+            _isReady = true;
+            StateHasChanged();
+        }
+    }
+}

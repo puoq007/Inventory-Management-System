@@ -1,0 +1,12 @@
+[Bb]in/
+[Oo]bj/
+[Nn]ode_modules/
+*.sqlite
+*.db
+*.db-shm
+*.db-wal
+.vs/
+.vscode/
+.DS_Store
+*.log
+appsettings.*.json

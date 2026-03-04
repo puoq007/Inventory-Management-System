@@ -1,0 +1,381 @@
+@page "/admin/jig-specs"
+@inject Inventory.Services.AuthService Auth
+@inject Microsoft.EntityFrameworkCore.IDbContextFactory<Inventory.Data.AppDbContext> DbFactory
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject Inventory.Services.ExcelImportService ExcelImport
+@using Inventory.Models
+
+<PageTitle>Admin - Jig Specs | Inventory</PageTitle>
+
+<div class="mb-6 flex justify-between items-end">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Jig Specifications</h1>
+        <p class="text-slate-500">Manage jig models and base requirements.</p>
+    </div>
+    <div class="flex gap-2">
+        <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+            <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls,.csv" />
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
+        </label>
+        
+        <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            New Spec
+        </button>
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="text-slate-500 font-medium">Loading specifications...</div>
+    </div>
+}
+else
+{
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Spec ID or Name</label>
+                <form class="relative" @onsubmit="FilterData" @onsubmit:preventDefault="true">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
+                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Toy Number, Part Number, Rev, etc." />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Spec ID / Rev</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Part Info</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig & Tool Type</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    @foreach (var spec in _displaySpecs ?? Enumerable.Empty<JigSpec>())
+                    {
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-slate-900 font-mono">@spec.Id</div>
+                                @if(!string.IsNullOrEmpty(spec.Rev)){ <div class="text-xs text-slate-500 mt-1">Rev: @spec.Rev</div> }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-medium">
+                                @spec.Name
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900">@spec.PartNumber</div>
+                                <div class="text-xs text-slate-500 mt-1">@spec.PartType</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900">@spec.JigType</div>
+                                <div class="text-xs text-slate-500 mt-1">@spec.ToolType</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button @onclick="() => OpenEditModal(spec)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                <button @onclick="() => DeleteSpec(spec)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (_showModal)
+{
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left max-h-[90vh] flex flex-col">
+            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@(_isEditMode ? "Edit Spec" : "Add New Spec")</h3>
+
+            <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Specification ID *</label>
+                        <input type="text" @bind="_editingSpec.Id" disabled="@_isEditMode" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500" placeholder="e.g. S4" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name / Description *</label>
+                        <input type="text" @bind="_editingSpec.Name" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Clamp D for Widget W" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Required Quantity</label>
+                        <input type="number" min="1" @bind="_editingSpec.JigRequired" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Rev.</label>
+                        <input type="text" @bind="_editingSpec.Rev" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Toy Number</label>
+                        <input type="text" @bind="_editingSpec.ToyNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Part Number</label>
+                        <input type="text" @bind="_editingSpec.PartNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Part Type</label>
+                        <input type="text" @bind="_editingSpec.PartType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">JIG Type</label>
+                        <input type="text" @bind="_editingSpec.JigType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">NO.Tool</label>
+                        <input type="text" @bind="_editingSpec.ToolNo" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tool Type</label>
+                        <input type="text" @bind="_editingSpec.ToolType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Total Step Print</label>
+                        <input type="text" @bind="_editingSpec.TotalStepPrint" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Unit Amount (จำนวน/บอร์ด(ชิ้น))</label>
+                        <input type="text" @bind="_editingSpec.UnitAmount" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Feed</label>
+                        <input type="text" @bind="_editingSpec.Feed" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Scan</label>
+                        <input type="text" @bind="_editingSpec.Scan" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Picture URL</label>
+                        <input type="text" @bind="_editingSpec.PictureUrl" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
+                
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="text-red-500 text-sm font-medium mt-2">@_errorMessage</div>
+                }
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">Cancel</button>
+                <button @onclick="SaveSpec" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">Save Changes</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private bool _isImporting = false;
+    private bool _showModal = false;
+    private bool _isEditMode = false;
+    private JigSpec _editingSpec = new();
+    private string _errorMessage = "";
+    private string _searchQuery = "";
+    private IEnumerable<JigSpec>? _displaySpecs;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            var role = auth.Role ?? "";
+
+            if (string.IsNullOrEmpty(role) || (role != "Admin" && role != "Engineer" && role != "ProdLead"))
+            {
+                NavManager.NavigateTo("/");
+                return;
+            }
+
+            FilterData();
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FilterData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        var allSpecs = context.JigSpecs.ToList();
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _displaySpecs = allSpecs;
+            return;
+        }
+
+        var lowerQuery = _searchQuery.ToLowerInvariant();
+        _displaySpecs = allSpecs.Where(s => 
+            (s.Id ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.Name ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.Rev ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.ToyNumber ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.PartNumber ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.PartType ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.JigType ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.ToolNo ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.ToolType ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.TotalStepPrint ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.UnitAmount ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.Feed ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.Scan ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (s.PictureUrl ?? "").ToLowerInvariant().Contains(lowerQuery)
+        ).ToList();
+    }
+
+    private void OpenAddModal()
+    {
+        _editingSpec = new JigSpec { JigRequired = 1 };
+        _isEditMode = false;
+        _errorMessage = "";
+        _showModal = true;
+    }
+
+    private void OpenEditModal(JigSpec spec)
+    {
+        _editingSpec = new JigSpec 
+        { 
+            Id = spec.Id, 
+            Name = spec.Name, 
+            JigRequired = spec.JigRequired,
+            Rev = spec.Rev,
+            PictureUrl = spec.PictureUrl,
+            ToyNumber = spec.ToyNumber,
+            PartNumber = spec.PartNumber,
+            PartType = spec.PartType,
+            JigType = spec.JigType,
+            ToolNo = spec.ToolNo,
+            ToolType = spec.ToolType,
+            TotalStepPrint = spec.TotalStepPrint,
+            UnitAmount = spec.UnitAmount,
+            Feed = spec.Feed,
+            Scan = spec.Scan
+        };
+        _isEditMode = true;
+        _errorMessage = "";
+        _showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        _showModal = false;
+    }
+
+    private async Task SaveSpec()
+    {
+        var actionName = _isEditMode ? "Edit Spec" : "Add Spec";
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", actionName, "Are you sure you want to save this specification?", "Yes, save", "question");
+        if (!confirmed) return;
+
+        if (string.IsNullOrWhiteSpace(_editingSpec.Id) || string.IsNullOrWhiteSpace(_editingSpec.Name))
+        {
+            _errorMessage = "ID and Name are required.";
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        if (_isEditMode)
+        {
+            var existing = context.JigSpecs.FirstOrDefault(s => s.Id == _editingSpec.Id);
+            if (existing != null)
+            {
+                existing.Name = _editingSpec.Name;
+                existing.JigRequired = _editingSpec.JigRequired;
+                existing.Rev = _editingSpec.Rev;
+                existing.PictureUrl = _editingSpec.PictureUrl;
+                existing.ToyNumber = _editingSpec.ToyNumber;
+                existing.PartNumber = _editingSpec.PartNumber;
+                existing.PartType = _editingSpec.PartType;
+                existing.JigType = _editingSpec.JigType;
+                existing.ToolNo = _editingSpec.ToolNo;
+                existing.ToolType = _editingSpec.ToolType;
+                existing.TotalStepPrint = _editingSpec.TotalStepPrint;
+                existing.UnitAmount = _editingSpec.UnitAmount;
+                existing.Feed = _editingSpec.Feed;
+                existing.Scan = _editingSpec.Scan;
+                context.SaveChanges();
+            }
+        }
+        else
+        {
+            if (context.JigSpecs.Any(s => s.Id == _editingSpec.Id))
+            {
+                _errorMessage = "Spec ID already exists!";
+                return;
+            }
+            context.JigSpecs.Add(_editingSpec);
+            context.SaveChanges();
+        }
+
+        FilterData();
+        _showModal = false;
+        StateHasChanged();
+    }
+
+    private async Task DeleteSpec(JigSpec spec)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Delete Spec", $"Are you sure you want to delete spec {spec.Name}? This may affect linked parts.", "Yes, delete", "error");
+        if (!confirmed) return;
+
+        using var context = DbFactory.CreateDbContext();
+        var toDelete = context.JigSpecs.FirstOrDefault(s => s.Id == spec.Id);
+        if (toDelete != null)
+        {
+            context.JigSpecs.Remove(toDelete);
+            context.SaveChanges();
+        }
+        FilterData();
+        StateHasChanged();
+    }
+
+    private async Task ImportExcel(InputFileChangeEventArgs e)
+    {
+        _isImporting = true;
+        StateHasChanged();
+        
+        try
+        {
+            using var stream = e.File.OpenReadStream(10_000_000); // 10MB limit
+            var result = await ExcelImport.ImportJigSpecsAsync(stream, e.File.Name);
+            
+            var msg = $"Import complete: {result.inserted} added, {result.updated} updated.";
+            if (result.errors.Any())
+            {
+                msg += $"\nErrors:\n{string.Join("\n", result.errors)}";
+                await JSRuntime.InvokeVoidAsync("alert", msg);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", msg);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Import failed: {ex.Message}");
+        }
+        finally
+        {
+            _isImporting = false;
+            FilterData();
+            StateHasChanged();
+        }
+    }
+}

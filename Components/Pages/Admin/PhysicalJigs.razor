@@ -1,0 +1,556 @@
+@page "/admin/physical-jigs"
+@inject Inventory.Services.AuthService Auth
+@inject Microsoft.EntityFrameworkCore.IDbContextFactory<Inventory.Data.AppDbContext> DbFactory
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject Inventory.Services.ExcelImportService ExcelImport
+@using Inventory.Models
+@using Net.Codecrete.QrCodeGenerator
+
+<PageTitle>Admin - Physical Jigs | Inventory</PageTitle>
+
+<div class="mb-6 flex justify-between items-end">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Physical Jigs</h1>
+        <p class="text-slate-500">Manage individual physical jig records.</p>
+    </div>
+    
+    <div>
+        @if (_selectedJigIds.Any())
+        {
+            <button @onclick="PrintSelectedQRs" class="mr-3 px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center inline-flex">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Print Selected (@_selectedJigIds.Count)
+            </button>
+        }
+        
+        <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center inline-flex mr-3 mb-0">
+            <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls,.csv" />
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
+        </label>
+
+        <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center inline-flex">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Register Jig
+        </button>
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="text-slate-500 font-medium">Loading physical jigs...</div>
+    </div>
+}
+else
+{
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Any Keyword</label>
+                <form class="relative" @onsubmit="FilterData" @onsubmit:preventDefault="true">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
+                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search Jig ID, Spec, Part, Tool..." />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12">
+                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" @onchange="ToggleSelectAll" checked="@(_selectedJigIds.Count == _totalJigsCount && _totalJigsCount > 0)" />
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig ID</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Specification & Part Info</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Print & Specs</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date & Capacity</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status & Condition</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    @foreach (var jig in _displayJigs ?? Enumerable.Empty<PhysicalJig>())
+                    {
+                        var specRecord = _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId);
+                        var specName = specRecord != null ? specRecord.Name : "Unknown Spec";
+
+                        <tr class="hover:bg-slate-50 @(_selectedJigIds.Contains(jig.Id) ? "bg-blue-50/50" : "")">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" checked="@_selectedJigIds.Contains(jig.Id)" @onchange="@(e => ToggleSelection(jig.Id, e.Value))" />
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 font-mono">
+                                <div><span class="border border-slate-200 bg-slate-100 px-2 py-1 rounded">@jig.Id</span></div>
+                                @if(!string.IsNullOrEmpty(jig.NamePlateWhite))
+                                {
+                                    <div class="text-xs text-slate-500 mt-1.5 font-sans font-normal">ป้ายขาว: @jig.NamePlateWhite</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-slate-800">@specName</div>
+                                <div class="text-xs text-slate-500 mt-1">
+                                    <span class="font-medium">Tool:</span> @specRecord?.ToolNo @specRecord?.ToolType 
+                                    <span class="ml-2 font-medium">Rev:</span> @specRecord?.Rev
+                                </div>
+                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Part:</span> @specRecord?.PartNumber (@specRecord?.PartType)</div>
+                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Jig Type:</span> @specRecord?.JigType</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900 border border-slate-200 bg-slate-50 px-2 py-1 inline-block rounded">
+                                    Step Print: <strong>@(string.IsNullOrEmpty(jig.StepPrint) ? specRecord?.TotalStepPrint : jig.StepPrint)</strong>
+                                </div>
+                                @if(!string.IsNullOrEmpty(jig.HG)){
+                                    <div class="text-xs text-slate-500 mt-1.5"><span class="font-medium">H/G:</span> @jig.HG</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if(!string.IsNullOrEmpty(jig.FS)){
+                                    <div class="text-sm text-slate-900 font-medium tracking-wide">F/S: @jig.FS</div>
+                                }
+                                @if(!string.IsNullOrEmpty(jig.IssueDate)){
+                                    <div class="text-xs text-slate-500 mt-1"><span class="font-medium">Date (วันที่เบิก):</span> @jig.IssueDate</div>
+                                }
+                                @if(!string.IsNullOrEmpty(jig.JigCapacity)){
+                                    <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Capacity:</span> @jig.JigCapacity</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                @(_allLocators.FirstOrDefault(l => l.Id == jig.LocatorId)?.Name ?? "Unknown")
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border 
+                                        @(jig.Status == "Available" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                                          jig.Status == "InUse" ? "bg-amber-100 text-amber-800 border-amber-200" :
+                                          "bg-slate-100 text-slate-800 border-slate-200")">
+                                        @jig.Status
+                                    </span>
+                                    <span class="text-xs text-slate-500 border-l border-slate-300 pl-2">
+                                        @jig.Condition
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                    QR
+                                </button>
+                                <button @onclick="() => OpenEditModal(jig)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                <button @onclick="() => DeleteJig(jig)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (_showModal)
+{
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left">
+            <h3 class="text-2xl font-bold text-slate-900 mb-6">@(_isEditMode ? "Edit Physical Jig" : "Register New Jig")</h3>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Jig ID (Serial / QR)</label>
+                    <input type="text" @bind="_editingJig.Id" disabled="@_isEditMode" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500" placeholder="e.g. J015" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Specification</label>
+                    <select @bind="_editingJig.SpecId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">-- Select Specification --</option>
+                        @foreach (var spec in _allSpecs)
+                        {
+                            <option value="@spec.Id">@spec.Name (@spec.Id)</option>
+                        }
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name Plate (ขาว)</label>
+                        <input type="text" @bind="_editingJig.NamePlateWhite" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Step Print</label>
+                        <input type="text" @bind="_editingJig.StepPrint" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">H/G</label>
+                        <input type="text" @bind="_editingJig.HG" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">F/S</label>
+                        <input type="text" @bind="_editingJig.FS" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Date (วันที่เบิก)</label>
+                        <input type="text" @bind="_editingJig.IssueDate" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Capacity (จำนวนที่ต่อ JIG)</label>
+                        <input type="text" @bind="_editingJig.JigCapacity" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <select @bind="_editingJig.Status" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="Available">Available</option>
+                        <option value="InUse">In Use</option>
+                        <option value="Evaluation">Evaluation / Hold</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Condition</label>
+                    <select @bind="_editingJig.Condition" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="Good">Good</option>
+                        <option value="NeedsCleaning">Needs Cleaning</option>
+                        <option value="UnderRepair">Under Repair</option>
+                        <option value="Broken">Broken / Scrapped</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Site</label>
+                        <select @bind="_selectedSite" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="MBK1">MBK1</option>
+                            <option value="mintech">mintech</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Cabinet (ตู้)</label>
+                        <select @bind="_selectedCabinet" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            @for (int i = 1; i <= 10; i++)
+                            {
+                                <option value="@i.ToString()">@i.ToString()</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Shelf (ชั้น)</label>
+                        <select @bind="_selectedShelf" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <option value="@i.ToString()">@i.ToString()</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Position (ตัว)</label>
+                        <select @bind="_selectedPosition" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            @for (int i = 1; i <= 10; i++)
+                            {
+                                <option value="@i.ToString()">@i.ToString()</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="text-red-500 text-sm font-medium mt-2">@_errorMessage</div>
+                }
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">Cancel</button>
+                <button @onclick="SaveJig" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">Save Changes</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private bool _isImporting = false;
+    private bool _showModal = false;
+    private bool _isEditMode = false;
+    private PhysicalJig _editingJig = new();
+    private string _errorMessage = "";
+    private string _searchQuery = "";
+    private IEnumerable<PhysicalJig>? _displayJigs;
+    
+    private List<JigSpec> _allSpecs = new();
+    private List<Locator> _allLocators = new();
+    private int _totalJigsCount = 0;
+
+    private HashSet<string> _selectedJigIds = new();
+
+    private string _selectedSite = "MBK1";
+    private string _selectedCabinet = "1";
+    private string _selectedShelf = "1";
+    private string _selectedPosition = "1";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            var role = auth.Role ?? "";
+
+            if (string.IsNullOrEmpty(role) || (role != "Admin" && role != "Engineer" && role != "ProdLead" && role != "Operator"))
+            {
+                NavManager.NavigateTo("/");
+                return;
+            }
+
+            FilterData();
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void FilterData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _allSpecs = context.JigSpecs.ToList();
+        _allLocators = context.Locators.ToList();
+        var allJigs = context.PhysicalJigs.ToList();
+        _totalJigsCount = allJigs.Count;
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _displayJigs = allJigs;
+            return;
+        }
+
+        var lowerQuery = _searchQuery.ToLowerInvariant();
+        _displayJigs = allJigs.Where(j => 
+            (j.Id ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.Status ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.Condition ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.NamePlateWhite ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.StepPrint ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.HG ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.FS ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.IssueDate ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.JigCapacity ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (j.SpecId ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allLocators.FirstOrDefault(l => l.Id == j.LocatorId)?.Name ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.Name ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.ToyNumber ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.PartNumber ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.Rev ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.ToolNo ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.PartType ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+            (_allSpecs.FirstOrDefault(s => s.Id == j.SpecId)?.JigType ?? "").ToLowerInvariant().Contains(lowerQuery)
+        ).ToList();
+    }
+
+    private void OpenAddModal()
+    {
+        _editingJig = new PhysicalJig 
+        { 
+            Status = "Available", 
+            Condition = "Good" 
+        };
+        _isEditMode = false;
+        _errorMessage = "";
+        
+        _selectedSite = "MBK1";
+        _selectedCabinet = "1";
+        _selectedShelf = "1";
+        _selectedPosition = "1";
+
+        _showModal = true;
+    }
+
+    private void OpenEditModal(PhysicalJig jig)
+    {
+        _editingJig = new PhysicalJig 
+        { 
+            Id = jig.Id, 
+            SpecId = jig.SpecId, 
+            Status = jig.Status,
+            LocatorId = jig.LocatorId,
+            Condition = jig.Condition
+        };
+        _isEditMode = true;
+        _errorMessage = "";
+        
+        using var context = DbFactory.CreateDbContext();
+        var loc = context.Locators.FirstOrDefault(l => l.Id == jig.LocatorId);
+        if (loc != null)
+        {
+            _selectedSite = loc.Site;
+            _selectedCabinet = loc.Cabinet;
+            _selectedShelf = loc.Shelf;
+            _selectedPosition = loc.Position;
+        }
+
+        _showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        _showModal = false;
+    }
+
+    private async Task SaveJig()
+    {
+        var actionName = _isEditMode ? "Edit Jig" : "Register Jig";
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", actionName, "Are you sure you want to save these changes?", "Yes, save", "question");
+        if (!confirmed) return;
+
+        if (string.IsNullOrWhiteSpace(_editingJig.Id) || string.IsNullOrWhiteSpace(_editingJig.SpecId))
+        {
+            _errorMessage = "Jig ID and Specification are required.";
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        var selectedLocator = context.Locators.FirstOrDefault(l => 
+            l.Site == _selectedSite && 
+            l.Cabinet == _selectedCabinet && 
+            l.Shelf == _selectedShelf && 
+            l.Position == _selectedPosition);
+
+        if (selectedLocator == null) 
+        {
+            _errorMessage = "Invalid location selected.";
+            return;
+        }
+        
+        _editingJig.LocatorId = selectedLocator.Id;
+
+        if (_isEditMode)
+        {
+            var existing = context.PhysicalJigs.FirstOrDefault(s => s.Id == _editingJig.Id);
+            if (existing != null)
+            {
+                existing.SpecId = _editingJig.SpecId;
+                existing.Status = _editingJig.Status;
+                existing.LocatorId = _editingJig.LocatorId ?? "";
+                existing.Condition = _editingJig.Condition;
+                context.SaveChanges();
+            }
+        }
+        else
+        {
+            if (context.PhysicalJigs.Any(s => s.Id == _editingJig.Id))
+            {
+                _errorMessage = "Jig ID already exists!";
+                return;
+            }
+            context.PhysicalJigs.Add(_editingJig);
+            context.SaveChanges();
+        }
+
+        FilterData();
+        _showModal = false;
+        StateHasChanged();
+    }
+
+    private async Task DeleteJig(PhysicalJig jig)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Delete Jig", $"Are you sure you want to delete jig {jig.Id}? This cannot be undone.", "Yes, delete", "error");
+        if (!confirmed) return;
+
+        using var context = DbFactory.CreateDbContext();
+        var toDelete = context.PhysicalJigs.FirstOrDefault(j => j.Id == jig.Id);
+        if (toDelete != null)
+        {
+            context.PhysicalJigs.Remove(toDelete);
+            context.SaveChanges();
+        }
+        _selectedJigIds.Remove(jig.Id);
+        FilterData();
+        StateHasChanged();
+    }
+
+    private async Task PrintQR(PhysicalJig jig)
+    {
+        var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
+        var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+        await JSRuntime.InvokeVoidAsync("printQR", svgStr, jig.Id);
+    }
+
+    private void ToggleSelection(string jigId, object? isChecked)
+    {
+        bool checkedState = isChecked as bool? ?? false;
+        if (checkedState)
+        {
+            _selectedJigIds.Add(jigId);
+        }
+        else
+        {
+            _selectedJigIds.Remove(jigId);
+        }
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        bool selectAll = (bool)(e.Value ?? false);
+        _selectedJigIds.Clear();
+        if (selectAll && _displayJigs != null)
+        {
+            foreach (var jig in _displayJigs)
+            {
+                _selectedJigIds.Add(jig.Id);
+            }
+        }
+    }
+
+    private async Task PrintSelectedQRs()
+    {
+        if (!_selectedJigIds.Any()) return;
+
+        var qrList = new List<object>();
+        foreach (var id in _selectedJigIds)
+        {
+            var qr = QrCode.EncodeText(id, QrCode.Ecc.Medium);
+            var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+            qrList.Add(new { svg = svgStr, id = id });
+        }
+
+        await JSRuntime.InvokeVoidAsync("printQRs", qrList);
+
+        // Optional: clear selection after print
+        // _selectedJigIds.Clear();
+    }
+
+    private async Task ImportExcel(InputFileChangeEventArgs e)
+    {
+        _isImporting = true;
+        StateHasChanged();
+        
+        try
+        {
+            using var stream = e.File.OpenReadStream(10_000_000); // 10MB limit
+            var result = await ExcelImport.ImportPhysicalJigsAsync(stream, e.File.Name);
+            
+            var msg = $"Import complete: {result.inserted} added, {result.updated} updated.";
+            if (result.errors.Any())
+            {
+                msg += $"\nErrors:\n{string.Join("\n", result.errors)}";
+                await JSRuntime.InvokeVoidAsync("alert", msg);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", msg);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Import failed: {ex.Message}");
+        }
+        finally
+        {
+            _isImporting = false;
+            FilterData();
+            StateHasChanged();
+        }
+    }
+}
