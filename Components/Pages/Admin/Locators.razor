@@ -116,7 +116,7 @@ else
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Locator ID *</label>
-                        <input type="text" @bind="_editingLocator.Id" disabled="@_isEditMode" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100" />
+                        <input type="text" @bind="_editingLocator.Id" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Site</label>
@@ -150,6 +150,7 @@ else
     private bool _showModal = false;
     private bool _isEditMode = false;
     private Locator _editingLocator = new();
+    private string? _originalLocatorId = null;
     private string _errorMessage = "";
     private string _searchQuery = "";
 
@@ -196,6 +197,7 @@ else
     private void OpenAddModal()
     {
         _isEditMode = false;
+        _originalLocatorId = null;
         _editingLocator = new Locator();
         _errorMessage = "";
         _showModal = true;
@@ -204,6 +206,7 @@ else
     private void OpenEditModal(Locator loc)
     {
         _isEditMode = true;
+        _originalLocatorId = loc.Id;
         _editingLocator = new Locator
         {
             Id = loc.Id,
@@ -233,14 +236,47 @@ else
 
         if (_isEditMode)
         {
-            var existing = context.Locators.FirstOrDefault(l => l.Id == _editingLocator.Id);
+            if (_originalLocatorId != _editingLocator.Id && context.Locators.Any(l => l.Id == _editingLocator.Id))
+            {
+                _errorMessage = "A location with this new ID already exists.";
+                return;
+            }
+
+            var existing = context.Locators.FirstOrDefault(l => l.Id == _originalLocatorId);
             if (existing != null)
             {
-                existing.Site = _editingLocator.Site;
-                existing.Cabinet = _editingLocator.Cabinet;
-                existing.Shelf = _editingLocator.Shelf;
-                existing.Position = _editingLocator.Position;
-                context.SaveChanges();
+                if (existing.Id != _editingLocator.Id)
+                {
+                    // To change Primary Key in EF Core: Remove old, Add new.
+                    context.Locators.Remove(existing);
+                    context.SaveChanges();
+
+                    var newLoc = new Locator
+                    {
+                        Id = _editingLocator.Id,
+                        Site = _editingLocator.Site,
+                        Cabinet = _editingLocator.Cabinet,
+                        Shelf = _editingLocator.Shelf,
+                        Position = _editingLocator.Position
+                    };
+                    context.Locators.Add(newLoc);
+
+                    // Update corresponding PhysicalJigs that reference the old Locator ID
+                    var linkedJigs = context.PhysicalJigs.Where(j => j.LocatorId == _originalLocatorId).ToList();
+                    foreach(var jig in linkedJigs)
+                    {
+                        jig.LocatorId = newLoc.Id;
+                    }
+                    context.SaveChanges();
+                }
+                else
+                {
+                    existing.Site = _editingLocator.Site;
+                    existing.Cabinet = _editingLocator.Cabinet;
+                    existing.Shelf = _editingLocator.Shelf;
+                    existing.Position = _editingLocator.Position;
+                    context.SaveChanges();
+                }
             }
         }
         else
