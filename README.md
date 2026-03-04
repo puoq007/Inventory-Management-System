@@ -55,3 +55,4 @@ The project follows a standard Blazor Server architecture:
 3. **Run Migrations/Create DB:** The application is configured to automatically ensure the database is created upon starting.
 4. **Launch:** Run the application using `dotnet run --urls "http://localhost:5101"`.
 5. **Initial Login:** The system is seeded with a default admin user `admin` and password `admin`.
+# Inventory-Management-System
