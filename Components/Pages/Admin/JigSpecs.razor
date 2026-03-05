@@ -130,10 +130,6 @@ else
                         <input type="text" @bind="_editingSpec.ToyNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Part Number</label>
-                        <input type="text" @bind="_editingSpec.PartNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Part Type</label>
                         <input type="text" @bind="_editingSpec.PartType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
@@ -353,11 +349,19 @@ else
             var parts = _mappedPartNumbers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                           .Select(p => p.Trim())
                                           .Where(p => !string.IsNullOrEmpty(p))
-                                          .Distinct();
+                                          .Distinct()
+                                          .ToList();
+                                          
+            _editingSpec.PartNumber = string.Join(", ", parts);
+            
             foreach (var part in parts)
             {
                 context.PartJigMappings.Add(new PartJigMapping { SpecId = _editingSpec.Id, PartNumber = part });
             }
+        }
+        else
+        {
+            _editingSpec.PartNumber = "";
         }
         
         context.SaveChanges();
