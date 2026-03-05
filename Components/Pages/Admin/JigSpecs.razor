@@ -77,6 +77,8 @@ else
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 font-mono">@spec.Id</div>
                                 @if(!string.IsNullOrEmpty(spec.Rev)){ <div class="text-xs text-slate-500 mt-1">Rev: @spec.Rev</div> }
+                                @if(!string.IsNullOrEmpty(spec.Week)){ <div class="text-xs text-slate-500 mt-0.5">Week: @spec.Week</div> }
+                                @if(!string.IsNullOrEmpty(spec.Item)){ <div class="text-xs text-slate-500 mt-0.5">Item: @spec.Item</div> }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-medium">
                                 @spec.Name
@@ -128,6 +130,14 @@ else
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Toy Number</label>
                         <input type="text" @bind="_editingSpec.ToyNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Week</label>
+                        <input type="text" @bind="_editingSpec.Week" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Item</label>
+                        <input type="text" @bind="_editingSpec.Item" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Part Type</label>
@@ -266,6 +276,8 @@ else
             Id = spec.Id, 
             Name = spec.Name, 
             JigRequired = spec.JigRequired,
+            Week = spec.Week,
+            Item = spec.Item,
             Rev = spec.Rev,
             PictureUrl = spec.PictureUrl,
             ToyNumber = spec.ToyNumber,
@@ -314,6 +326,8 @@ else
             {
                 existing.Name = _editingSpec.Name;
                 existing.JigRequired = _editingSpec.JigRequired;
+                existing.Week = _editingSpec.Week;
+                existing.Item = _editingSpec.Item;
                 existing.Rev = _editingSpec.Rev;
                 existing.PictureUrl = _editingSpec.PictureUrl;
                 existing.ToyNumber = _editingSpec.ToyNumber;

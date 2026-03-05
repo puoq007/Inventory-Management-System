@@ -101,15 +101,19 @@ else
                                 {
                                     <div class="text-xs text-slate-500 mt-1.5 font-sans font-normal">ป้ายขาว: @jig.NamePlateWhite</div>
                                 }
+                                @if(!string.IsNullOrEmpty(jig.NamePlateBlack))
+                                {
+                                    <div class="text-xs text-slate-500 mt-0.5 font-sans font-normal">ป้ายดำ: @jig.NamePlateBlack</div>
+                                }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-800">@specName</div>
                                 <div class="text-xs text-slate-500 mt-1">
-                                    <span class="font-medium">Tool:</span> @specRecord?.ToolNo @specRecord?.ToolType 
+                                    <span class="font-medium">Tool:</span> @(string.IsNullOrEmpty(jig.Tool) ? $"{specRecord?.ToolNo} {specRecord?.ToolType}" : jig.Tool)
                                     <span class="ml-2 font-medium">Rev:</span> @specRecord?.Rev
                                 </div>
-                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Part:</span> @specRecord?.PartNumber (@specRecord?.PartType)</div>
-                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Jig Type:</span> @specRecord?.JigType</div>
+                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Part:</span> @(string.IsNullOrEmpty(jig.Part) ? $"{specRecord?.PartNumber} ({specRecord?.PartType})" : jig.Part)</div>
+                                <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Jig Type:</span> @(string.IsNullOrEmpty(jig.JigType) ? specRecord?.JigType : jig.JigType)</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-slate-900 border border-slate-200 bg-slate-50 px-2 py-1 inline-block rounded">
@@ -186,8 +190,24 @@ else
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tool</label>
+                        <input type="text" @bind="_editingJig.Tool" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Part</label>
+                        <input type="text" @bind="_editingJig.Part" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name Plate (ดำ)</label>
+                        <input type="text" @bind="_editingJig.NamePlateBlack" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Name Plate (ขาว)</label>
                         <input type="text" @bind="_editingJig.NamePlateWhite" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">ชนิด JIG</label>
+                        <input type="text" @bind="_editingJig.JigType" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Step Print</label>
@@ -381,7 +401,17 @@ else
             SpecId = jig.SpecId, 
             Status = jig.Status,
             LocatorId = jig.LocatorId,
-            Condition = jig.Condition
+            Condition = jig.Condition,
+            Tool = jig.Tool,
+            NamePlateBlack = jig.NamePlateBlack,
+            NamePlateWhite = jig.NamePlateWhite,
+            Part = jig.Part,
+            JigType = jig.JigType,
+            StepPrint = jig.StepPrint,
+            HG = jig.HG,
+            FS = jig.FS,
+            IssueDate = jig.IssueDate,
+            JigCapacity = jig.JigCapacity
         };
         _isEditMode = true;
         _errorMessage = "";
@@ -440,6 +470,18 @@ else
                 existing.Status = _editingJig.Status;
                 existing.LocatorId = _editingJig.LocatorId ?? "";
                 existing.Condition = _editingJig.Condition;
+
+                existing.Tool = _editingJig.Tool;
+                existing.NamePlateBlack = _editingJig.NamePlateBlack;
+                existing.NamePlateWhite = _editingJig.NamePlateWhite;
+                existing.Part = _editingJig.Part;
+                existing.JigType = _editingJig.JigType;
+                existing.StepPrint = _editingJig.StepPrint;
+                existing.HG = _editingJig.HG;
+                existing.FS = _editingJig.FS;
+                existing.IssueDate = _editingJig.IssueDate;
+                existing.JigCapacity = _editingJig.JigCapacity;
+
                 context.SaveChanges();
             }
         }

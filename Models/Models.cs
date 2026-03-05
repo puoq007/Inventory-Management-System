@@ -15,6 +15,8 @@ public class JigSpec
     public int JigRequired { get; set; }
     
     // New fields from specification table
+    public string Week { get; set; } = "";
+    public string Item { get; set; } = "";
     public string Rev { get; set; } = "";
     public string PictureUrl { get; set; } = "";
     public string ToyNumber { get; set; } = "";
@@ -44,7 +46,11 @@ public class PhysicalJig
     public string Condition { get; set; } = "Good";
     
     // New fields from Physical Jig table
+    public string Tool { get; set; } = "";
+    public string NamePlateBlack { get; set; } = "";
     public string NamePlateWhite { get; set; } = "";
+    public string Part { get; set; } = "";
+    public string JigType { get; set; } = "";
     public string StepPrint { get; set; } = "";
     public string HG { get; set; } = "";
     public string FS { get; set; } = "";

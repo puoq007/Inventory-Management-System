@@ -60,6 +60,8 @@ namespace Inventory.Services
                         string name = GetString(row, columnNames, "Name", "Description");
                         if (string.IsNullOrWhiteSpace(name)) name = id; // Fallback
 
+                        string week = GetString(row, columnNames, "Week");
+                        string item = GetString(row, columnNames, "Item");
                         string rev = GetString(row, columnNames, "Rev", "Revision");
                         string toyNumber = GetString(row, columnNames, "ToyNumber", "Toy Number");
                         string partNumber = GetString(row, columnNames, "PartNumber", "Part Number");
@@ -80,6 +82,8 @@ namespace Inventory.Services
                         if (existingSpecs.TryGetValue(id, out var spec))
                         {
                             spec.Name = name;
+                            spec.Week = week;
+                            spec.Item = item;
                             spec.Rev = rev;
                             spec.ToyNumber = toyNumber;
                             spec.PartNumber = partNumber;
@@ -101,6 +105,8 @@ namespace Inventory.Services
                             {
                                 Id = id,
                                 Name = name,
+                                Week = week,
+                                Item = item,
                                 Rev = rev,
                                 ToyNumber = toyNumber,
                                 PartNumber = partNumber,
@@ -188,12 +194,17 @@ namespace Inventory.Services
                         string condition = GetString(row, columnNames, "Condition", "สภาพ");
                         if (string.IsNullOrWhiteSpace(condition)) condition = "Good";
 
-                        string namePlateWhite = GetString(row, columnNames, "NamePlateWhite", "Name Plate", "ป้ายขาว");
-                        string stepPrint = GetString(row, columnNames, "StepPrint", "Step Print");
-                        string hg = GetString(row, columnNames, "HG", "H/G", "HG");
-                        string fs = GetString(row, columnNames, "FS", "F/S", "FS");
-                        string issueDate = GetString(row, columnNames, "IssueDate", "Date", "วันที่เบิก");
-                        string jigCapacity = GetString(row, columnNames, "JigCapacity", "Capacity", "ความจุ");
+                        string tool = GetString(row, columnNames, "Tool");
+                        string namePlateBlack = GetString(row, columnNames, "NamePlateBlack", "Name Plate ดำ", "ป้ายดำ");
+                        string namePlateWhite = GetString(row, columnNames, "NamePlateWhite", "Name Plate ขาว", "ป้ายขาว");
+                        string part = GetString(row, columnNames, "Part");
+                        string jigType = GetString(row, columnNames, "JigType", "ชนิด JIG");
+                        
+                        string stepPrint = GetString(row, columnNames, "StepPrint", "Step print");
+                        string hg = GetString(row, columnNames, "HG", "H/G");
+                        string fs = GetString(row, columnNames, "FS", "F/S");
+                        string issueDate = GetString(row, columnNames, "IssueDate", "วันที่เบิก", "Date");
+                        string jigCapacity = GetString(row, columnNames, "JigCapacity", "จำนวนวัตถุต่อ JIG", "Capacity");
 
                         // Auto-create locator if not exists
                         if (!string.IsNullOrWhiteSpace(locatorId) && !existingLocators.ContainsKey(locatorId))
@@ -209,7 +220,11 @@ namespace Inventory.Services
                             jig.Status = status;
                             jig.LocatorId = locatorId;
                             jig.Condition = condition;
+                            jig.Tool = tool;
+                            jig.NamePlateBlack = namePlateBlack;
                             jig.NamePlateWhite = namePlateWhite;
+                            jig.Part = part;
+                            jig.JigType = jigType;
                             jig.StepPrint = stepPrint;
                             jig.HG = hg;
                             jig.FS = fs;
@@ -226,7 +241,11 @@ namespace Inventory.Services
                                 Status = status,
                                 LocatorId = locatorId ?? "",
                                 Condition = condition,
+                                Tool = tool,
+                                NamePlateBlack = namePlateBlack,
                                 NamePlateWhite = namePlateWhite,
+                                Part = part,
+                                JigType = jigType,
                                 StepPrint = stepPrint,
                                 HG = hg,
                                 FS = fs,

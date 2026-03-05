@@ -11,6 +11,8 @@ public class SeedDataService
         {
             // Attempt to add new columns to JigSpecs table. It will fail if they already exist, so we use Try/Catch
             Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, 
+                "ALTER TABLE JigSpecs ADD [Week] nvarchar(max) DEFAULT ''; " +
+                "ALTER TABLE JigSpecs ADD [Item] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE JigSpecs ADD [Rev] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE JigSpecs ADD [PictureUrl] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE JigSpecs ADD [ToyNumber] nvarchar(max) DEFAULT ''; " +
@@ -30,6 +32,8 @@ public class SeedDataService
         {
             Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, 
                 "UPDATE JigSpecs SET " +
+                "[Week] = ISNULL([Week], ''), " +
+                "[Item] = ISNULL([Item], ''), " +
                 "[Rev] = ISNULL([Rev], ''), " +
                 "[PictureUrl] = ISNULL([PictureUrl], ''), " +
                 "[ToyNumber] = ISNULL([ToyNumber], ''), " +
@@ -48,7 +52,11 @@ public class SeedDataService
         try
         {
             Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, 
+                "ALTER TABLE PhysicalJigs ADD [Tool] nvarchar(max) DEFAULT ''; " +
+                "ALTER TABLE PhysicalJigs ADD [NamePlateBlack] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE PhysicalJigs ADD [NamePlateWhite] nvarchar(max) DEFAULT ''; " +
+                "ALTER TABLE PhysicalJigs ADD [Part] nvarchar(max) DEFAULT ''; " +
+                "ALTER TABLE PhysicalJigs ADD [JigType] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE PhysicalJigs ADD [StepPrint] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE PhysicalJigs ADD [HG] nvarchar(max) DEFAULT ''; " +
                 "ALTER TABLE PhysicalJigs ADD [FS] nvarchar(max) DEFAULT ''; " +
@@ -61,7 +69,11 @@ public class SeedDataService
         {
             Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, 
                 "UPDATE PhysicalJigs SET " +
+                "[Tool] = ISNULL([Tool], ''), " +
+                "[NamePlateBlack] = ISNULL([NamePlateBlack], ''), " +
                 "[NamePlateWhite] = ISNULL([NamePlateWhite], ''), " +
+                "[Part] = ISNULL([Part], ''), " +
+                "[JigType] = ISNULL([JigType], ''), " +
                 "[StepPrint] = ISNULL([StepPrint], ''), " +
                 "[HG] = ISNULL([HG], ''), " +
                 "[FS] = ISNULL([FS], ''), " +
