@@ -170,6 +170,12 @@ else
                         <input type="text" @bind="_editingSpec.PictureUrl" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                 </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mapped Part Numbers (Comma-separated)</label>
+                    <textarea @bind="_mappedPartNumbers" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" rows="2" placeholder="e.g. PN-1001, PN-1002, PN-1003"></textarea>
+                    <p class="text-xs text-slate-500 mt-1">These parts will be linked to this Jig Spec in the system.</p>
+                </div>
             </div>
 
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
@@ -194,6 +200,7 @@ else
     private bool _showModal = false;
     private bool _isEditMode = false;
     private JigSpec _editingSpec = new();
+    private string _mappedPartNumbers = "";
     private string _errorMessage = "";
     private string _searchQuery = "";
     private IEnumerable<JigSpec>? _displaySpecs;
@@ -250,6 +257,7 @@ else
     private void OpenAddModal()
     {
         _editingSpec = new JigSpec { JigRequired = 1 };
+        _mappedPartNumbers = "";
         _isEditMode = false;
         _errorMessage = "";
         _showModal = true;
@@ -276,6 +284,11 @@ else
             Scan = spec.Scan
         };
         _isEditMode = true;
+        
+        using var context = DbFactory.CreateDbContext();
+        var mappings = context.PartJigMappings.Where(m => m.SpecId == spec.Id).Select(m => m.PartNumber).ToList();
+        _mappedPartNumbers = string.Join(", ", mappings);
+        
         _errorMessage = "";
         _showModal = true;
     }
@@ -331,6 +344,24 @@ else
             context.SaveChanges();
         }
 
+        // Handle Part Mappings
+        var existingMappings = context.PartJigMappings.Where(m => m.SpecId == _editingSpec.Id).ToList();
+        context.PartJigMappings.RemoveRange(existingMappings);
+        
+        if (!string.IsNullOrWhiteSpace(_mappedPartNumbers))
+        {
+            var parts = _mappedPartNumbers.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                          .Select(p => p.Trim())
+                                          .Where(p => !string.IsNullOrEmpty(p))
+                                          .Distinct();
+            foreach (var part in parts)
+            {
+                context.PartJigMappings.Add(new PartJigMapping { SpecId = _editingSpec.Id, PartNumber = part });
+            }
+        }
+        
+        context.SaveChanges();
+
         FilterData();
         _showModal = false;
         StateHasChanged();
@@ -345,6 +376,8 @@ else
         var toDelete = context.JigSpecs.FirstOrDefault(s => s.Id == spec.Id);
         if (toDelete != null)
         {
+            var mappings = context.PartJigMappings.Where(m => m.SpecId == spec.Id).ToList();
+            context.PartJigMappings.RemoveRange(mappings);
             context.JigSpecs.Remove(toDelete);
             context.SaveChanges();
         }
