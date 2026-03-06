@@ -21,9 +21,12 @@
             {
                 <div class="mt-8 pt-4 border-t border-slate-700">
                     <p class="text-xs text-slate-500 uppercase font-semibold px-4 mb-2 tracking-wider">Management</p>
-                    @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
+                    @if (_role == "Admin")
                     {
                         <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/users">Users</NavLink>
+                    }
+                    @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
+                    {
                         <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/jig-specs">Jig Specs</NavLink>
                         <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/locators">Locations</NavLink>
                     }

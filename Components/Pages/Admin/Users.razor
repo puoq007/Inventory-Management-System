@@ -108,20 +108,11 @@ else
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Role</label>
                     <select @bind="_editingUser.Role" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        @if (_currentRole == "Admin")
-                        {
-                            <option value="Admin">Admin</option>
-                        }
-                        @if (_currentRole == "Admin" || _currentRole == "Engineer")
-                        {
-                            <option value="Engineer">Engineer</option>
-                        }
-                        @if (_currentRole == "Admin" || _currentRole == "Engineer" || _currentRole == "ProdLead")
-                        {
-                            <option value="ProdLead">Production Lead</option>
-                            <option value="Operator">Operator</option>
-                            <option value="Guest">Guest</option>
-                        }
+                        <option value="Admin">Admin</option>
+                        <option value="Engineer">Engineer</option>
+                        <option value="ProdLead">Production Lead</option>
+                        <option value="Operator">Operator</option>
+                        <option value="Guest">Guest</option>
                     </select>
                 </div>
                 <div>
@@ -162,7 +153,7 @@ else
             _currentRole = role;
 
             // Admin area validation
-            if (string.IsNullOrEmpty(role) || (role != "Admin" && role != "Engineer" && role != "ProdLead"))
+            if (string.IsNullOrEmpty(role) || role != "Admin")
             {
                 NavManager.NavigateTo("/");
                 return;
@@ -177,14 +168,7 @@ else
     private IEnumerable<UserAccount> GetManageableUsers()
     {
         using var context = DbFactory.CreateDbContext();
-        if (_currentRole == "Admin")
-            return context.Users.ToList();
-        else if (_currentRole == "Engineer")
-            return context.Users.Where(u => u.Role != "Admin").ToList();
-        else if (_currentRole == "ProdLead")
-            return context.Users.Where(u => u.Role != "Admin" && u.Role != "Engineer").ToList();
-            
-        return Enumerable.Empty<UserAccount>();
+        return context.Users.ToList();
     }
 
     private void FilterData()
