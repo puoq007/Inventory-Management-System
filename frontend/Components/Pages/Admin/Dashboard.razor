@@ -1,0 +1,357 @@
+@page "/"
+@inject frontend.Services.AuthService Auth
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@using shared.Models
+@using System.Linq
+@using System.Text
+@using System.Net.Http.Json
+
+<PageTitle>Admin Dashboard | Inventory</PageTitle>
+
+<div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Dashboard</h1>
+        <p class="text-slate-500">Overview of inventory status and operations</p>
+    </div>
+    @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
+    {
+        <button @onclick="ExportAnalytics" class="px-4 py-2 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            </svg>
+            Export Report
+        </button>
+    }
+</div>
+
+@if (_isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="text-slate-500 font-medium">Loading dashboard data...</div>
+    </div>
+}
+else
+{
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">Total Jigs</p>
+                <p class="text-2xl font-bold text-slate-900">@_totalJigs</p>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg mr-4">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">Available</p>
+                <p class="text-2xl font-bold text-slate-900">@_availableJigs</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="p-3 bg-amber-100 text-amber-600 rounded-lg mr-4">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">In Use</p>
+                <p class="text-2xl font-bold text-slate-900">@_inUseJigs</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="p-3 bg-red-100 text-red-600 rounded-lg mr-4">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500">Under Evaluation / Broken</p>
+                <p class="text-2xl font-bold text-slate-900">@_issueJigs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Broken / Scrapped Focus -->
+        @if (_role != "Guest")
+        {
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                    </svg>
+                    Action Required (Issues)
+                </h2>
+                @if (_actionRequiredList.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var jig in _actionRequiredList)
+                        {
+                            var spec = _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId);
+                            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                <div>
+                                    <span class="font-mono text-sm font-semibold text-slate-900 mr-2">@jig.Id</span>
+                                    <span class="text-sm text-slate-600">@spec?.Name</span>
+                                </div>
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                    @jig.Condition
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-slate-500 text-sm py-4 italic text-center">No current issues requiring action.</div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center text-center">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 tracking-wider">
+                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Welcome!</h2>
+                <p class="text-slate-500 text-sm">You are currently in <strong>Read-Only Mode</strong> as a Guest. You can view the current status of existing physical jigs.</p>
+                <div class="mt-6 pt-6 border-t border-slate-100">
+                    <a href="/login" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors inline-block text-sm">Sign In to Continue</a>
+                </div>
+            </div>
+        }
+
+        <!-- Recent Transactions -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Recent Activity
+            </h2>
+            
+            <div class="space-y-4">
+                @foreach (var txn in _recentTxns)
+                {
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            @if (txn.Action == "CheckOut")
+                            {
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                </div>
+                            }
+                            else if (txn.Action == "CheckIn" || txn.Action == "ForceCheckIn")
+                            {
+                                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                            }
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-slate-900">
+                                <span class="font-mono mr-1">@txn.JigId</span> 
+                                @if (txn.Action == "CheckOut") { <span>was borrowed by</span> }
+                                else if (txn.Action == "CheckIn") { <span>was returned by</span> }
+                                else if (txn.Action == "ForceCheckIn") { <span>was force-returned by</span> }
+                                else if (txn.Action == "ReportIssue") { <span>was reported with an issue by</span> }
+                                else if (txn.Action == "Scrapped") { <span>was scrapped by</span> }
+                                <span class="font-semibold text-slate-700 ml-1">@txn.User</span>
+                            </p>
+                            <p class="text-xs text-slate-500 mt-0.5">@txn.Timestamp.ToString("MMM dd, HH:mm")</p>
+                        </div>
+                    </div>
+                }
+                
+                @if (!_recentTxns.Any())
+                {
+                    <div class="text-slate-500 text-sm py-4 italic text-center">No recent activity detected.</div>
+                }
+            </div>
+        </div>
+
+        <!-- Top Used Jigs Analytics -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 text-purple-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Top Used Jigs
+            </h2>
+            
+            <div class="space-y-4 mt-2">
+                @if (_topUsedJigs.Any())
+                {
+                    @foreach (var stat in _topUsedJigs)
+                    {
+                        var percentage = (_totalCheckouts > 0) ? (stat.Value * 100 / _totalCheckouts) : 0;
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-purple-600 bg-purple-200">
+                                        @stat.Key
+                                    </span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-semibold inline-block text-slate-600">
+                                        @stat.Value borrows
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-purple-100">
+                                <div style="width:@percentage%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500"></div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-slate-500 text-sm py-4 italic text-center">Not enough data to analyze.</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string _role = "";
+    private bool _isLoading = true;
+    private int _totalJigs = 0;
+    private int _availableJigs = 0;
+    private int _inUseJigs = 0;
+    private int _issueJigs = 0;
+    private List<PhysicalJig> _actionRequiredList = new();
+    private Dictionary<string, int> _topUsedJigs = new();
+    private int _totalCheckouts = 0;
+    
+    private List<JigSpec> _allSpecs = new();
+    private List<TransactionRow> _recentTxns = new();
+    private List<PhysicalJig> _allJigs = new();
+    private List<TransactionRow> _allTxns = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            _role = auth.Role ?? "";
+
+            if (string.IsNullOrEmpty(_role))
+            {
+                NavManager.NavigateTo("/login");
+                return;
+            }
+
+            await LoadData();
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var jigsTask = Http.GetFromJsonAsync<List<PhysicalJig>>("api/physicaljigs");
+            var specsTask = Http.GetFromJsonAsync<List<JigSpec>>("api/jigspecs");
+            var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
+
+            await Task.WhenAll(jigsTask, specsTask, txnsTask);
+
+            _allJigs = await jigsTask ?? new List<PhysicalJig>();
+            _allSpecs = await specsTask ?? new List<JigSpec>();
+            _allTxns = await txnsTask ?? new List<TransactionRow>();
+
+            CalculateStats();
+        }
+        catch (Exception)
+        {
+            // Handle error minimally
+        }
+    }
+
+    private void CalculateStats()
+    {
+        _recentTxns = _allTxns.OrderByDescending(t => t.Timestamp).Take(5).ToList();
+        
+        _totalJigs = _allJigs.Count;
+        _availableJigs = _allJigs.Count(j => j.Status == "Available");
+        _inUseJigs = _allJigs.Count(j => j.Status == "InUse");
+        _issueJigs = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
+        
+        _actionRequiredList = _allJigs
+            .Where(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning")
+            .OrderBy(j => j.Status)
+            .ToList();
+
+        // Calculate Analytics
+        var checkouts = _allTxns.Where(t => t.Action == "CheckOut").ToList();
+        _totalCheckouts = checkouts.Count;
+        _topUsedJigs = checkouts
+            .GroupBy(t => t.JigId)
+            .Select(g => new { JigId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(5)
+            .ToDictionary(x => x.JigId, x => x.Count);
+    }
+
+    private async Task ExportAnalytics()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Date Generated," + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.AppendLine();
+        
+        sb.AppendLine("Overall Status");
+        sb.AppendLine($"Total Jigs,{_totalJigs}");
+        sb.AppendLine($"Available,{_availableJigs}");
+        sb.AppendLine($"In Use,{_inUseJigs}");
+        sb.AppendLine($"Issues,{_issueJigs}");
+        sb.AppendLine();
+        
+        sb.AppendLine("Top Used Jigs");
+        sb.AppendLine("JigId,CheckoutCount");
+        foreach(var stat in _topUsedJigs)
+        {
+            sb.AppendLine($"{stat.Key},{stat.Value}");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("Action Required / Broken");
+        sb.AppendLine("JigId,SpecId,Condition,Status");
+        foreach(var jig in _actionRequiredList)
+        {
+            sb.AppendLine($"{jig.Id},{jig.SpecId},{jig.Condition},{jig.Status}");
+        }
+
+        var csvContent = sb.ToString();
+        var fileName = $"analytics_report_{DateTime.Now.ToString("yyyyMMdd")}.csv";
+        
+        await JSRuntime.InvokeVoidAsync("downloadTextFile", fileName, csvContent);
+    }
+}

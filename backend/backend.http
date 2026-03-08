@@ -1,0 +1,6 @@
+@JigInventory.Api_HostAddress = http://localhost:5105
+
+GET {{JigInventory.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

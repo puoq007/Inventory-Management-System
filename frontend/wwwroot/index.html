@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend</title>
+    <base href="/" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css?v=1772814275" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="frontend.styles.css" rel="stylesheet" />
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        window.confirmAction = function (title, text, confirmBtnStr, icon) {
+            return Swal.fire({
+                title: title || 'Are you sure?',
+                text: text || "You won't be able to revert this!",
+                icon: icon || 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: confirmBtnStr || 'Yes'
+            }).then((result) => {
+                return result.isConfirmed;
+            });
+        }
+
+        window.downloadTextFile = function (fileName, content) {
+            const blob = new Blob(["\ufeff" + content], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        window.printQR = function (svgHtml, jigId) {
+            const printWnd = window.open('', '_blank', 'width=400,height=400');
+            printWnd.document.write(`
+                <html>
+                <head><title>Print QR - ${jigId}</title></head>
+                <body style="text-align:center; padding: 20px; font-family: sans-serif;">
+                    <div style="width:150px; height:150px; margin: 0 auto;">${svgHtml}</div>
+                    <h2>${jigId}</h2>
+                    <p style="color:#666; font-size:12px;">Inventory System</p>
+                    <script>
+                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 200); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        }
+
+        window.printQRs = function (qrDataList) {
+            const printWnd = window.open('', '_blank', 'width=800,height=800');
+
+            let content = '';
+            qrDataList.forEach(data => {
+                content += `
+                    <div style="display:flex; align-items:center; padding: 10px; font-family: sans-serif; border: 1px dashed #ccc; page-break-inside: avoid; width: 350px; box-sizing: border-box;">
+                        <div style="width:100px; height:100px; flex-shrink:0;">${data.svg}</div>
+                        <div style="margin-left: 15px; text-align: left;">
+                            <h2 style="margin: 0 0 5px 0; font-size: 16px;">${data.id}</h2>
+                            <p style="color:#333; font-size:12px; margin: 0; line-height:1.4;">
+                                <strong>Name:</strong> ${data.name || 'N/A'}<br/>
+                                <strong>Part:</strong> ${data.partNumber || 'N/A'} - ${data.jigType || 'N/A'}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            printWnd.document.write(`
+                <html>
+                <head><title>Print Jig Specs</title></head>
+                <body style="padding: 20px; display: flex; flex-wrap: wrap; gap: 15px;">
+                    ${content}
+                    <script>
+                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 500); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        }
+
+        window.qrScannerInstance = null;
+        window.startQrScan = function (dotNetHelper, elementId) {
+            if (window.qrScannerInstance) return;
+            window.qrScannerInstance = new window.Html5QrcodeScanner(elementId, {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            }, false);
+
+            window.qrScannerInstance.render(
+                (decodedText) => {
+                    dotNetHelper.invokeMethodAsync('OnQrScanned', decodedText);
+                },
+                (error) => { }
+            );
+        };
+
+        window.stopQrScan = function () {
+            if (window.qrScannerInstance) {
+                window.qrScannerInstance.clear();
+                window.qrScannerInstance = null;
+            }
+        };
+    </script>
+</body>
+
+</html>

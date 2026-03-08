@@ -1,0 +1,402 @@
+@page "/current-status"
+@inject frontend.Services.AuthService Auth
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@using shared.Models
+@using System.Threading.Tasks
+@using System.Net.Http.Json
+@implements IAsyncDisposable
+
+<PageTitle>Current Status - Inventory</PageTitle>
+
+<div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Current Status</h1>
+        <p class="text-slate-500">Search and manage physical jigs</p>
+    </div>
+    @if (!string.IsNullOrEmpty(_role))
+    {
+        <div class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+            Role: <span class="text-slate-800">@_role</span>
+        </div>
+    }
+</div>
+
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Part Number or Jig ID</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" 
+                       class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. PN-1001 or J001" />
+            </div>
+        </div>
+        <div class="flex items-end space-x-3 w-full md:w-auto mt-4 md:mt-0">
+            <button @onclick="OpenScanModal" class="w-full md:w-auto px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 focus:outline-none transition-colors border border-slate-200 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                Scan QR
+            </button>
+            <button @onclick="FilterData" class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                Search
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (_showScanModal)
+{
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-center">
+            <h3 class="text-xl font-bold text-slate-900 mb-4">Scan QR Code</h3>
+            <div id="qr-reader" class="mx-auto w-full mb-4 overflow-hidden rounded-lg bg-slate-50 border border-slate-200" style="min-height: 250px;"></div>
+            <button @onclick="CloseScanModal" class="px-6 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">Cancel</button>
+        </div>
+    </div>
+}
+
+@if (_isLoading)
+{
+    <div class="flex items-center justify-center py-12">
+        <div class="text-slate-500 font-medium tracking-wide">Loading status variables...</div>
+    </div>
+}
+else if (_displayJigs == null)
+{
+    <div class="flex items-center justify-center py-12">
+        <div class="text-slate-500 font-medium tracking-wide">Enter a search term to find jigs...</div>
+    </div>
+}
+else if (!_displayJigs.Any())
+{
+    <div class="flex flex-col items-center justify-center py-12 text-slate-500">
+        <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="text-lg font-medium">No results found</div>
+        <p class="text-sm">We couldn't find any jigs matching "@_searchQuery".</p>
+    </div>
+}
+else
+{
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig ID</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Specification</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Condition</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    @foreach (var item in _displayJigs)
+                    {
+                        var spec = _allSpecs.FirstOrDefault(s => s.Id == item.SpecId);
+                        var specName = spec?.Name ?? "Unknown";
+
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="font-mono text-sm font-semibold text-slate-900 border border-slate-200 bg-slate-100 px-2 py-1 rounded">@item.Id</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900 font-medium">@specName</div>
+                                <div class="text-xs text-slate-500">Spec: @item.SpecId @(!string.IsNullOrEmpty(spec?.Rev) ? $" | Rev: {spec?.Rev}" : "")</div>
+                                @if(!string.IsNullOrEmpty(spec?.PartNumber)){
+                                    <div class="text-xs text-slate-500 mt-0.5">Part: @spec?.PartNumber</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if (item.Status == "Available")
+                                {
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        Available
+                                    </span>
+                                }
+                                else if (item.Status == "InUse")
+                                {
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                        In Use
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                                        @item.Status
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    @(_allLocators.FirstOrDefault(l => l.Id == item.LocatorId)?.Name ?? "Unknown")
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                @item.Condition
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                @if (_role != "Guest")
+                                {
+                                    @if (item.Status == "Available")
+                                    {
+                                        <button @onclick="() => ProcessBorrow(item.Id)" class="text-blue-600 hover:text-blue-900 font-semibold px-3 py-1 rounded hover:bg-blue-50 transition-colors">
+                                            Borrow
+                                        </button>
+                                        <button @onclick="() => ReportIssue(item.Id)" class="text-amber-600 hover:text-amber-900 font-semibold px-3 py-1 rounded hover:bg-amber-50 transition-colors ml-2">
+                                            Report Issue
+                                        </button>
+                                    }
+                                    else if (item.Status == "InUse")
+                                    {
+                                        <button @onclick="() => ProcessReturn(item.Id)" class="text-emerald-600 hover:text-emerald-900 font-semibold px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
+                                            Return
+                                        </button>
+                                    }
+
+                                    @if (item.Status != "Available" && (_role == "Admin" || _role == "ProdLead"))
+                                    {
+                                        <button @onclick="() => ForceCheckIn(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-3 py-1 rounded hover:bg-indigo-50 transition-colors ml-2">
+                                            Force Return
+                                        </button>
+                                    }
+
+                                    @if ((item.Status == "Available" || item.Status == "Evaluation") && (_role == "Admin" || _role == "ProdLead"))
+                                    {
+                                        <button @onclick="() => ProcessScrap(item.Id)" class="text-red-600 hover:text-red-900 font-semibold px-3 py-1 rounded hover:bg-red-50 transition-colors ml-2">
+                                            Scrap
+                                        </button>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private string _role = "";
+    private string _name = "";
+    private string _searchQuery = "";
+    private IEnumerable<PhysicalJig>? _displayJigs;
+    private bool _isLoading = true;
+    
+    private List<PhysicalJig> _allJigs = new();
+    private List<JigSpec> _allSpecs = new();
+    private List<Locator> _allLocators = new();
+
+    private bool _showScanModal = false;
+    private DotNetObjectReference<CurrentStatus>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            var auth = await Auth.GetAuthAsync();
+            _role = auth.Role ?? "";
+            _name = auth.Name ?? "";
+
+            if (string.IsNullOrEmpty(_role))
+            {
+                NavManager.NavigateTo("/login");
+                return;
+            }
+
+            await LoadData();
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var locatorsTask = Http.GetFromJsonAsync<List<Locator>>("api/locators");
+            var specsTask = Http.GetFromJsonAsync<List<JigSpec>>("api/jigspecs");
+            var jigsTask = Http.GetFromJsonAsync<List<PhysicalJig>>("api/physicaljigs");
+
+            await Task.WhenAll(locatorsTask, specsTask, jigsTask);
+
+            _allLocators = await locatorsTask ?? new List<Locator>();
+            _allSpecs = await specsTask ?? new List<JigSpec>();
+            _allJigs = await jigsTask ?? new List<PhysicalJig>();
+
+            FilterData();
+        }
+        catch (Exception)
+        {
+            // Handle error minimally
+            _displayJigs = new List<PhysicalJig>();
+        }
+    }
+
+    private void FilterData()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _displayJigs = _allJigs;
+            return;
+        }
+
+        var lowerQuery = _searchQuery.ToLowerInvariant();
+        
+        // Search by part number to find associated spec
+        // Note: Without PartJigMappings API, we rely on PartNumber string in JigSpec
+        var matchSpecIds = _allSpecs
+            .Where(p => (p.PartNumber ?? "").ToLowerInvariant().Contains(lowerQuery))
+            .Select(p => p.Id)
+            .ToList();
+
+        // Also search by Spec Name directly
+        var specNameMatchIds = _allSpecs
+            .Where(s => (s.Name ?? "").ToLowerInvariant().Contains(lowerQuery))
+            .Select(s => s.Id)
+            .ToList();
+            
+        matchSpecIds.AddRange(specNameMatchIds);
+
+        // Filter the physical jigs
+        _displayJigs = _allJigs
+            .Where(j => 
+                (j.Id ?? "").ToLowerInvariant().Contains(lowerQuery) || // match Jig ID
+                matchSpecIds.Contains(j.SpecId) || // match Spec ID from part mapping or spec name
+                (_allLocators.FirstOrDefault(l => l.Id == j.LocatorId)?.Name ?? "").ToLowerInvariant().Contains(lowerQuery) // match location
+            )
+            .ToList();
+    }
+
+    private async Task ProcessBorrow(string id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Borrow Jig?", $"Do you want to borrow jig {id}?", "Yes, borrow", "question");
+        if (!confirmed) return;
+
+        var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+        if (jig != null)
+        {
+            jig.Status = "InUse";
+            await Http.PutAsJsonAsync($"api/physicaljigs/{id}", jig);
+            await Http.PostAsJsonAsync("api/transactions", new TransactionRow { JigId = id, Action = "CheckOut", User = _name, Timestamp = DateTime.Now });
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ProcessReturn(string id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Return Jig?", $"Do you want to return jig {id}?", "Yes, return", "question");
+        if (!confirmed) return;
+
+        var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+        if (jig != null)
+        {
+            jig.Status = "Available";
+            jig.Condition = "NeedsCleaning"; // Example flow: returning makes it need cleaning
+            await Http.PutAsJsonAsync($"api/physicaljigs/{id}", jig);
+            await Http.PostAsJsonAsync("api/transactions", new TransactionRow { JigId = id, Action = "CheckIn", User = _name, Timestamp = DateTime.Now });
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReportIssue(string id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Report Issue", $"Are you sure you want to report an issue for jig {id}?", "Yes, report", "warning");
+        if (!confirmed) return;
+
+        var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+        if (jig != null)
+        {
+            jig.Status = "Evaluation";
+            jig.Condition = "UnderRepair";
+            await Http.PutAsJsonAsync($"api/physicaljigs/{id}", jig);
+            await Http.PostAsJsonAsync("api/transactions", new TransactionRow { JigId = id, Action = "ReportIssue", User = _name, Timestamp = DateTime.Now });
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ForceCheckIn(string id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Force Return", $"Force return jig {id}?", "Yes, force return", "warning");
+        if (!confirmed) return;
+
+        var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+        if (jig != null)
+        {
+            jig.Status = "Available";
+            jig.Condition = "NeedsCleaning";
+            await Http.PutAsJsonAsync($"api/physicaljigs/{id}", jig);
+            await Http.PostAsJsonAsync("api/transactions", new TransactionRow { JigId = id, Action = "ForceCheckIn", User = _name, Timestamp = DateTime.Now });
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ProcessScrap(string id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Scrap Jig", $"Are you absolutely sure you want to scrap jig {id}?", "Yes, scrap it", "error");
+        if (!confirmed) return;
+
+        var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+        if (jig != null)
+        {
+            jig.Status = "Evaluation";
+            jig.Condition = "Broken";
+            await Http.PutAsJsonAsync($"api/physicaljigs/{id}", jig);
+            await Http.PostAsJsonAsync("api/transactions", new TransactionRow { JigId = id, Action = "Scrapped", User = _name, Timestamp = DateTime.Now });
+            await LoadData();
+            StateHasChanged();
+        }
+    }
+
+    private void OpenScanModal()
+    {
+        _showScanModal = true;
+        StateHasChanged();
+        
+        // Wait for modal to render, then start scanner
+        Task.Delay(300).ContinueWith(_ => 
+        {
+            InvokeAsync(async () => {
+                await JSRuntime.InvokeVoidAsync("startQrScan", _dotNetRef, "qr-reader");
+            });
+        });
+    }
+
+    private async Task CloseScanModal()
+    {
+        _showScanModal = false;
+        await JSRuntime.InvokeVoidAsync("stopQrScan");
+    }
+
+    [JSInvokable]
+    public async Task OnQrScanned(string decodedText)
+    {
+        await CloseScanModal();
+        _searchQuery = decodedText;
+        FilterData();
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+        await JSRuntime.InvokeVoidAsync("stopQrScan");
+    }
+}

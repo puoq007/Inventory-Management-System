@@ -1,0 +1,257 @@
+@page "/scan-out"
+@using shared.Models
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject frontend.Services.AuthService Auth
+@implements IAsyncDisposable
+
+<PageTitle>Scan Out | Inventory</PageTitle>
+
+<div class="h-full flex flex-col space-y-6">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900">Scan Out</h1>
+        <p class="text-slate-500 mt-1">Scan a Jig QR code to record it as checked out.</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-6 flex flex-col items-center">
+        @if (!String.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="mb-4 bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 w-full max-w-md">
+                @_errorMessage
+            </div>
+        }
+        
+        @if (!String.IsNullOrEmpty(_successMessage))
+        {
+            <div class="mb-4 bg-green-50 text-green-700 p-3 rounded-lg border border-green-200 w-full max-w-md">
+                @_successMessage
+            </div>
+        }
+
+        <!-- Primary Feature: Physical Scanner -->
+        <div class="mb-6 w-full max-w-md bg-blue-50 p-6 rounded-xl border border-blue-200">
+            <h3 class="font-bold text-blue-900 mb-3 text-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                Physical Scanner
+            </h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Select Destination / Line / Zone</label>
+                <select @bind="_selectedDestination" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2.5 border bg-white">
+                    <option value="" disabled>-- Please select destination --</option>
+                    @foreach(var dest in _destinations)
+                    {
+                        <option value="@dest">@dest</option>
+                    }
+                </select>
+                <p class="text-xs text-slate-500 mt-1">Select where the Jig will be used before scanning.</p>
+            </div>
+
+            <p class="text-blue-700 text-sm mb-2 font-semibold border-t border-blue-200 mt-4 pt-4">Click the box below and press scan using your scanner.</p>
+            <div class="flex space-x-2">
+                <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp" disabled="@(string.IsNullOrEmpty(_selectedDestination))" placeholder="@(string.IsNullOrEmpty(_selectedDestination) ? "Select destination first..." : "Scan QR Code here...")" class="flex-grow rounded-lg border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-100 disabled:cursor-not-allowed" autofocus />
+                <button @onclick="ProcessManualEntry" disabled="@(_isProcessing || string.IsNullOrEmpty(_selectedDestination))" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold disabled:opacity-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-28">
+                    @if (_isProcessing)
+                    {
+                        <span class="inline-block animate-spin h-5 w-5 border-2 border-white rounded-full border-t-transparent"></span>
+                    }
+                    else
+                    {
+                        <span>Submit</span>
+                    }
+                </button>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md mt-4 pt-6 border-t border-slate-200">
+            <h3 class="font-medium text-slate-500 mb-4 flex justify-center text-sm uppercase tracking-wider">Or Use Web Camera</h3>
+            
+            <!-- QR Scanner container -->
+            <div id="qr-reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-200 mb-4 bg-slate-50 flex items-center justify-center @(_isScanning ? "min-h-[250px]" : "hidden")"></div>
+            
+            <div class="flex justify-center">
+                @if (!_isScanning)
+                {
+                    <button @onclick="StartScanning" disabled="@(string.IsNullOrEmpty(_selectedDestination))" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        @(string.IsNullOrEmpty(_selectedDestination) ? "Select Destination First" : "Start Web Camera")
+                    </button>
+                }
+                else
+                {
+                    <button @onclick="StopScanning" class="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Stop Camera
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isScanning = false;
+    private bool _isProcessing = false;
+    private DotNetObjectReference<ScanOut>? _objRef;
+    private string _errorMessage = "";
+    private string _successMessage = "";
+    private string _manualJigId = "";
+    private string _currentUser = "";
+    private string _selectedDestination = "";
+    private ElementReference _jigInputRef;
+
+    // TODO: This could be loaded from database in the future
+    private List<string> _destinations = new()
+    {
+        "Main Production Line 1",
+        "Main Production Line 2",
+        "Sub-Assembly Zone A",
+        "Sub-Assembly Zone B",
+        "Testing Area",
+        "QA Inspection Table 1",
+        "Maintenance/Repair bench"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authObj = await Auth.GetAuthAsync();
+        _currentUser = authObj.Name ?? "Unknown";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await FocusInputAsync();
+        }
+    }
+
+    private async Task FocusInputAsync()
+    {
+        try
+        {
+            await _jigInputRef.FocusAsync();
+        }
+        catch { /* Ignore if unable to focus */ }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ProcessManualEntry();
+        }
+    }
+
+    private async Task StartScanning()
+    {
+        _errorMessage = "";
+        _successMessage = "";
+        _objRef = DotNetObjectReference.Create(this);
+        _isScanning = true;
+        await Task.Delay(50); // Give DOM time to un-hide the div
+        await JSRuntime.InvokeVoidAsync("startQrScan", _objRef, "qr-reader");
+    }
+
+    private async Task StopScanning()
+    {
+        await JSRuntime.InvokeVoidAsync("stopQrScan");
+        if (_objRef != null)
+        {
+            _objRef.Dispose();
+            _objRef = null;
+        }
+        _isScanning = false;
+        
+        // Return focus to physical scanner
+        await FocusInputAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnQrScanned(string decodedText)
+    {
+        if (_isProcessing) return;
+        
+        // Temporarily stop scanning when something is found
+        await StopScanning();
+        
+        await ProcessCheckout(decodedText);
+        StateHasChanged();
+    }
+
+    private async Task ProcessManualEntry()
+    {
+        if (string.IsNullOrWhiteSpace(_manualJigId) || _isProcessing || string.IsNullOrEmpty(_selectedDestination)) return;
+        await ProcessCheckout(_manualJigId.Trim());
+    }
+
+    private async Task ProcessCheckout(string jigId)
+    {
+        try
+        {
+            _isProcessing = true;
+            _errorMessage = "";
+            _successMessage = "";
+            
+            var request = new { 
+                JigId = jigId, 
+                User = _currentUser,
+                Destination = _selectedDestination
+            };
+            var response = await Http.PostAsJsonAsync("api/transactions/checkout", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _successMessage = $"Successfully checked out: {jigId}";
+                _manualJigId = ""; // clear input for next scan
+                
+                // Show nice notification via SweetAlert2 instead of blocking alert
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new {
+                    title = "Checked Out!",
+                    text = $"Successfully checked out Jig: {jigId}",
+                    icon = "success",
+                    timer = 1500,
+                    showConfirmButton = false
+                });
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _errorMessage = $"Failed: {error}";
+                
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new {
+                    title = "Error!",
+                    text = error,
+                    icon = "error",
+                    confirmButtonColor = "#ef4444"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isProcessing = false;
+            // Always return focus to input for continuous scanning
+            await FocusInputAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try 
+        {
+            await StopScanning();
+        }
+        catch { /* ignore */ }
+    }
+}
