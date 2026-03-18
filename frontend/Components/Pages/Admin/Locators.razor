@@ -338,7 +338,14 @@ else
     {
         var qr = QrCode.EncodeText(loc.Id, QrCode.Ecc.Medium);
         var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-        await JSRuntime.InvokeVoidAsync("printQR", svgStr, loc.Id);
+        var data = new {
+            id = loc.Id,
+            site = loc.Site,
+            cabinet = loc.Cabinet,
+            shelf = loc.Shelf,
+            type = loc.Type
+        };
+        await JSRuntime.InvokeVoidAsync("printLocatorQR", svgStr, data);
     }
 
     private void ToggleSelection(string locId, object? isChecked)
@@ -374,12 +381,21 @@ else
         var qrList = new List<object>();
         foreach (var id in _selectedLocatorIds)
         {
+            var loc = _allLocators.FirstOrDefault(l => l.Id == id);
+            if (loc == null) continue;
             var qr = QrCode.EncodeText(id, QrCode.Ecc.Medium);
             var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-            qrList.Add(new { svg = svgStr, id = id });
+            qrList.Add(new {
+                svg = svgStr,
+                id = id,
+                site = loc.Site,
+                cabinet = loc.Cabinet,
+                shelf = loc.Shelf,
+                type = loc.Type
+            });
         }
 
-        await JSRuntime.InvokeVoidAsync("printQRs", qrList);
+        await JSRuntime.InvokeVoidAsync("printLocatorQRs", qrList);
         _selectedLocatorIds.Clear();
     }
 

@@ -57,18 +57,35 @@
             }
         }
 
-        window.printQR = function (svgHtml, jigId) {
-            const printWnd = window.open('', '_blank', 'width=400,height=400');
+        window.printQR = function (svgHtml, data) {
+            const printWnd = window.open('', '_blank', 'width=500,height=500');
             printWnd.document.write(`
                 <html>
-                <head><title>Print QR - ${jigId}</title></head>
-                <body style="text-align:center; padding: 20px; font-family: sans-serif;">
-                    <div style="width:150px; height:150px; margin: 0 auto;">${svgHtml}</div>
-                    <h2>${jigId}</h2>
-                    <p style="color:#666; font-size:12px;">Inventory System</p>
-                    <script>
-                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 200); }
-                    <\/script>
+                <head><title>Print QR - ${data.id}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 12px; }
+                    .card { display: flex; align-items: center; border: 1.5px solid #222; border-radius: 8px; padding: 10px 14px; width: 340px; box-sizing: border-box; gap: 14px; }
+                    .qr { flex-shrink: 0; width: 110px; height: 110px; }
+                    .info { text-align: left; flex: 1; }
+                    .id { font-size: 17px; font-weight: bold; margin: 0 0 5px 0; letter-spacing: 0.5px; }
+                    .row { font-size: 11px; color: #333; margin: 2px 0; line-height: 1.4; }
+                    .label { color: #888; }
+                    .footer { font-size: 10px; color: #aaa; margin-top: 6px; }
+                </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="qr">${svgHtml}</div>
+                        <div class="info">
+                            <p class="id">${data.id}</p>
+                            <p class="row"><span class="label">Toy No: </span><strong>${data.toyNumber || '-'}</strong></p>
+                            <p class="row"><span class="label">Part No: </span>${data.partNumber || '-'}</p>
+                            <p class="row"><span class="label">Part: </span>${data.part || '-'}</p>
+                            <p class="row"><span class="label">Type: </span>${data.jigType || '-'}</p>
+                            <p class="footer">Inventory System</p>
+                        </div>
+                    </div>
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 200); }<\/script>
                 </body>
                 </html>
             `);
@@ -76,19 +93,20 @@
         }
 
         window.printQRs = function (qrDataList) {
-            const printWnd = window.open('', '_blank', 'width=800,height=800');
+            const printWnd = window.open('', '_blank', 'width=900,height=800');
 
             let content = '';
             qrDataList.forEach(data => {
                 content += `
-                    <div style="display:flex; align-items:center; padding: 10px; font-family: sans-serif; border: 1px dashed #ccc; page-break-inside: avoid; width: 350px; box-sizing: border-box;">
-                        <div style="width:100px; height:100px; flex-shrink:0;">${data.svg}</div>
-                        <div style="margin-left: 15px; text-align: left;">
-                            <h2 style="margin: 0 0 5px 0; font-size: 16px;">${data.id}</h2>
-                            <p style="color:#333; font-size:12px; margin: 0; line-height:1.4;">
-                                <strong>Name:</strong> ${data.name || 'N/A'}<br/>
-                                <strong>Part:</strong> ${data.partNumber || 'N/A'} - ${data.jigType || 'N/A'}
-                            </p>
+                    <div class="card">
+                        <div class="qr">${data.svg}</div>
+                        <div class="info">
+                            <p class="id">${data.id}</p>
+                            <p class="row"><span class="label">Toy No: </span><strong>${data.toyNumber || '-'}</strong></p>
+                            <p class="row"><span class="label">Part No: </span>${data.partNumber || '-'}</p>
+                            <p class="row"><span class="label">Part: </span>${data.part || '-'}</p>
+                            <p class="row"><span class="label">Type: </span>${data.jigType || '-'}</p>
+                            <p class="footer">Inventory System</p>
                         </div>
                     </div>
                 `;
@@ -96,12 +114,98 @@
 
             printWnd.document.write(`
                 <html>
-                <head><title>Print Jig Specs</title></head>
-                <body style="padding: 20px; display: flex; flex-wrap: wrap; gap: 15px;">
+                <head><title>Print Physical Jigs QR</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; display: flex; flex-wrap: wrap; gap: 12px; }
+                    .card { display: flex; align-items: center; border: 1.5px solid #222; border-radius: 8px; padding: 10px 14px; width: 340px; box-sizing: border-box; gap: 14px; page-break-inside: avoid; }
+                    .qr { flex-shrink: 0; width: 100px; height: 100px; }
+                    .info { text-align: left; flex: 1; }
+                    .id { font-size: 16px; font-weight: bold; margin: 0 0 5px 0; }
+                    .row { font-size: 11px; color: #333; margin: 2px 0; line-height: 1.4; }
+                    .label { color: #888; }
+                    .footer { font-size: 10px; color: #aaa; margin-top: 6px; }
+                </style>
+                </head>
+                <body>
                     ${content}
-                    <script>
-                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 500); }
-                    <\/script>
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 500); }<\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        }
+        window.printLocatorQR = function (svgHtml, data) {
+            const printWnd = window.open('', '_blank', 'width=500,height=500');
+            printWnd.document.write(`
+                <html>
+                <head><title>Print QR - ${data.id}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 12px; }
+                    .card { display: flex; align-items: center; border: 1.5px solid #222; border-radius: 8px; padding: 10px 14px; width: 340px; box-sizing: border-box; gap: 14px; }
+                    .qr { flex-shrink: 0; width: 110px; height: 110px; }
+                    .info { text-align: left; flex: 1; }
+                    .id { font-size: 17px; font-weight: bold; margin: 0 0 5px 0; letter-spacing: 0.5px; }
+                    .row { font-size: 11px; color: #333; margin: 2px 0; line-height: 1.4; }
+                    .label { color: #888; }
+                    .footer { font-size: 10px; color: #aaa; margin-top: 6px; }
+                </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="qr">${svgHtml}</div>
+                        <div class="info">
+                            <p class="id">${data.id}</p>
+                            <p class="row"><span class="label">Site: </span><strong>${data.site || '-'}</strong></p>
+                            <p class="row"><span class="label">Cabinet: </span>${data.cabinet || '-'}</p>
+                            <p class="row"><span class="label">Shelf: </span>${data.shelf || '-'}</p>
+                            <p class="row"><span class="label">Type: </span>${data.type || '-'}</p>
+                            <p class="footer">Inventory System</p>
+                        </div>
+                    </div>
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 200); }<\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        }
+
+        window.printLocatorQRs = function (qrDataList) {
+            const printWnd = window.open('', '_blank', 'width=900,height=800');
+
+            let content = '';
+            qrDataList.forEach(data => {
+                content += `
+                    <div class="card">
+                        <div class="qr">${data.svg}</div>
+                        <div class="info">
+                            <p class="id">${data.id}</p>
+                            <p class="row"><span class="label">Site: </span><strong>${data.site || '-'}</strong></p>
+                            <p class="row"><span class="label">Cabinet: </span>${data.cabinet || '-'}</p>
+                            <p class="row"><span class="label">Shelf: </span>${data.shelf || '-'}</p>
+                            <p class="row"><span class="label">Type: </span>${data.type || '-'}</p>
+                            <p class="footer">Inventory System</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            printWnd.document.write(`
+                <html>
+                <head><title>Print Location QR</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; display: flex; flex-wrap: wrap; gap: 12px; }
+                    .card { display: flex; align-items: center; border: 1.5px solid #222; border-radius: 8px; padding: 10px 14px; width: 340px; box-sizing: border-box; gap: 14px; page-break-inside: avoid; }
+                    .qr { flex-shrink: 0; width: 100px; height: 100px; }
+                    .info { text-align: left; flex: 1; }
+                    .id { font-size: 16px; font-weight: bold; margin: 0 0 5px 0; }
+                    .row { font-size: 11px; color: #333; margin: 2px 0; line-height: 1.4; }
+                    .label { color: #888; }
+                    .footer { font-size: 10px; color: #aaa; margin-top: 6px; }
+                </style>
+                </head>
+                <body>
+                    ${content}
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 500); }<\/script>
                 </body>
                 </html>
             `);

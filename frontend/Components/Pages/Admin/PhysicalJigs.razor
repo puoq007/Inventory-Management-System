@@ -525,9 +525,17 @@ else
 
     private async Task PrintQR(PhysicalJig jig)
     {
+        var spec = _allSpecs?.FirstOrDefault(s => s.Id == jig.SpecId);
         var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
         var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-        await JSRuntime.InvokeVoidAsync("printQR", svgStr, jig.Id);
+        var data = new {
+            id = jig.Id,
+            part = jig.Part,
+            partNumber = spec?.PartNumber ?? "",
+            toyNumber = spec?.ToyNumber ?? "",
+            jigType = jig.JigType
+        };
+        await JSRuntime.InvokeVoidAsync("printQR", svgStr, data);
     }
 
     private void ToggleSelection(string jigId, object? isChecked)
@@ -563,9 +571,19 @@ else
         var qrList = new List<object>();
         foreach (var id in _selectedJigIds)
         {
+            var jig = _allJigs.FirstOrDefault(j => j.Id == id);
+            if (jig == null) continue;
+            var spec = _allSpecs?.FirstOrDefault(s => s.Id == jig.SpecId);
             var qr = QrCode.EncodeText(id, QrCode.Ecc.Medium);
             var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-            qrList.Add(new { svg = svgStr, id = id });
+            qrList.Add(new {
+                svg = svgStr,
+                id = id,
+                part = jig.Part,
+                partNumber = spec?.PartNumber ?? "",
+                toyNumber = spec?.ToyNumber ?? "",
+                jigType = jig.JigType
+            });
         }
 
         await JSRuntime.InvokeVoidAsync("printQRs", qrList);
