@@ -1,26 +1,55 @@
 @page "/scan-out"
 @using shared.Models
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject frontend.Services.AuthService Auth
 @implements IAsyncDisposable
 
-<PageTitle>Scan Out | Inventory</PageTitle>
+<PageTitle>Scan In/Out | Inventory</PageTitle>
 
 <div class="h-full flex flex-col space-y-6">
     <div>
-        <h1 class="text-3xl font-bold tracking-tight text-slate-900">Scan Out</h1>
-        <p class="text-slate-500 mt-1">Scan a Jig QR code to record it as checked out.</p>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900">Scan In / Out</h1>
+        <p class="text-slate-500 mt-1">Scan a Jig QR code to check it in or out.</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-6 flex flex-col items-center">
+    @* Safelist for Tailwind JIT to ensure dynamic C# formatting classes are included in the build *@
+    <div class="hidden bg-blue-600 bg-amber-600 bg-emerald-600 bg-blue-50 bg-amber-50 bg-emerald-50 text-blue-900 text-amber-900 text-emerald-900 text-blue-600 text-amber-600 text-emerald-600 border-blue-200 border-amber-200 border-emerald-200 bg-blue-100 bg-amber-100 bg-emerald-100 text-blue-700 text-amber-700 text-emerald-700 hover:bg-blue-50 hover:bg-amber-50 hover:bg-emerald-50 hover:bg-blue-700 hover:bg-amber-700 hover:bg-emerald-700 focus:ring-blue-500 focus:ring-amber-500 focus:ring-emerald-500"></div>
+
+    @* Mode Toggle *@
+    <div class="flex rounded-xl overflow-hidden border border-slate-200 shadow-sm w-full max-w-xl mx-auto">
+        <button @onclick='() => SetMode("out")'
+                class="@(_mode == "out" ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50") flex-1 py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+            เบิกใช้งาน (Scan Out)
+        </button>
+        <button @onclick='() => SetMode("in")'
+                class="@(_mode == "in" ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50") flex-1 py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 border-l border-r border-slate-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+            ส่งล้าง (Scan In)
+        </button>
+        <button @onclick='() => SetMode("store")'
+                class="@(_mode == "store" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50") flex-1 py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            เก็บเข้าตู้ (Store)
+        </button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center">
         @if (!String.IsNullOrEmpty(_errorMessage))
         {
             <div class="mb-4 bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 w-full max-w-md">
                 @_errorMessage
             </div>
         }
-        
+
         @if (!String.IsNullOrEmpty(_successMessage))
         {
             <div class="mb-4 bg-green-50 text-green-700 p-3 rounded-lg border border-green-200 w-full max-w-md">
@@ -28,194 +57,439 @@
             </div>
         }
 
-        <!-- Primary Feature: Physical Scanner -->
-        <div class="mb-6 w-full max-w-md bg-blue-50 p-6 rounded-xl border border-blue-200">
-            <h3 class="font-bold text-blue-900 mb-3 text-lg flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        @* Physical Scanner section *@
+        @{
+            var containerStyle = _mode == "out" ? "bg-blue-50 border-blue-200" :
+                                 _mode == "in" ? "bg-amber-50 border-amber-200" : 
+                                 "bg-emerald-50 border-emerald-200";
+            var textStyle = _mode == "out" ? "text-blue-900" :
+                            _mode == "in" ? "text-amber-900" : 
+                            "text-emerald-900";
+            var iconStyle = _mode == "out" ? "text-blue-600" :
+                            _mode == "in" ? "text-amber-600" : 
+                            "text-emerald-600";
+                            
+            var title = _mode == "out" ? "เบิกออก (Scan Out)" :
+                        _mode == "in" ? "ส่งล้าง (Scan In)" : 
+                        "เก็บเข้าตู้ (Store)";
+
+            var locLabel = _mode == "out" ? "ย้ายไปที่โซนการผลิต / Production *" :
+                           _mode == "in" ? "ส่งไปที่โซนทำความสะอาด / Cleaning *" : 
+                           "เก็บเข้าตู้ / Storage *";
+            var locHint  = _mode == "out" ? "เลือกโซนการผลิตที่จะนำ Jig ไปใช้" :
+                           _mode == "in" ? "เลือกจุดรับล้างทำความสะอาด" : 
+                           "เลือกตู้และชั้นที่จะเก็บ Jig เข้าที่";
+                           
+            var accentHover = _mode == "out" ? "hover:bg-blue-50" :
+                              _mode == "in" ? "hover:bg-amber-50" : 
+                              "hover:bg-emerald-50";
+            var accentActive = _mode == "out" ? "bg-blue-100 text-blue-900 font-semibold" :
+                               _mode == "in" ? "bg-amber-100 text-amber-900 font-semibold" : 
+                               "bg-emerald-100 text-emerald-900 font-semibold";
+            var accentBadge = _mode == "out" ? "text-blue-700" :
+                              _mode == "in" ? "text-amber-700" : 
+                              "text-emerald-700";
+                              
+            var btnStyle = _mode == "out" ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500" :
+                           _mode == "in" ? "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500" : 
+                           "bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500";
+            
+            var btnText = _mode == "out" ? "ยืมออก" :
+                          _mode == "in" ? "ส่งล้าง" : 
+                          "เก็บเข้าตู้";
+
+            var selId = _selectedLocatorId;
+            var selLoc = _locators?.FirstOrDefault(l => l.Id == selId);
+        }
+        <div class="mb-6 w-full max-w-md @containerStyle p-6 rounded-xl border">
+            <h3 class="font-bold @textStyle mb-4 text-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 @iconStyle" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
-                Physical Scanner
+                @title
             </h3>
-            
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Select Destination / Line / Zone</label>
-                <select @bind="_selectedDestination" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2.5 border bg-white">
-                    <option value="" disabled>-- Please select destination --</option>
-                    @foreach(var dest in _destinations)
+                <label class="block text-sm font-medium text-slate-700 mb-1">@locLabel</label>
+                @if (_locators == null)
+                {
+                    <div class="text-xs text-slate-400 py-2">กำลังโหลด...</div>
+                }
+                else
+                {
+                    <div class="relative">
+                        <div class="flex gap-2">
+                            @* Search input *@
+                            <div class="relative flex-1">
+                                <input type="text"
+                                       @ref="_locationSearchRef"
+                                       value="@_locatorSearchText"
+                                       @oninput="OnLocatorSearchInput"
+                                       @onkeydown="HandleLocationSearchKeyDown"
+                                       @onfocus="OnLocatorFocus"
+                                       @onblur="OnLocatorBlur"
+                                       placeholder="🔍  พิมพ์หรือสแกน QR Location..."
+                                       class="w-full px-3 py-2.5 rounded-lg border border-slate-300 shadow-sm text-sm bg-white outline-none transition-all" />
+                            </div>
+                            @if (!string.IsNullOrEmpty(selId))
+                            {
+                                <button type="button" @onclick="ClearLocator"
+                                        class="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                    × Clear
+                                </button>
+                            }
+                        </div>
+                        @if (_locatorDropdownOpen)
+                        {
+                            <ul id="locator-dropdown" class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl text-sm divide-y divide-slate-100">
+                                @if (!_filteredLocators.Any())
+                                {
+                                    <li class="px-4 py-3 text-slate-400 italic">ไม่พบ Location ที่ค้นหา</li>
+                                }
+                                else
+                                {
+                                    @for (int i = 0; i < _filteredLocators.Count; i++)
+                                    {
+                                        var loc = _filteredLocators[i];
+                                        var isActive = loc.Id == selId;
+                                        var isFocused = i == _focusedLocatorIndex;
+                                        var highlightClass = isFocused ? "bg-slate-100 ring-2 ring-inset ring-blue-500" : "";
+                                        
+                                        <li id="locator-item-@i" @onmousedown="() => SelectLocator(loc)"
+                                            class="flex items-center gap-2 px-4 py-2.5 cursor-pointer @accentHover transition-colors @(isActive ? accentActive : "") @highlightClass">
+                                            @if (isActive)
+                                            {
+                                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            }
+                                            else
+                                            {
+                                                <span class="w-4 flex-shrink-0"></span>
+                                            }
+                                            @loc.Name
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        }
+                    </div>
+                    @if (selLoc != null)
                     {
-                        <option value="@dest">@dest</option>
+                        <div class="mt-1.5 flex items-center gap-1 text-xs @accentBadge font-medium">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            เลือก: <strong>@selLoc.Name</strong>
+                        </div>
                     }
-                </select>
-                <p class="text-xs text-slate-500 mt-1">Select where the Jig will be used before scanning.</p>
+                }
+                <p class="text-xs text-slate-500 mt-1">@locHint</p>
             </div>
 
-            <p class="text-blue-700 text-sm mb-2 font-semibold border-t border-blue-200 mt-4 pt-4">Click the box below and press scan using your scanner.</p>
+            <p class="@textStyle border-t border-slate-200 text-sm mb-2 font-semibold mt-4 pt-4">
+                กดที่ช่องด้านล่างแล้วสแกน QR
+            </p>
             <div class="flex space-x-2">
-                <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp" disabled="@(string.IsNullOrEmpty(_selectedDestination))" placeholder="@(string.IsNullOrEmpty(_selectedDestination) ? "Select destination first..." : "Scan QR Code here...")" class="flex-grow rounded-lg border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-100 disabled:cursor-not-allowed" autofocus />
-                <button @onclick="ProcessManualEntry" disabled="@(_isProcessing || string.IsNullOrEmpty(_selectedDestination))" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold disabled:opacity-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-28">
+                <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp"
+                       disabled="@IsInputDisabled"
+                       placeholder="@InputPlaceholder"
+                       class="flex-grow rounded-lg border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-100 disabled:cursor-not-allowed" />
+                <button @onclick="ProcessManualEntry"
+                        disabled="@(_isProcessing || IsInputDisabled)"
+                        class="@btnStyle text-white px-6 py-3 rounded-lg font-bold disabled:opacity-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 w-28">
                     @if (_isProcessing)
                     {
                         <span class="inline-block animate-spin h-5 w-5 border-2 border-white rounded-full border-t-transparent"></span>
                     }
                     else
                     {
-                        <span>Submit</span>
+                        <span>@btnText</span>
                     }
                 </button>
-            </div>
-        </div>
-
-        <div class="w-full max-w-md mt-4 pt-6 border-t border-slate-200">
-            <h3 class="font-medium text-slate-500 mb-4 flex justify-center text-sm uppercase tracking-wider">Or Use Web Camera</h3>
-            
-            <!-- QR Scanner container -->
-            <div id="qr-reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-200 mb-4 bg-slate-50 flex items-center justify-center @(_isScanning ? "min-h-[250px]" : "hidden")"></div>
-            
-            <div class="flex justify-center">
-                @if (!_isScanning)
-                {
-                    <button @onclick="StartScanning" disabled="@(string.IsNullOrEmpty(_selectedDestination))" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        @(string.IsNullOrEmpty(_selectedDestination) ? "Select Destination First" : "Start Web Camera")
-                    </button>
-                }
-                else
-                {
-                    <button @onclick="StopScanning" class="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Stop Camera
-                    </button>
-                }
             </div>
         </div>
     </div>
 </div>
 
 @code {
-    private bool _isScanning = false;
     private bool _isProcessing = false;
-    private DotNetObjectReference<ScanOut>? _objRef;
     private string _errorMessage = "";
     private string _successMessage = "";
     private string _manualJigId = "";
     private string _currentUser = "";
-    private string _selectedDestination = "";
+    private string _mode = "out"; // "out" or "in"
+
+    private ElementReference _locationSearchRef;
     private ElementReference _jigInputRef;
 
-    // TODO: This could be loaded from database in the future
-    private List<string> _destinations = new()
-    {
-        "Main Production Line 1",
-        "Main Production Line 2",
-        "Sub-Assembly Zone A",
-        "Sub-Assembly Zone B",
-        "Testing Area",
-        "QA Inspection Table 1",
-        "Maintenance/Repair bench"
-    };
+    private string _selectedLocatorId = "";
+    private List<Locator>? _locators;
+
+    // Searchable locator combobox state
+    private string _locatorSearchText = "";
+    private bool _locatorDropdownOpen = false;
+    private List<Locator> _filteredLocators = new();
+    private int _focusedLocatorIndex = -1;
+
+    private bool IsInputDisabled => _isProcessing || string.IsNullOrEmpty(_selectedLocatorId);
+
+    private string InputPlaceholder => string.IsNullOrEmpty(_selectedLocatorId) ? "เลือก Location ก่อน..." : "Scan QR Code here...";
 
     protected override async Task OnInitializedAsync()
     {
         var authObj = await Auth.GetAuthAsync();
         _currentUser = authObj.Name ?? "Unknown";
+        _locators = await Http.GetFromJsonAsync<List<Locator>>("api/locators");
+        UpdateFilteredLocators(); // Initial filtering
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await FocusInputAsync();
+            // Handle initial state setup securely
+            var stateJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "initialScanState");
+            if (!string.IsNullOrEmpty(stateJson))
+            {
+                try
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(stateJson);
+                    if (dict != null)
+                    {
+                        if (dict.TryGetValue("mode", out string? modeVal) && !string.IsNullOrEmpty(modeVal))
+                        {
+                            _mode = modeVal == "in" || modeVal == "out" || modeVal == "store" ? modeVal : "out";
+                        }
+                        if (dict.TryGetValue("locator", out string? locVal)) _selectedLocatorId = locVal ?? "";
+                    }
+                }
+                catch { /* Ignore invalid JSON */ }
+                await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "initialScanState");
+                await Task.Delay(100); // Small delay to let UI render the inputs based on state and let App.razor's FocusOnNavigate finish
+                await SetFocusAsync();
+            }
+            else
+            {
+                await Task.Delay(100); // Wait for Blazor's FocusOnNavigate to finish
+                await SetFocusAsync();
+            }
+            StateHasChanged();
         }
     }
 
-    private async Task FocusInputAsync()
+    private async Task SetMode(string newMode)
+    {
+        if (_mode == newMode) return;
+        _mode = newMode;
+        _manualJigId = "";
+        _errorMessage = "";
+        _successMessage = "";
+        _selectedLocatorId = "";
+        _locatorSearchText = "";
+        UpdateFilteredLocators();
+        await SetFocusAsync();
+        StateHasChanged();
+    }
+
+    private void OnLocatorSearchInput(ChangeEventArgs e)
+    {
+        _locatorSearchText = e.Value?.ToString() ?? "";
+        _locatorDropdownOpen = true;
+        _focusedLocatorIndex = -1;
+        UpdateFilteredLocators();
+    }
+
+    private void OnLocatorFocus()
+    {
+        _locatorDropdownOpen = true;
+        _focusedLocatorIndex = -1;
+        UpdateFilteredLocators();
+    }
+
+    private async Task OnLocatorBlur()
+    {
+        await Task.Delay(200);
+        _locatorDropdownOpen = false;
+    }
+
+    private async Task HandleLocationSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (!_locatorDropdownOpen || !_filteredLocators.Any()) return;
+
+        bool indexChanged = false;
+
+        if (e.Key == "ArrowDown")
+        {
+            if (_focusedLocatorIndex < _filteredLocators.Count - 1)
+                _focusedLocatorIndex++;
+            else
+                _focusedLocatorIndex = 0; // wrap around
+            indexChanged = true;
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            if (_focusedLocatorIndex > 0)
+                _focusedLocatorIndex--;
+            else
+                _focusedLocatorIndex = _filteredLocators.Count - 1; // wrap around
+            indexChanged = true;
+        }
+        else if (e.Key == "Enter")
+        {
+            var searchTerm = _locatorSearchText.Trim();
+
+            // Priority 1: Exact ID match across ALL locators (for QR scanning)
+            var exactIdMatch = _locators?.FirstOrDefault(l => 
+                string.Equals(l.Id, searchTerm, StringComparison.OrdinalIgnoreCase));
+            if (exactIdMatch != null)
+            {
+                await SelectLocator(exactIdMatch);
+                return;
+            }
+
+            // Priority 2: Arrow-key navigation selection from dropdown
+            if (_focusedLocatorIndex >= 0 && _focusedLocatorIndex < _filteredLocators.Count)
+            {
+                await SelectLocator(_filteredLocators[_focusedLocatorIndex]);
+            }
+            else if (_filteredLocators.Any())
+            {
+                // Priority 3: Exact ID/Name match in filtered list
+                var exactMatch = _filteredLocators.FirstOrDefault(l =>
+                    string.Equals(l.Id, searchTerm, StringComparison.OrdinalIgnoreCase));
+                
+                if (exactMatch != null)
+                {
+                    await SelectLocator(exactMatch);
+                }
+                else if (_filteredLocators.Count == 1)
+                {
+                    // Fallback: If only 1 result remains, assume it's the intended one
+                    await SelectLocator(_filteredLocators.First());
+                }
+            }
+        }
+
+        if (indexChanged)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("scrollToActiveLocator", _focusedLocatorIndex);
+            }
+            catch { /* Ignore JS errors during rapid scrolling */ }
+        }
+    }
+
+    private async Task SelectLocator(Locator loc)
+    {
+        _selectedLocatorId = loc.Id;
+        _locatorSearchText = "";
+        _locatorDropdownOpen = false;
+        await Task.Delay(100); // Allow DOM to update disabled state
+        await SetFocusAsync();
+    }
+
+    private async Task ClearLocator()
+    {
+        _selectedLocatorId = "";
+        _locatorSearchText = "";
+        _locatorDropdownOpen = true; // Open dropdown immediately when clearing
+        UpdateFilteredLocators();
+        await SetFocusAsync();
+    }
+
+    private void UpdateFilteredLocators()
+    {
+        var q = _locatorSearchText.ToLowerInvariant();
+        var baseList = _locators ?? new();
+        
+        if (_mode == "out") {
+            baseList = baseList.Where(l => l.Type == "Production").ToList();
+        } else if (_mode == "in") {
+            baseList = baseList.Where(l => l.Type == "Cleaning").ToList();
+        } else { // store
+            baseList = baseList.Where(l => l.Type != "Production" && l.Type != "Cleaning").ToList();
+        }
+
+        _filteredLocators = baseList.Where(l => l.Name.ToLowerInvariant().Contains(q)).ToList();
+    }
+
+    private async Task SetFocusAsync()
     {
         try
         {
-            await _jigInputRef.FocusAsync();
+            if (string.IsNullOrEmpty(_selectedLocatorId))
+            {
+                if (_locationSearchRef.Context != null)
+                {
+                    await _locationSearchRef.FocusAsync();
+                }
+            }
+            else
+            {
+                if (_jigInputRef.Context != null)
+                {
+                    await _jigInputRef.FocusAsync();
+                }
+            }
         }
-        catch { /* Ignore if unable to focus */ }
+        catch { /* Ignore if focus fails during rapid navigation */ }
     }
 
     private async Task HandleKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
-        {
             await ProcessManualEntry();
-        }
-    }
-
-    private async Task StartScanning()
-    {
-        _errorMessage = "";
-        _successMessage = "";
-        _objRef = DotNetObjectReference.Create(this);
-        _isScanning = true;
-        await Task.Delay(50); // Give DOM time to un-hide the div
-        await JSRuntime.InvokeVoidAsync("startQrScan", _objRef, "qr-reader");
-    }
-
-    private async Task StopScanning()
-    {
-        await JSRuntime.InvokeVoidAsync("stopQrScan");
-        if (_objRef != null)
-        {
-            _objRef.Dispose();
-            _objRef = null;
-        }
-        _isScanning = false;
-        
-        // Return focus to physical scanner
-        await FocusInputAsync();
-    }
-
-    [JSInvokable]
-    public async Task OnQrScanned(string decodedText)
-    {
-        if (_isProcessing) return;
-        
-        // Temporarily stop scanning when something is found
-        await StopScanning();
-        
-        await ProcessCheckout(decodedText);
-        StateHasChanged();
     }
 
     private async Task ProcessManualEntry()
     {
-        if (string.IsNullOrWhiteSpace(_manualJigId) || _isProcessing || string.IsNullOrEmpty(_selectedDestination)) return;
-        await ProcessCheckout(_manualJigId.Trim());
+        if (string.IsNullOrWhiteSpace(_manualJigId))
+        {
+            _errorMessage = "Please enter a Jig ID";
+            return;
+        }await ProcessScan(_manualJigId.Trim());
     }
 
-    private async Task ProcessCheckout(string jigId)
+    private async Task ProcessScan(string jigId)
     {
         try
         {
             _isProcessing = true;
             _errorMessage = "";
             _successMessage = "";
-            
-            var request = new { 
-                JigId = jigId, 
-                User = _currentUser,
-                Destination = _selectedDestination
-            };
-            var response = await Http.PostAsJsonAsync("api/transactions/checkout", request);
-            
+
+            HttpResponseMessage response;
+
+            if (_mode == "out")
+            {
+                var destLocator = _locators?.FirstOrDefault(l => l.Id == _selectedLocatorId);
+                var request = new { JigId = jigId, User = _currentUser, Destination = destLocator?.Name ?? _selectedLocatorId };
+                response = await Http.PostAsJsonAsync("api/transactions/checkout", request);
+            }
+            else if (_mode == "in")
+            {
+                var request = new { JigId = jigId, User = _currentUser, LocatorId = _selectedLocatorId };
+                response = await Http.PostAsJsonAsync("api/transactions/checkin", request);
+            }
+            else // store
+            {
+                var request = new { JigId = jigId, User = _currentUser, LocatorId = _selectedLocatorId };
+                response = await Http.PostAsJsonAsync("api/transactions/returntostore", request);
+            }
+
             if (response.IsSuccessStatusCode)
             {
-                _successMessage = $"Successfully checked out: {jigId}";
-                _manualJigId = ""; // clear input for next scan
-                
-                // Show nice notification via SweetAlert2 instead of blocking alert
-                await JSRuntime.InvokeVoidAsync("Swal.fire", new {
-                    title = "Checked Out!",
-                    text = $"Successfully checked out Jig: {jigId}",
+                var action = _mode == "out" ? "เบิกออกสำเร็จ" : 
+                             _mode == "in" ? "ส่งล้างสำเร็จ" : 
+                             "เก็บเข้าตู้สำเร็จ";
+                _successMessage = $"{action}: {jigId}";
+                _manualJigId = "";
+
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Success!",
+                    text = $"{action}\nJig: {jigId}",
                     icon = "success",
                     timer = 1500,
                     showConfirmButton = false
@@ -224,9 +498,10 @@
             else
             {
                 var error = await response.Content.ReadAsStringAsync();
-                _errorMessage = $"Failed: {error}";
-                
-                await JSRuntime.InvokeVoidAsync("Swal.fire", new {
+                _errorMessage = $"ไม่สำเร็จ: {error}";
+
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
                     title = "Error!",
                     text = error,
                     icon = "error",
@@ -241,17 +516,22 @@
         finally
         {
             _isProcessing = false;
-            // Always return focus to input for continuous scanning
-            await FocusInputAsync();
+            await SetFocusAsync();
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        try 
-        {
-            await StopScanning();
-        }
-        catch { /* ignore */ }
+        return ValueTask.CompletedTask;
     }
 }
+
+<script>
+    window.scrollToActiveLocator = function (index) {
+        const item = document.getElementById('locator-item-' + index);
+        
+        if (item) {
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+</script>

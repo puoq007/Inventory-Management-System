@@ -1,37 +1,16 @@
 using shared.Models;
 using backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services;
 
 public class SeedDataService
 {
-    private void AddColumn(AppDbContext context, string table, string column)
-    {
-        try 
-        {
-#pragma warning disable EF1002 // Vulnerability to SQL injection
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, $"ALTER TABLE {table} ADD [{column}] nvarchar(max) DEFAULT '';"); 
-#pragma warning restore EF1002 // Vulnerability to SQL injection
-        } 
-        catch { }
-    }
-
     public void SeedDatabase(AppDbContext context)
     {
-        string[] jigSpecsCols = { "Week", "Item", "Rev", "PictureUrl", "ToyNumber", "PartNumber", "PartType", "JigType", "ToolNo", "ToolType", "TotalStepPrint", "UnitAmount", "Feed", "Scan" };
-        foreach (var col in jigSpecsCols)
-        {
-            AddColumn(context, "JigSpecs", col);
-        }
-
-        string[] physicalJigsCols = { "Tool", "NamePlateBlack", "NamePlateWhite", "Part", "JigType", "StepPrint", "HG", "FS", "IssueDate", "JigCapacity" };
-        foreach (var col in physicalJigsCols)
-        {
-            AddColumn(context, "PhysicalJigs", col);
-        }
-
         try 
         {
+            // Ensure non-nullable string columns always have empty string (not NULL)
             Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, 
                 "UPDATE PhysicalJigs SET " +
                 "[Tool] = ISNULL([Tool], ''), " +
@@ -47,28 +26,35 @@ public class SeedDataService
         } 
         catch { }
 
-        // Force clearing to re-run seed data with populated properties
-        bool hasOldData = false; // Set to false to prevent dropping data again
-        if (hasOldData)
-        {
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM Transactions");
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM PhysicalJigs");
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM PartJigMappings");
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM JigSpecs");
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM Locators");
-        }
-
+        // Seed default admin user only if no users exist
+        // NOTE: Change this password immediately after first login
         if (!context.Users.Any())
         {
-            context.Users.Add(new UserAccount { EmployeeId = "admin", Name = "Administrator", Role = "Admin", Password = "admin" });
-            context.SaveChanges();
+            context.Users.Add(new UserAccount 
+            { 
+                EmployeeId = "admin", 
+                Name = "Administrator", 
+                Role = "Admin", 
+                Password = "admin" 
+            });
         }
 
-        bool resetLocators = false;
-        if (resetLocators)
+        // Seed minimal location zones required for the system to function
+        // Production zones and cleaning zone are required for Scan In/Out
+        if (!context.Locators.Any(l => l.Type == "Production"))
         {
-            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(context.Database, "DELETE FROM Locators");
-            context.SaveChanges();
+            context.Locators.Add(new Locator { Id = "ZONE-A", Site = "SITE1", Cabinet = "-", Shelf = "Zone A", Position = "-", Type = "Production" });
+            context.Locators.Add(new Locator { Id = "ZONE-B", Site = "SITE1", Cabinet = "-", Shelf = "Zone B", Position = "-", Type = "Production" });
         }
+        if (!context.Locators.Any(l => l.Type == "Cleaning"))
+        {
+            context.Locators.Add(new Locator { Id = "CLEANING-ZONE", Site = "SITE1", Cabinet = "-", Shelf = "Cleaning Zone", Position = "-", Type = "Cleaning" });
+        }
+
+        // NOTE: All actual company data (Jig Specs, Physical Jigs, Locators, Users)
+        // must be entered via the Admin UI or imported via Excel/CSV import.
+        // Do NOT hardcode real company data in this file.
+
+        context.SaveChanges();
     }
 }

@@ -16,14 +16,6 @@
     </div>
     
     <div class="flex flex-wrap gap-2">
-        @if (_selectedJigIds.Any())
-        {
-            <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
-                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                Print Selected (@_selectedJigIds.Count)
-            </button>
-        }
-        
         <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
             <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -65,6 +57,15 @@ else
                            class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search Jig ID, Spec, Part, Tool..." />
                 </form>
             </div>
+            @if (_selectedJigIds.Any())
+            {
+                <div class="flex items-end mb-[2px]">
+                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Print Selected QR (@_selectedJigIds.Count)
+                    </button>
+                </div>
+            }
         </div>
     </div>
 
@@ -79,7 +80,6 @@ else
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig ID</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Specification & Part Info</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Print & Specs</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date & Capacity</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status & Condition</th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
@@ -107,25 +107,38 @@ else
                                 }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-slate-800">Toy Number: <span class="font-bold">@specRecord?.ToyNumber</span></div>
-                                <div class="text-xs text-slate-500 mt-1">
-                                    <span class="font-medium">Part:</span> @jig.Part <span class="text-slate-400">(@specRecord?.PartType)</span>
-                                </div>
-                                <div class="text-xs text-slate-500 mt-0.5">
-                                    <span class="font-medium">Tool:</span> @jig.Tool <span class="text-slate-400">(@specRecord?.ToolType)</span>
-                                </div>
-                                <div class="text-xs text-slate-500 mt-0.5">
-                                    <span class="font-medium">Jig Type:</span> @jig.JigType
-                                </div>
-                                <div class="text-xs text-slate-500 mt-0.5">
-                                    <span class="font-medium">Rev:</span> @specRecord?.Rev <span class="ml-2 font-medium">Week:</span> @specRecord?.Week <span class="ml-2 font-medium">Item:</span> @specRecord?.Item
+                                <div class="flex items-start gap-4">
+                                    @if (!string.IsNullOrEmpty(specRecord?.PictureUrl) && specRecord.PictureUrl.StartsWith("/"))
+                                    {
+                                        <div class="shrink-0 mt-1 border shadow-sm border-slate-200 rounded-lg overflow-hidden bg-white">
+                                            <img src="@($"http://localhost:5253{specRecord.PictureUrl}")" class="h-16 w-16 object-cover" alt="Spec Image" />
+                                        </div>
+                                    }
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-slate-800">Toy Number: <span class="font-bold">@specRecord?.ToyNumber</span></div>
+                                        <div class="text-xs text-slate-500 mt-1">
+                                            <span class="font-medium">Part:</span> @jig.Part <span class="text-slate-400">(@specRecord?.PartType)</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-0.5">
+                                            <span class="font-medium">Tool:</span> @jig.Tool <span class="text-slate-400">(@specRecord?.ToolType)</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-0.5">
+                                            <span class="font-medium">Jig Type:</span> @jig.JigType
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-0.5">
+                                            <span class="font-medium">Rev:</span> @specRecord?.Rev <span class="ml-2 font-medium">Week:</span> @specRecord?.Week <span class="ml-2 font-medium">Item:</span> @specRecord?.Item
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-slate-900 border border-slate-200 bg-slate-50 px-2 py-1 inline-block rounded">
+                                <div class="text-sm text-slate-900 border border-slate-200 bg-slate-50 px-2 py-1 inline-block rounded mb-1.5">
                                     Step Print: <strong>@jig.StepPrint</strong>
                                 </div>
-                                <div class="flex flex-row gap-2 mt-1.5">
+                                @if(!string.IsNullOrEmpty(jig.IssueDate)){
+                                    <div class="text-xs text-slate-500 mb-1.5"><span class="font-medium">Date (วันที่เบิก):</span> @jig.IssueDate</div>
+                                }
+                                <div class="flex flex-row gap-2 mt-1">
                                 @if(!string.IsNullOrEmpty(jig.HG)){
                                     <div class="text-xs text-slate-500"><span class="font-medium">H/G:</span> @jig.HG</div>
                                 }
@@ -136,17 +149,6 @@ else
                                     <div class="text-xs text-slate-500"><span class="font-medium">Scan:</span> @specRecord?.Scan</div>
                                 }
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if(!string.IsNullOrEmpty(jig.FS)){
-                                    <div class="text-sm text-slate-900 font-medium tracking-wide">F/S: @jig.FS</div>
-                                }
-                                @if(!string.IsNullOrEmpty(jig.IssueDate)){
-                                    <div class="text-xs text-slate-500 mt-1"><span class="font-medium">Date (วันที่เบิก):</span> @jig.IssueDate</div>
-                                }
-                                @if(!string.IsNullOrEmpty(jig.JigCapacity)){
-                                    <div class="text-xs text-slate-500 mt-0.5"><span class="font-medium">Capacity:</span> @jig.JigCapacity</div>
-                                }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                                 @(_allLocators.FirstOrDefault(l => l.Id == jig.LocatorId)?.Name ?? "Unknown")
@@ -285,41 +287,15 @@ else
                         <option value="Broken">Broken / Scrapped</option>
                     </select>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Site</label>
-                        <select @bind="_selectedSite" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="MBK1">MBK1</option>
-                            <option value="mintech">mintech</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Cabinet (ตู้)</label>
-                        <select @bind="_selectedCabinet" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            @for (int i = 1; i <= 10; i++)
-                            {
-                                <option value="@i.ToString()">@i.ToString()</option>
-                            }
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Shelf (ชั้น)</label>
-                        <select @bind="_selectedShelf" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                <option value="@i.ToString()">@i.ToString()</option>
-                            }
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Position (ตัว)</label>
-                        <select @bind="_selectedPosition" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            @for (int i = 1; i <= 10; i++)
-                            {
-                                <option value="@i.ToString()">@i.ToString()</option>
-                            }
-                        </select>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                    <select @bind="_editingJig.LocatorId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">-- Select Location --</option>
+                        @foreach (var loc in _allLocators.OrderBy(l => l.Name))
+                        {
+                            <option value="@loc.Id">@loc.Name</option>
+                        }
+                    </select>
                 </div>
                 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -353,10 +329,7 @@ else
 
     private HashSet<string> _selectedJigIds = new();
 
-    private string _selectedSite = "MBK1";
-    private string _selectedCabinet = "1";
-    private string _selectedShelf = "1";
-    private string _selectedPosition = "1";
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -442,10 +415,7 @@ else
         _isEditMode = false;
         _errorMessage = "";
         
-        _selectedSite = "MBK1";
-        _selectedCabinet = "1";
-        _selectedShelf = "1";
-        _selectedPosition = "1";
+        _editingJig.LocatorId = "";
 
         _showModal = true;
     }
@@ -473,14 +443,7 @@ else
         _isEditMode = true;
         _errorMessage = "";
         
-        var loc = _allLocators.FirstOrDefault(l => l.Id == jig.LocatorId);
-        if (loc != null)
-        {
-            _selectedSite = loc.Site;
-            _selectedCabinet = loc.Cabinet;
-            _selectedShelf = loc.Shelf;
-            _selectedPosition = loc.Position;
-        }
+
 
         _showModal = true;
     }
@@ -502,19 +465,18 @@ else
             return;
         }
 
-        var selectedLocator = _allLocators.FirstOrDefault(l => 
-            l.Site == _selectedSite && 
-            l.Cabinet == _selectedCabinet && 
-            l.Shelf == _selectedShelf && 
-            l.Position == _selectedPosition);
+        if (string.IsNullOrWhiteSpace(_editingJig.LocatorId))
+        {
+            _errorMessage = "Location is required.";
+            return;
+        }
 
-        if (selectedLocator == null) 
+        if (!_allLocators.Any(l => l.Id == _editingJig.LocatorId)) 
         {
             _errorMessage = "Invalid location selected.";
             return;
         }
-        
-        _editingJig.LocatorId = selectedLocator.Id;
+
         HttpResponseMessage response;
 
         if (_isEditMode)

@@ -45,6 +45,8 @@ public class PhysicalJig
     public string LocatorId { get; set; } = ""; // Relates to Locator.Id
     public string CurrentDestination { get; set; } = ""; // Where the jig currently is when Checked Out
     public string Condition { get; set; } = "Good";
+    public string HomeLocatorId { get; set; } = ""; // Original storage location
+
     
     // New fields from Physical Jig table
     public string Tool { get; set; } = "";
@@ -68,8 +70,10 @@ public class Locator
     public string Cabinet { get; set; } = ""; // e.g., "1", "2", ... "10"
     public string Shelf { get; set; } = ""; // e.g., "1", "2", ... "5"
     public string Position { get; set; } = ""; // e.g., "1", "2", ... "10"
+    public string Type { get; set; } = "Store"; // Store, Production, Cleaning
 
-    public string Name => (Cabinet == "-") ? $"{Site} {Shelf}" : $"{Site} ตู้ {Cabinet} ชั้นที่ {Shelf}";
+
+    public string Name => (Cabinet == "-") ? $"{Site} {Shelf}" : $"{Site} ตู้ {Cabinet} ชั้น {Shelf}";
 }
 
 public class TransactionRow
