@@ -14,7 +14,7 @@ public class UploadsController : ControllerBase
     }
 
     [HttpPost("image")]
-    public async Task<IActionResult> UploadImage(IFormFile file)
+    public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string? specId)
     {
         if (file == null || file.Length == 0)
         {
@@ -23,7 +23,10 @@ public class UploadsController : ControllerBase
 
         try
         {
-            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var extension = Path.GetExtension(file.FileName);
+            var fileName = !string.IsNullOrWhiteSpace(specId) 
+                ? $"{specId}{extension}" 
+                : Guid.NewGuid().ToString() + extension;
             var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "specs");
 
             if (!Directory.Exists(uploadsFolder))

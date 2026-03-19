@@ -111,7 +111,7 @@ else
                                     @if (!string.IsNullOrEmpty(specRecord?.PictureUrl) && specRecord.PictureUrl.StartsWith("/"))
                                     {
                                         <div class="shrink-0 mt-1 border shadow-sm border-slate-200 rounded-lg overflow-hidden bg-white">
-                                            <img src="@($"http://localhost:5253{specRecord.PictureUrl}")" class="h-16 w-16 object-cover" alt="Spec Image" />
+                                            <img src="@($"http://localhost:5105{specRecord.PictureUrl}")" class="h-16 w-16 object-cover" alt="Spec Image" />
                                         </div>
                                     }
                                     <div class="flex-1">
@@ -184,27 +184,27 @@ else
 
 @if (_showModal)
 {
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left">
-            <h3 class="text-2xl font-bold text-slate-900 mb-6">@(_isEditMode ? "Edit Physical Jig" : "Register New Jig")</h3>
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left max-h-[90vh] flex flex-col">
+            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@(_isEditMode ? "Edit Physical Jig" : "Register New Jig")</h3>
 
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Jig ID (Serial / QR)</label>
-                    <input type="text" @bind="_editingJig.Id" disabled="@_isEditMode" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500" placeholder="e.g. J015" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Specification</label>
-                    <select @bind="_editingJig.SpecId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="">-- Select Specification --</option>
-                        @foreach (var spec in _allSpecs)
-                        {
-                            <option value="@spec.Id">@spec.Name (@spec.Id)</option>
-                        }
-                    </select>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="md:col-span-1 lg:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Jig ID (Serial / QR)</label>
+                        <input type="text" @bind="_editingJig.Id" disabled="@_isEditMode" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500" placeholder="e.g. J015" />
+                    </div>
+                    <div class="md:col-span-1 lg:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Specification</label>
+                        <select @bind="_editingJig.SpecId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">-- Select Specification --</option>
+                            @foreach (var spec in _allSpecs)
+                            {
+                                <option value="@spec.Id">@spec.Name (@spec.Id)</option>
+                            }
+                        </select>
+                    </div>
+                    
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Tool</label>
                         <input type="text" @bind="_editingJig.Tool" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
@@ -242,13 +242,12 @@ else
                         <input type="text" @bind="_editingJig.IssueDate" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Capacity (จำนวนที่ต่อ JIG)</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Capacity</label>
                         <input type="text" @bind="_editingJig.JigCapacity" class="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
-                </div>
 
-                <div class="mt-4 pt-4 border-t border-slate-200">
-                    <h4 class="text-sm font-bold text-slate-800 mb-2">Spec Info (Read-only)</h4>
+                    <div class="md:col-span-2 lg:col-span-4 mt-2">
+                        <h4 class="text-sm font-bold text-slate-800 mb-2 border-t border-slate-200 pt-4">Spec Info (Read-only)</h4>
                     @{
                         var s = _allSpecs.FirstOrDefault(sp => sp.Id == _editingJig.SpecId);
                     }
@@ -269,33 +268,37 @@ else
                     {
                         <p class="text-xs text-slate-400 italic">Select a specification to see linked details.</p>
                     }
+                    </div>
+
+                    <div class="md:col-span-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-200 pt-4 mt-2">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <select @bind="_editingJig.Status" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="Available">Available</option>
+                            <option value="InUse">In Use</option>
+                            <option value="Evaluation">Evaluation / Hold</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Condition</label>
+                        <select @bind="_editingJig.Condition" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="Good">Good</option>
+                            <option value="NeedsCleaning">Needs Cleaning</option>
+                            <option value="UnderRepair">Under Repair</option>
+                            <option value="Broken">Broken / Scrapped</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-1 lg:col-span-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                        <select @bind="_editingJig.LocatorId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="">-- Select Location --</option>
+                            @foreach (var loc in _allLocators.OrderBy(l => l.Name))
+                            {
+                                <option value="@loc.Id">@loc.Name</option>
+                            }
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                    <select @bind="_editingJig.Status" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="Available">Available</option>
-                        <option value="InUse">In Use</option>
-                        <option value="Evaluation">Evaluation / Hold</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Condition</label>
-                    <select @bind="_editingJig.Condition" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="Good">Good</option>
-                        <option value="NeedsCleaning">Needs Cleaning</option>
-                        <option value="UnderRepair">Under Repair</option>
-                        <option value="Broken">Broken / Scrapped</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
-                    <select @bind="_editingJig.LocatorId" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="">-- Select Location --</option>
-                        @foreach (var loc in _allLocators.OrderBy(l => l.Name))
-                        {
-                            <option value="@loc.Id">@loc.Name</option>
-                        }
-                    </select>
                 </div>
                 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -304,7 +307,7 @@ else
                 }
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
                 <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">Cancel</button>
                 <button @onclick="SaveJig" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">Save Changes</button>
             </div>
@@ -442,8 +445,6 @@ else
         };
         _isEditMode = true;
         _errorMessage = "";
-        
-
 
         _showModal = true;
     }

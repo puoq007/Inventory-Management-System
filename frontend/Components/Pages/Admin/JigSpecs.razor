@@ -101,7 +101,7 @@ else
                                     @if (!string.IsNullOrEmpty(spec.PictureUrl) && spec.PictureUrl.StartsWith("/"))
                                     {
                                         <div class="shrink-0 w-12 h-12 rounded-md overflow-hidden border border-slate-200 bg-slate-50 shadow-sm flex items-center justify-center">
-                                            <img src="@($"http://localhost:5253{spec.PictureUrl}")" class="w-full h-full object-contain p-0.5" alt="Spec" />
+                                            <img src="@($"http://localhost:5105{spec.PictureUrl}")" class="w-full h-full object-contain p-0.5" alt="Spec" />
                                         </div>
                                     }
                                     else
@@ -217,7 +217,7 @@ else
                         @if (!string.IsNullOrEmpty(_editingSpec.PictureUrl) && _editingSpec.PictureUrl.StartsWith("/"))
                         {
                             <div class="mt-2">
-                                <img src="@($"http://localhost:5253{_editingSpec.PictureUrl}")" class="h-16 w-auto object-contain rounded border border-slate-200 bg-white" alt="Preview" />
+                                <img src="@($"http://localhost:5105{_editingSpec.PictureUrl}")" class="h-16 w-auto object-contain rounded border border-slate-200 bg-white" alt="Preview" />
                             </div>
                         }
                     </div>
@@ -502,8 +502,13 @@ else
             var fileContent = new StreamContent(e.File.OpenReadStream(maxAllowedSize));
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(e.File.ContentType);
             content.Add(fileContent, "file", e.File.Name);
+            
+            if (!string.IsNullOrWhiteSpace(_editingSpec.Id))
+            {
+                content.Add(new StringContent(_editingSpec.Id), "specId");
+            }
 
-            var response = await Http.PostAsync("http://localhost:5253/api/uploads/image", content);
+            var response = await Http.PostAsync("http://localhost:5105/api/uploads/image", content);
 
             if (response.IsSuccessStatusCode)
             {

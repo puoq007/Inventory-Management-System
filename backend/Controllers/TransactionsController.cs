@@ -96,7 +96,7 @@ namespace backend.Controllers
         {
             var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
             if (jig == null) return NotFound("Jig not found.");
-            if (jig.Status != "Cleaning") return BadRequest("Jig is not in cleaning status.");
+            if (jig.Status != "Cleaning" && jig.Status != "InUse") return BadRequest("Jig must be In Use or in Cleaning to be stored.");
 
             if (string.IsNullOrEmpty(req.LocatorId))
                 return BadRequest("Destination locator is required.");
