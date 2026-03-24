@@ -463,8 +463,8 @@ else
         
         _totalJigs = _allJigs.Count;
         _availableJigs = _allJigs.Count(j => j.Status == "Available");
-        _inUseJigs = _allJigs.Count(j => j.Status == "InUse");
-        _issueJigs = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
+        _inUseCount = _allJigs.Count(j => j.Status == "InUse");
+        _actionRequiredCount = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
         
         var thirtyDaysAgo = DateTime.Now.AddDays(-30);
         _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo && t.Action != "CheckInToCleaning");
@@ -526,8 +526,8 @@ else
         sb.AppendLine("Overall Status");
         sb.AppendLine($"Total Jigs,{_totalJigs}");
         sb.AppendLine($"Available,{_availableJigs}");
-        sb.AppendLine($"In Use,{_inUseJigs}");
-        sb.AppendLine($"Issues,{_issueJigs}");
+        sb.AppendLine($"In Use,{_inUseCount}");
+        sb.AppendLine($"Issues,{_actionRequiredCount}");
         sb.AppendLine();
         
         sb.AppendLine("Top Used Jigs");
