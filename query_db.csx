@@ -2,7 +2,7 @@
 using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 
-var connStr = "Server=localhost,1433;Database=InventoryDB;User Id=sa;Password=Bb42461503;Encrypt=False;TrustServerCertificate=True;";
+var connStr = "Server=.\\SQLEXPRESS;Database=InventoryDB;User Id=James;Password=Bb424615;Encrypt=True;TrustServerCertificate=True;";
 using var conn = new SqlConnection(connStr);
 conn.Open();
 var cmd = conn.CreateCommand();

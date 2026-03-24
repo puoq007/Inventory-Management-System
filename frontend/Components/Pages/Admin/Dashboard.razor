@@ -61,7 +61,7 @@ else
             </div>
             <div class="text-3xl font-extrabold text-slate-900 tracking-tight">@_utilizationRate%</div>
             <a href="/current-status?status=InUse" class="text-xs text-slate-400 mt-2 group-hover:text-emerald-600 transition-colors flex items-center">
-                @Lang.T($"กำลังใช้งานอยู่ ({_inUseCount} ชิ้น)", $"Currently in use ({_inUseCount} Jigs)") <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                @Lang.T($"กำลังใช้งานอยู่ ({_inUseJigs} ชิ้น)", $"Currently in use ({_inUseJigs} Jigs)") <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
             <!-- Decorative bg -->
             <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
@@ -77,7 +77,7 @@ else
             </div>
             <div class="text-3xl font-extrabold text-rose-600 tracking-tight">@_repairRate%</div>
             <a href="/current-status?filter=Issues" class="text-xs text-slate-400 mt-2 group-hover:text-rose-500 transition-colors flex items-center">
-                @Lang.T($"ต้องได้รับการแก้ไข ({_actionRequiredCount} ชิ้น)", $"Needs attention ({_actionRequiredCount} Jigs)") <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                @Lang.T($"ต้องได้รับการแก้ไข ({_issueJigs} ชิ้น)", $"Needs attention ({_issueJigs} Jigs)") <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
             <!-- Decorative bg -->
             <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-rose-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
@@ -386,8 +386,8 @@ else
     private bool _isLoading = true;
     private int _totalJigs = 0;
     private int _availableJigs = 0;
-    private int _inUseCount = 0; // Renamed from _inUseJigs
-    private int _actionRequiredCount = 0; // Renamed from _issueJigs
+    private int _inUseJigs = 0;
+    private int _issueJigs = 0;
     private int _monthlyTxnCount = 0;
     private double _utilizationRate = 0;
     private double _repairRate = 0;
@@ -463,8 +463,8 @@ else
         
         _totalJigs = _allJigs.Count;
         _availableJigs = _allJigs.Count(j => j.Status == "Available");
-        _inUseCount = _allJigs.Count(j => j.Status == "InUse");
-        _actionRequiredCount = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
+        _inUseJigs = _allJigs.Count(j => j.Status == "InUse");
+        _issueJigs = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
         
         var thirtyDaysAgo = DateTime.Now.AddDays(-30);
         _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo && t.Action != "CheckInToCleaning");
@@ -526,8 +526,8 @@ else
         sb.AppendLine("Overall Status");
         sb.AppendLine($"Total Jigs,{_totalJigs}");
         sb.AppendLine($"Available,{_availableJigs}");
-        sb.AppendLine($"In Use,{_inUseCount}");
-        sb.AppendLine($"Issues,{_actionRequiredCount}");
+        sb.AppendLine($"In Use,{_inUseJigs}");
+        sb.AppendLine($"Issues,{_issueJigs}");
         sb.AppendLine();
         
         sb.AppendLine("Top Used Jigs");
