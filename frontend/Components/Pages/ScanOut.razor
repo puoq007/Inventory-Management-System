@@ -26,21 +26,21 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-            เบิกใช้งาน (Scan Out)
+            Check Out
         </button>
         <button @onclick='() => SetMode("in")'
                 class="@(_mode == "in" ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50") flex-1 py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2 border-l border-r border-slate-200">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
             </svg>
-            ส่งล้าง (Scan In)
+            Clean (Scan In)
         </button>
         <button @onclick='() => SetMode("store")'
                 class="@(_mode == "store" ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50") flex-1 py-3 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
-            เก็บเข้าตู้ (Store)
+            Store (Cabinet)
         </button>
     </div>
 
@@ -71,16 +71,16 @@
                             _mode == "in" ? "text-amber-600" : 
                             "text-emerald-600";
                             
-            var title = _mode == "out" ? "เบิกออก (Scan Out)" :
-                        _mode == "in" ? "ส่งล้าง (Scan In)" : 
-                        "เก็บเข้าตู้ (Store)";
+            var title = _mode == "out" ? "Check Out (Scan Out)" :
+                        _mode == "in" ? "Clean (Scan In)" : 
+                        "Store (Return to Cabinet)";
 
-            var locLabel = _mode == "out" ? "ย้ายไปที่โซนการผลิต / Production *" :
-                           _mode == "in" ? "ส่งไปที่โซนทำความสะอาด / Cleaning *" : 
-                           "เก็บเข้าตู้ / Storage *";
-            var locHint  = _mode == "out" ? "เลือกโซนการผลิตที่จะนำ Jig ไปใช้" :
-                           _mode == "in" ? "เลือกจุดรับล้างทำความสะอาด" : 
-                           "เลือกตู้และชั้นที่จะเก็บ Jig เข้าที่";
+            var locLabel = _mode == "out" ? "Move to Production Zone *" :
+                           _mode == "in" ? "Send to Cleaning Zone *" : 
+                           "Return to Cabinet / Storage *";
+            var locHint  = _mode == "out" ? "Select production zone for the Jig" :
+                           _mode == "in" ? "Select cleaning destination" : 
+                           "Select cabinet and shelf to store the Jig";
                            
             var accentHover = _mode == "out" ? "hover:bg-blue-50" :
                               _mode == "in" ? "hover:bg-amber-50" : 
@@ -96,9 +96,9 @@
                            _mode == "in" ? "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500" : 
                            "bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500";
             
-            var btnText = _mode == "out" ? "ยืมออก" :
-                          _mode == "in" ? "ส่งล้าง" : 
-                          "เก็บเข้าตู้";
+            var btnText = _mode == "out" ? "Check Out" :
+                          _mode == "in" ? "Clean" : 
+                          "Store";
 
             var selId = _selectedLocatorId;
             var selLoc = _locators?.FirstOrDefault(l => l.Id == selId);
@@ -133,7 +133,7 @@
             </div>
 
             <p class="@textStyle border-t border-slate-200 text-sm mb-2 font-semibold mt-4 pt-4">
-                กดที่ช่องด้านล่างแล้วสแกน QR
+                Click box below and Scan QR
             </p>
             <div class="flex space-x-2">
                 <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp"
@@ -164,17 +164,17 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        ประวัติการสแกนรอบนี้
+                        Recent Scan History
                     </h4>
-                    <button @onclick="ClearSessionHistory" class="text-xs text-slate-500 hover:text-red-600 transition-colors font-medium px-2 py-1 rounded hover:bg-red-50">ล้างประวัติ (Clear)</button>
+                    <button @onclick="ClearSessionHistory" class="text-xs text-slate-500 hover:text-red-600 transition-colors font-medium px-2 py-1 rounded hover:bg-red-50">Clear History</button>
                 </div>
                 <div class="max-h-60 overflow-y-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-white sticky top-0 border-b border-slate-100 shadow-sm text-xs uppercase text-slate-500 z-10">
                             <tr>
-                                <th class="px-4 py-2 font-semibold w-24">เวลา</th>
+                                <th class="px-4 py-2 font-semibold w-24">Time</th>
                                 <th class="px-4 py-2 font-semibold">Jig ID</th>
-                                <th class="px-4 py-2 font-semibold">สถานที่ / สถานะ</th>
+                                <th class="px-4 py-2 font-semibold">Location / Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -199,7 +199,7 @@
                                                 @(item.Action == "out" ? "bg-blue-100 text-blue-700 border border-blue-200" : 
                                                   item.Action == "in" ? "bg-amber-100 text-amber-700 border border-amber-200" : 
                                                   "bg-emerald-100 text-emerald-700 border border-emerald-200")">
-                                                @(item.Action == "out" ? "เบิกไป:" : item.Action == "in" ? "ล้างที่:" : "เก็บที่:") @item.Location
+                                                @(item.Action == "out" ? "Out to:" : item.Action == "in" ? "Cleaning at:" : "Stored at:") @item.Location
                                             </span>
                                         }
                                     </td>

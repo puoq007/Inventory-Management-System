@@ -73,7 +73,7 @@ public class Locator
     public string Type { get; set; } = "Store"; // Store, Production, Cleaning
 
 
-    public string Name => (Cabinet == "-") ? $"{Site} {Shelf}" : $"{Site} ตู้ {Cabinet} ชั้น {Shelf}";
+    public string Name => (Cabinet == "-") ? $"{Site} {Shelf}" : $"{Site} Cabinet {Cabinet} Shelf {Shelf}";
 }
 
 public class TransactionRow
