@@ -82,7 +82,7 @@ else
                 <tbody class="bg-white divide-y divide-slate-200">
                     @foreach (var txn in _displayTransactions ?? Enumerable.Empty<TransactionRow>())
                     {
-                        var jig = _allJigs.FirstOrDefault(j => j.Id == txn.JigId);
+                        var jig = _allJigs.FirstOrDefault(j => string.Equals(j.Id, txn.JigId, StringComparison.OrdinalIgnoreCase));
                         var spec = jig != null ? _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId) : null;
                         var specName = spec?.Name ?? "Unknown";
 
@@ -208,7 +208,7 @@ else
 
         foreach (var txn in _allTransactions)
         {
-            var jig = _allJigs.FirstOrDefault(j => j.Id == txn.JigId);
+            var jig = _allJigs.FirstOrDefault(j => string.Equals(j.Id, txn.JigId, StringComparison.OrdinalIgnoreCase));
             var spec = jig != null ? _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId) : null;
             var specName = spec?.Name ?? "Unknown";
 

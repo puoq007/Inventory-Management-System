@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using shared.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
@@ -23,6 +24,7 @@ namespace backend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<TransactionRow>> PostTransaction(TransactionRow transaction)
         {
             _context.Transactions.Add(transaction);
@@ -32,8 +34,10 @@ namespace backend.Controllers
         }
 
         [HttpPost("checkout")]
+        [Authorize(Roles = "Admin,ProdLead,Operator")]
         public async Task<ActionResult> CheckOut([FromBody] CheckoutRequest req)
         {
+            req.JigId = req.JigId?.ToUpperInvariant();
             var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
             if (jig == null) return NotFound("Jig not found.");
             if (jig.Status == "InUse") return BadRequest("Jig is already checked out.");
@@ -57,11 +61,16 @@ namespace backend.Controllers
         }
         
         [HttpPost("checkin")]
+        [Authorize(Roles = "Admin,ProdLead,Operator")]
         public async Task<ActionResult> CheckIn([FromBody] CheckinRequest req)
         {
+            req.JigId = req.JigId?.ToUpperInvariant();
             var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
             if (jig == null) return NotFound("Jig not found.");
-            if (jig.Status != "InUse") return BadRequest("Jig is not currently checked out.");
+            
+            // Allow going to cleaning from any state (Available, InUse, etc) so dusty jigs can be cleaned.
+            if (jig.Status == "Cleaning" && jig.LocatorId == req.LocatorId) 
+                return BadRequest("Jig is already at this cleaning station.");
 
             if (string.IsNullOrEmpty(req.LocatorId))
                 return BadRequest("Destination locator is required.");
@@ -92,11 +101,15 @@ namespace backend.Controllers
         }
 
         [HttpPost("returntostore")]
+        [Authorize(Roles = "Admin,ProdLead,Operator")]
         public async Task<ActionResult> ReturnToStore([FromBody] ReturnToStoreRequest req)
         {
+            req.JigId = req.JigId?.ToUpperInvariant();
             var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
             if (jig == null) return NotFound("Jig not found.");
-            if (jig.Status != "Cleaning" && jig.Status != "InUse") return BadRequest("Jig must be In Use or in Cleaning to be stored.");
+            
+            if (jig.Status == "Available" && jig.LocatorId == req.LocatorId) 
+                return BadRequest("Jig is already stored at this location.");
 
             if (string.IsNullOrEmpty(req.LocatorId))
                 return BadRequest("Destination locator is required.");
@@ -110,6 +123,7 @@ namespace backend.Controllers
             jig.Status = "Available";
             jig.LocatorId = req.LocatorId;
             jig.HomeLocatorId = req.LocatorId; // Update home locator to wherever they put it back
+            jig.Condition = "Good"; // Auto-reset condition when securely stored in cabinet
 
             var transaction = new TransactionRow
             {

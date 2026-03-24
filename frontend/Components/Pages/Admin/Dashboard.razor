@@ -34,54 +34,51 @@
 }
 else
 {
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
-            <div class="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
-                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+    <!-- Overview Metrics (from Analytics) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center cursor-pointer hover:border-blue-200 transition-colors group" @onclick='() => NavManager.NavigateTo("/history")'>
+            <div class="flex items-center mb-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                </div>
+                จำนวนชิ้นยืม-คืน (Month)
             </div>
-            <div>
-                <p class="text-sm font-medium text-slate-500">Total Jigs</p>
-                <p class="text-2xl font-bold text-slate-900">@_totalJigs</p>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
-            <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg mr-4">
-                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-slate-500">Available</p>
-                <p class="text-2xl font-bold text-slate-900">@_availableJigs</p>
+            <div class="text-3xl font-extrabold text-slate-900 tracking-tight">@_monthlyTxnCount</div>
+            <div class="text-xs text-slate-400 mt-2 group-hover:text-blue-500 transition-colors flex items-center">
+                Click to view history <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
-            <div class="p-3 bg-amber-100 text-amber-600 rounded-lg mr-4">
-                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <!-- Ready & Available Jigs -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-emerald-200 transition-colors cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?status=InUse")'>
+            <div class="flex items-center text-sm font-semibold text-slate-500 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mr-3">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                อัตราการถูกเบิกใช้งาน (Utilization Rate)
             </div>
-            <div>
-                <p class="text-sm font-medium text-slate-500">In Use</p>
-                <p class="text-2xl font-bold text-slate-900">@_inUseJigs</p>
+            <div class="text-3xl font-extrabold text-slate-900 tracking-tight">@_utilizationRate%</div>
+            <div class="text-xs text-slate-400 mt-2 group-hover:text-emerald-600 transition-colors flex items-center">
+                Currently in use (@_inUseJigs Jigs) <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </div>
+            <!-- Decorative bg -->
+            <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
-            <div class="p-3 bg-red-100 text-red-600 rounded-lg mr-4">
-                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+        <!-- Needs Attention Jigs -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-rose-200 transition-colors cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?filter=Issues")'>
+            <div class="flex items-center text-sm font-semibold text-slate-500 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mr-3">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                อัตราที่ต้องซ่อมบำรุง (Repair Rate)
             </div>
-            <div>
-                <p class="text-sm font-medium text-slate-500">Under Evaluation / Broken</p>
-                <p class="text-2xl font-bold text-slate-900">@_issueJigs</p>
+            <div class="text-3xl font-extrabold text-rose-600 tracking-tight">@_repairRate%</div>
+            <div class="text-xs text-slate-400 mt-2 group-hover:text-rose-500 transition-colors flex items-center">
+                Needs attention (@_issueJigs Jigs) <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </div>
+            <!-- Decorative bg -->
+            <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-rose-50 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
         </div>
     </div>
 
@@ -237,6 +234,149 @@ else
             </div>
         </div>
     </div>
+
+    <!-- Activity Overview Chart -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mt-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-6 flex items-center">
+            <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-3">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm12 0c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2z" /></svg>
+            </div>
+            Activity This Week (Mon - Sat)
+        </h2>
+        
+        <!-- Add standard CSS animation for bar growth -->
+        <style>
+            @@keyframes growUp {
+                from { transform: scaleY(0); transform-origin: bottom; }
+                to { transform: scaleY(1); transform-origin: bottom; }
+            }
+            .animate-grow {
+                animation: growUp 0.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+            }
+        </style>
+
+        <!-- Activity This Week Graph Header removed since it is built into the relative scope below -->
+
+        <div class="relative w-full mt-4" style="height: 320px;">
+            @{ 
+                var maxCheckOut = _checkOutCounts.Length > 0 ? _checkOutCounts.Max() : 0;
+                var maxCheckIn = _checkInCounts.Length > 0 ? _checkInCounts.Max() : 0;
+                var maxCleaning = _cleaningCounts.Length > 0 ? _cleaningCounts.Max() : 0;
+                var maxActivity = Math.Max(maxCheckOut, Math.Max(maxCheckIn, maxCleaning)); 
+                if (maxActivity == 0) maxActivity = 4; // fallback for empty graph
+            }
+
+            <!-- Legend Top Right Floating -->
+            <div style="position: absolute; top: -16px; right: 0; display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 500; color: #475569; z-index: 20;">
+                <div style="display: flex; align-items: center; background: white; padding: 6px 10px; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                    <div style="width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; background: linear-gradient(to right, #4338ca 0%, #818cf8 35%, #312e81 100%);"></div> 
+                    ยืมออก (Check Outs)
+                </div>
+                <div style="display: flex; align-items: center; background: white; padding: 6px 10px; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                    <div style="width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; background: linear-gradient(to right, #047857 0%, #34d399 35%, #064e3b 100%);"></div> 
+                    คืนเข้าตู้ (Store)
+                </div>
+                <div style="display: flex; align-items: center; background: white; padding: 6px 10px; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                    <div style="width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; background: linear-gradient(to right, #b45309 0%, #fbbf24 35%, #78350f 100%);"></div> 
+                    ส่งล้าง (Cleaning)
+                </div>
+            </div>
+            
+            <!-- Guaranteed Absolute Exact Bounded Plot Area -->
+            <!-- The plot height is fixed to bottom-8 (leaving exactly 32px for X-axis labels) -->
+            <div style="position: absolute; top: 40px; left: 40px; right: 16px; bottom: 32px; border-bottom: 1px solid transparent;">
+                
+                <!-- Y-Axis Grid Lines (Perfectly absolute 100% height map) -->
+                <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 0;">
+                    <!-- Max Activity -->
+                    <div style="position: absolute; top: 0%; left: 0; width: 100%; border-top: 1px solid #f1f5f9;">
+                        <span style="position: absolute; top: -7px; left: -24px; color: #94a3b8; font-weight: 500; font-size: 10px;">@(maxActivity)</span>
+                    </div>
+                    <div style="position: absolute; top: 25%; left: 0; width: 100%; border-top: 1px solid #f1f5f9;">
+                        <span style="position: absolute; top: -7px; left: -24px; color: #94a3b8; font-weight: 500; font-size: 10px;">@(maxActivity * 3 / 4)</span>
+                    </div>
+                    <div style="position: absolute; top: 50%; left: 0; width: 100%; border-top: 1px solid #f1f5f9;">
+                        <span style="position: absolute; top: -7px; left: -24px; color: #94a3b8; font-weight: 500; font-size: 10px;">@(maxActivity / 2)</span>
+                    </div>
+                    <div style="position: absolute; top: 75%; left: 0; width: 100%; border-top: 1px solid #f1f5f9;">
+                        <span style="position: absolute; top: -7px; left: -24px; color: #94a3b8; font-weight: 500; font-size: 10px;">@(maxActivity / 4)</span>
+                    </div>
+                    <!-- Exactly Zero -->
+                    <div style="position: absolute; top: 100%; left: 0; width: 100%; border-top: 1px solid #cbd5e1;">
+                        <span style="position: absolute; top: -7px; left: -24px; color: #64748b; font-weight: bold; font-size: 10px;">0</span>
+                    </div>
+                </div>
+
+                <!-- Plot Area Elements -->
+                <div style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10;">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        var currentDayAttr = _startOfWeek.AddDays(i);
+
+                        <div style="position: relative; flex: 1 1 0%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; pointer-events: auto;">
+                            
+                            <!-- Triple Bars Wrapper -->
+                            <div style="display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 100%; gap: 6px;">
+                                @{
+                                    var outCount = _checkOutCounts[i];
+                                    var inCount = _checkInCounts[i];
+                                    var cleanCount = _cleaningCounts[i];
+                                    int hOut = maxActivity > 0 ? (int)((outCount * 100.0) / maxActivity) : 0;
+                                    int hIn = maxActivity > 0 ? (int)((inCount * 100.0) / maxActivity) : 0;
+                                    int hClean = maxActivity > 0 ? (int)((cleanCount * 100.0) / maxActivity) : 0;
+                                }
+
+                                <!-- CheckOut 3D Cylinder -->
+                                @if (outCount > 0)
+                                {
+                                    <div class="animate-grow" style="position: relative; flex: 0 0 16px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 10; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; height: @(hOut)%; background: linear-gradient(to right, #4338ca 0%, #818cf8 35%, #312e81 100%); box-shadow: inset -1px 0 3px rgba(0,0,0,0.15), 2px 0 4px rgba(0,0,0,0.1);">
+                                         <div style="position: absolute; left: 0; width: 100%; border-radius: 50%; background: #a5b4fc; height: 6px; top: -3px;"></div>
+                                         <span style="position: absolute; left: 50%; transform: translateX(-50%); top: -20px; font-size: 10px; font-weight: 800; color: #4338ca;">@outCount</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="flex: 0 0 16px;"></div>
+                                }
+
+                                <!-- CheckIn 3D Cylinder (To Store) -->
+                                @if (inCount > 0)
+                                {
+                                    <div class="animate-grow" style="position: relative; flex: 0 0 16px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 10; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; height: @(hIn)%; background: linear-gradient(to right, #047857 0%, #34d399 35%, #064e3b 100%); box-shadow: inset -1px 0 3px rgba(0,0,0,0.15), 2px 0 4px rgba(0,0,0,0.1);">
+                                         <div style="position: absolute; left: 0; width: 100%; border-radius: 50%; background: #6ee7b7; height: 6px; top: -3px;"></div>
+                                         <span style="position: absolute; left: 50%; transform: translateX(-50%); top: -20px; font-size: 10px; font-weight: 800; color: #059669;">@inCount</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="flex: 0 0 16px;"></div>
+                                }
+
+                                <!-- Cleaning 3D Cylinder -->
+                                @if (cleanCount > 0)
+                                {
+                                    <div class="animate-grow" style="position: relative; flex: 0 0 16px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 10; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; height: @(hClean)%; background: linear-gradient(to right, #b45309 0%, #fbbf24 35%, #78350f 100%); box-shadow: inset -1px 0 3px rgba(0,0,0,0.15), 2px 0 4px rgba(0,0,0,0.1);">
+                                         <div style="position: absolute; left: 0; width: 100%; border-radius: 50%; background: #fcd34d; height: 6px; top: -3px;"></div>
+                                         <span style="position: absolute; left: 50%; transform: translateX(-50%); top: -20px; font-size: 10px; font-weight: 800; color: #b45309;">@cleanCount</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="flex: 0 0 16px;"></div>
+                                }
+                            </div>
+
+                            <!-- X-Axis Label explicitly placed below -->
+                            <div style="position: absolute; bottom: -28px; width: 100%; text-align: center; display: flex; justify-content: center;">
+                                <span class="hidden md:block" style="font-size: 11px; font-weight: 600; color: #64748b;">@currentDayAttr.ToString("ddd, MMM d")</span>
+                                <span class="md:hidden" style="font-size: 11px; font-weight: 600; color: #64748b;">@currentDayAttr.ToString("dd")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -246,6 +386,14 @@ else
     private int _availableJigs = 0;
     private int _inUseJigs = 0;
     private int _issueJigs = 0;
+    private int _monthlyTxnCount = 0;
+    private double _utilizationRate = 0;
+    private double _repairRate = 0;
+    private int[] _checkOutCounts = new int[6];
+    private int[] _checkInCounts = new int[6];
+    private int[] _cleaningCounts = new int[6];
+    private DateTime _startOfWeek;
+    
     private List<PhysicalJig> _actionRequiredList = new();
     private Dictionary<string, int> _topUsedJigs = new();
     private int _totalCheckouts = 0;
@@ -305,6 +453,15 @@ else
         _inUseJigs = _allJigs.Count(j => j.Status == "InUse");
         _issueJigs = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
         
+        var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+        _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo && t.Action != "CheckInToCleaning");
+
+        if (_allJigs.Any())
+        {
+            _utilizationRate = Math.Round((double)_allJigs.Count(j => j.Status == "InUse") / _allJigs.Count * 100, 1);
+            _repairRate = Math.Round((double)_allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning") / _allJigs.Count * 100, 1);
+        }
+        
         _actionRequiredList = _allJigs
             .Where(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning")
             .OrderBy(j => j.Status)
@@ -314,11 +471,37 @@ else
         var checkouts = _allTxns.Where(t => t.Action == "CheckOut").ToList();
         _totalCheckouts = checkouts.Count;
         _topUsedJigs = checkouts
-            .GroupBy(t => t.JigId)
+            .GroupBy(t => t.JigId?.ToUpperInvariant())
             .Select(g => new { JigId = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(5)
             .ToDictionary(x => x.JigId, x => x.Count);
+
+        // Calculate Activity This Week (Mon-Sat)
+        DateTime today = DateTime.Now.Date;
+        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+        _startOfWeek = today.AddDays(-1 * diff).Date;
+        _checkOutCounts = new int[6]; // Reset
+        _checkInCounts = new int[6];
+        _cleaningCounts = new int[6];
+        
+        foreach (var txn in _allTxns)
+        {
+            if (txn.Timestamp >= _startOfWeek)
+            {
+                int dayDiff = (int)(txn.Timestamp.Date - _startOfWeek).TotalDays;
+                // Exclude Sunday (dayDiff == 6) and future out-of-bounds days
+                if (dayDiff >= 0 && dayDiff < 6)
+                {
+                    if (txn.Action == "CheckOut")
+                        _checkOutCounts[dayDiff]++;
+                    else if (txn.Action == "CheckInToCleaning")
+                        _cleaningCounts[dayDiff]++;
+                    else if (txn.Action == "CheckIn" || txn.Action == "ReturnToStore" || txn.Action == "ForceCheckIn")
+                        _checkInCounts[dayDiff]++;
+                }
+            }
+        }
     }
 
     private async Task ExportAnalytics()

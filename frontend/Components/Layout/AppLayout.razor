@@ -2,6 +2,7 @@
 @inject NavigationManager NavManager
 @using frontend.Services
 @inject AuthService Auth
+@inject HttpClient Http
 
 <div class="min-h-[100dvh] bg-slate-50 text-slate-900 font-sans flex text-sm flex-col md:flex-row">
     <!-- Mobile header -->
@@ -29,8 +30,10 @@
         <div class="flex-grow w-full px-4 space-y-2">
             <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors font-medium" href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
             <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/current-status">Current Status</NavLink>
-            @if (_role != "Guest") {
+            @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
                 <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/scan-out">Scan In / Out</NavLink>
+            }
+            @if (_role != "Guest") {
                 <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/history">History</NavLink>
             }
 
@@ -84,6 +87,13 @@
             var auth = await Auth.GetAuthAsync();
             _role = auth.Role ?? "";
             _name = auth.Name ?? "";
+
+            var token = await Auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
             StateHasChanged();
         }
     }

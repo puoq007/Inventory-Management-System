@@ -2,6 +2,7 @@ using backend.Data;
 using shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -36,6 +37,7 @@ public class JigSpecsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Engineer")]
     public async Task<ActionResult<JigSpec>> PostJigSpec(JigSpec jigSpec)
     {
         _context.JigSpecs.Add(jigSpec);
@@ -46,6 +48,7 @@ public class JigSpecsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Engineer")]
     public async Task<IActionResult> PutJigSpec(string id, JigSpec jigSpec)
     {
         if (id != jigSpec.Id)
@@ -134,6 +137,7 @@ public class JigSpecsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteJigSpec(string id)
     {
         var jigSpec = await _context.JigSpecs.FindAsync(id);

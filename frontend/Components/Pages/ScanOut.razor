@@ -1,7 +1,9 @@
 @page "/scan-out"
+@* Version 102 (Strict RBAC) *@
 @using shared.Models
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
 @inject frontend.Services.AuthService Auth
 @implements IAsyncDisposable
@@ -243,6 +245,14 @@
     protected override async Task OnInitializedAsync()
     {
         var authObj = await Auth.GetAuthAsync();
+        var role = authObj.Role ?? "";
+        
+        if (role == "Engineer" || role == "Guest" || string.IsNullOrEmpty(role))
+        {
+            NavManager.NavigateTo("/");
+            return;
+        }
+
         _currentUser = authObj.Name ?? "Unknown";
         _locators = await Http.GetFromJsonAsync<List<Locator>>("api/locators");
         
@@ -312,8 +322,9 @@
             if (cleaningLoc != null) _selectedLocatorId = cleaningLoc.Name;
         }
         
-        await SetFocusAsync();
         StateHasChanged();
+        await Task.Delay(50); // Allow Blazor to re-render DOM enabling/disabling inputs
+        await SetFocusAsync();
     }
 
     private void ClearSessionHistory()
@@ -369,6 +380,7 @@
 
     private async Task ProcessScan(string jigId)
     {
+        jigId = jigId?.ToUpperInvariant() ?? "";
         try
         {
             _isProcessing = true;

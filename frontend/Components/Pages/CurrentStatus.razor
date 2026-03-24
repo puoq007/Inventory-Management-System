@@ -72,34 +72,127 @@ else if (_displayJigs == null)
         <div class="text-slate-500 font-medium tracking-wide">Enter a search term to find jigs...</div>
     </div>
 }
-else if (!_displayJigs.Any())
-{
-    <div class="flex flex-col items-center justify-center py-12 text-slate-500">
-        <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div class="text-lg font-medium">No results found</div>
-        <p class="text-sm">We couldn't find any jigs matching "@_searchQuery".</p>
-    </div>
-}
 else
 {
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-full relative">
+        <div class="block w-full overflow-x-auto pb-64 -mb-64">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig ID</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Specification</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleStatusFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_statusFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                                <span class="tracking-widest">Status@(_statusFilter != "All" ? $": {(_statusFilter == "InUse" ? "In Use" : _statusFilter)}" : "")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showStatusFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
+                                    <svg class='w-3.5 h-3.5 @(_statusFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_statusFilter != "All")
+                                {
+                                    <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                                }
+                            </div>
+                            @if (_showStatusFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Status</span>
+                                        @if (_statusFilter != "All")
+                                        {
+                                            <button @onclick='() => SetStatusFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                        }
+                                    </div>
+                                    <div class="py-1.5">
+                                        @foreach (var opt in new[] { ("All", "Show All Statuses"), ("Available", "Available"), ("InUse", "In Use"), ("Cleaning", "Cleaning"), ("Evaluation", "Evaluation") })
+                                        {
+                                            <button @onclick="() => SetStatusFilter(opt.Item1)" 
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_statusFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                <span>@opt.Item2</span>
+                                                @if (_statusFilter == opt.Item1)
+                                                {
+                                                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Condition</th>
-                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleConditionFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_conditionFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                                <span class="tracking-widest">Condition@(_conditionFilter != "All" ? $": {(_conditionFilter == "NeedsCleaning" ? "Needs Clean" : _conditionFilter == "UnderRepair" ? "Repair" : _conditionFilter)}" : "")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showConditionFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
+                                    <svg class='w-3.5 h-3.5 @(_conditionFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_conditionFilter != "All")
+                                {
+                                    <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                                }
+                            </div>
+                            @if (_showConditionFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Condition</span>
+                                        @if (_conditionFilter != "All")
+                                        {
+                                            <button @onclick='() => SetConditionFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                        }
+                                    </div>
+                                    <div class="py-1.5">
+                                        @foreach (var opt in new[] { ("All", "Show All Conditions"), ("Good", "Good"), ("NeedsCleaning", "Needs Cleaning"), ("UnderRepair", "Under Repair"), ("Broken", "Broken") })
+                                        {
+                                            <button @onclick="() => SetConditionFilter(opt.Item1)" 
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_conditionFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                <span>@opt.Item2</span>
+                                                @if (_conditionFilter == opt.Item1)
+                                                {
+                                                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
+                        @if (_role != "Guest" && _role != "")
+                        {
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                        }
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-200">
-                    @foreach (var item in _displayJigs)
+                    @if (!_displayJigs.Any())
                     {
+                        <tr>
+                            <td colspan="10" class="px-6 py-12 text-center text-slate-500">
+                                <div class="flex flex-col items-center justify-center">
+                                    <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div class="text-lg font-medium text-slate-900">No results found</div>
+                                    <p class="text-sm text-slate-500">We couldn't find any jigs matching your current filters.</p>
+                                    <button @onclick='() => { _statusFilter = "All"; _conditionFilter = "All"; _searchQuery = ""; FilterData(); }' 
+                                            class="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                        Clear all filters
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _displayJigs)
+                        {
                         var spec = _allSpecs.FirstOrDefault(s => s.Id == item.SpecId);
                         var specName = spec?.Name ?? "Unknown";
 
@@ -146,41 +239,47 @@ else
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                                 @item.Condition
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                @if (_role != "Guest")
-                                {
-                                    @if (item.Status == "Available")
+                            @if (_role != "Guest" && _role != "")
+                            {
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    @if (_role != "Guest")
                                     {
-                                        <button @onclick="() => ProcessBorrow(item.Id)" class="text-blue-600 hover:text-blue-900 font-semibold px-3 py-1 rounded hover:bg-blue-50 transition-colors">
-                                            Borrow
-                                        </button>
-                                        <button @onclick="() => ReportIssue(item.Id)" class="text-amber-600 hover:text-amber-900 font-semibold px-3 py-1 rounded hover:bg-amber-50 transition-colors ml-2">
-                                            Report Issue
-                                        </button>
-                                    }
-                                    else if (item.Status == "InUse")
-                                    {
-                                        <button @onclick="() => ProcessReturn(item.Id)" class="text-emerald-600 hover:text-emerald-900 font-semibold px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
-                                            Return
-                                        </button>
-                                    }
+                                        <div class="flex items-center justify-end gap-4 @(_role == "Admin" ? "flex-nowrap" : "")">
+                                            @if (item.Status == "Available")
+                                            {
+                                                <button @onclick="() => ReportIssue(item.Id)" class="text-amber-600 hover:text-amber-900 font-semibold px-2 py-1 rounded hover:bg-amber-50 transition-colors">
+                                                    Report Issue
+                                                </button>
+                                                <button @onclick="() => ProcessBorrow(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
+                                                    Borrow
+                                                </button>
+                                            }
+                                            else if (item.Status == "InUse")
+                                            {
+                                                <button @onclick="() => ProcessReturn(item.Id)" class="text-emerald-600 hover:text-emerald-900 font-semibold px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
+                                                    Return
+                                                </button>
+                                            }
 
-                                    @if (item.Status != "Available" && (_role == "Admin" || _role == "ProdLead"))
-                                    {
-                                        <button @onclick="() => ForceCheckIn(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-3 py-1 rounded hover:bg-indigo-50 transition-colors ml-2">
-                                            Force Return
-                                        </button>
-                                    }
+                                            @if (item.Status != "Available" && (_role == "Admin" || _role == "ProdLead"))
+                                            {
+                                                <button @onclick="() => ForceCheckIn(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-3 py-1 rounded hover:bg-indigo-50 transition-colors">
+                                                    Force Return
+                                                </button>
+                                            }
 
-                                    @if ((item.Status == "Available" || item.Status == "Evaluation") && (_role == "Admin" || _role == "ProdLead"))
-                                    {
-                                        <button @onclick="() => ProcessScrap(item.Id)" class="text-red-600 hover:text-red-900 font-semibold px-3 py-1 rounded hover:bg-red-50 transition-colors ml-2">
-                                            Scrap
-                                        </button>
+                                            @if ((item.Status == "Available" || item.Status == "Evaluation") && (_role == "Admin" || _role == "ProdLead"))
+                                            {
+                                                <button @onclick="() => ProcessScrap(item.Id)" class="text-red-600 hover:text-red-900 font-semibold px-3 py-1 rounded hover:bg-red-50 transition-colors">
+                                                    Scrap
+                                                </button>
+                                            }
+                                        </div>
                                     }
-                                }
-                            </td>
+                                </td>
+                            }
                         </tr>
+                        }
                     }
                 </tbody>
             </table>
@@ -189,9 +288,62 @@ else
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "filter")]
+    public string? Filter { get; set; }
+
+    [SupplyParameterFromQuery(Name = "status")]
+    public string? StatusFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "condition")]
+    public string? ConditionFromQuery { get; set; }
+
     private string _role = "";
     private string _name = "";
     private string _searchQuery = "";
+    private string _statusFilter = "All";
+    private string _conditionFilter = "All";
+    private bool _showStatusFilter = false;
+    private bool _showConditionFilter = false;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(StatusFromQuery))
+        {
+            _statusFilter = StatusFromQuery;
+        }
+        if (!string.IsNullOrEmpty(ConditionFromQuery))
+        {
+            _conditionFilter = ConditionFromQuery;
+        }
+        if (!string.IsNullOrEmpty(Filter))
+        {
+            // If explicit filter is "Issues", we reset other filters to prevent conflict
+            if (Filter == "Issues")
+            {
+                _statusFilter = "All";
+                _conditionFilter = "All";
+            }
+        }
+        FilterData();
+    }
+
+    private void ToggleStatusFilter() { _showStatusFilter = !_showStatusFilter; _showConditionFilter = false; }
+    private void ToggleConditionFilter() { _showConditionFilter = !_showConditionFilter; _showStatusFilter = false; }
+
+    private void SetStatusFilter(string val)
+    {
+        _statusFilter = val;
+        FilterData();
+        _showStatusFilter = false;
+    }
+
+    private void SetConditionFilter(string val)
+    {
+        _conditionFilter = val;
+        FilterData();
+        _showConditionFilter = false;
+    }
+
     private IEnumerable<PhysicalJig>? _displayJigs;
     private bool _isLoading = true;
     
@@ -248,37 +400,49 @@ else
 
     private void FilterData()
     {
-        if (string.IsNullOrWhiteSpace(_searchQuery))
+        var query = _allJigs.AsEnumerable();
+        var lowerQuery = (_searchQuery ?? "").ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(lowerQuery))
         {
-            _displayJigs = _allJigs;
-            return;
+            // Search by part number to find associated spec
+            var matchSpecIds = _allSpecs
+                .Where(p => (p.PartNumber ?? "").ToLowerInvariant().Contains(lowerQuery))
+                .Select(p => p.Id)
+                .ToList();
+
+            // Also search by Spec Name directly
+            var specNameMatchIds = _allSpecs
+                .Where(s => (s.Name ?? "").ToLowerInvariant().Contains(lowerQuery))
+                .Select(s => s.Id)
+                .ToList();
+                
+            matchSpecIds.AddRange(specNameMatchIds);
+
+            query = query.Where(j => 
+                (j.Id ?? "").ToLowerInvariant().Contains(lowerQuery) || 
+                matchSpecIds.Contains(j.SpecId) || 
+                (_allLocators.FirstOrDefault(l => l.Id == j.LocatorId)?.Name ?? "").ToLowerInvariant().Contains(lowerQuery)
+            );
         }
 
-        var lowerQuery = _searchQuery.ToLowerInvariant();
-        
-        // Search by part number to find associated spec
-        // Note: Without PartJigMappings API, we rely on PartNumber string in JigSpec
-        var matchSpecIds = _allSpecs
-            .Where(p => (p.PartNumber ?? "").ToLowerInvariant().Contains(lowerQuery))
-            .Select(p => p.Id)
-            .ToList();
+        if (_statusFilter != "All")
+        {
+            query = query.Where(j => j.Status == _statusFilter);
+        }
 
-        // Also search by Spec Name directly
-        var specNameMatchIds = _allSpecs
-            .Where(s => (s.Name ?? "").ToLowerInvariant().Contains(lowerQuery))
-            .Select(s => s.Id)
-            .ToList();
-            
-        matchSpecIds.AddRange(specNameMatchIds);
+        if (_conditionFilter != "All")
+        {
+            query = query.Where(j => j.Condition == _conditionFilter);
+        }
 
-        // Filter the physical jigs
-        _displayJigs = _allJigs
-            .Where(j => 
-                (j.Id ?? "").ToLowerInvariant().Contains(lowerQuery) || // match Jig ID
-                matchSpecIds.Contains(j.SpecId) || // match Spec ID from part mapping or spec name
-                (_allLocators.FirstOrDefault(l => l.Id == j.LocatorId)?.Name ?? "").ToLowerInvariant().Contains(lowerQuery) // match location
-            )
-            .ToList();
+        // Apply special "Issues" filter if requested via URL AND no manual filter is overriding it
+        if (Filter == "Issues" && _statusFilter == "All" && _conditionFilter == "All")
+        {
+            query = query.Where(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning");
+        }
+
+        _displayJigs = query.ToList();
     }
 
     private async Task ProcessBorrow(string id)
@@ -397,6 +561,6 @@ else
     public async ValueTask DisposeAsync()
     {
         _dotNetRef?.Dispose();
-        await JSRuntime.InvokeVoidAsync("stopQrScan");
+        try { await JSRuntime.InvokeVoidAsync("stopQrScan"); } catch { }
     }
 }

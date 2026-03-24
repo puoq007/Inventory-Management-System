@@ -2,6 +2,7 @@ using backend.Data;
 using shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -36,6 +37,7 @@ public class PhysicalJigsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Engineer,ProdLead")]
     public async Task<ActionResult<PhysicalJig>> PostPhysicalJig(PhysicalJig jig)
     {
         _context.PhysicalJigs.Add(jig);
@@ -45,6 +47,7 @@ public class PhysicalJigsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Engineer,ProdLead")]
     public async Task<IActionResult> PutPhysicalJig(string id, PhysicalJig jig)
     {
         if (id != jig.Id)
@@ -74,6 +77,7 @@ public class PhysicalJigsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletePhysicalJig(string id)
     {
         var jig = await _context.PhysicalJigs.FindAsync(id);

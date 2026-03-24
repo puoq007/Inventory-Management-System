@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -14,6 +15,7 @@ public class UploadsController : ControllerBase
     }
 
     [HttpPost("image")]
+    [Authorize(Roles = "Admin,Engineer")]
     public async Task<IActionResult> UploadImage([FromForm] IFormFile file, [FromForm] string? specId)
     {
         if (file == null || file.Length == 0)

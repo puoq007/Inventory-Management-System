@@ -14,11 +14,13 @@ public class AuthService
         _jsRuntime = jsRuntime;
     }
 
-    public async Task SetAuthAsync(string employeeId, string role, string name)
+    public async Task SetAuthAsync(string employeeId, string role, string name, string token = "")
     {
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "auth_employee", employeeId);
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "auth_role", role);
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "auth_name", name);
+        if (!string.IsNullOrEmpty(token))
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "auth_token", token);
     }
 
     public async Task ClearAuthAsync()
@@ -26,6 +28,7 @@ public class AuthService
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "auth_employee");
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "auth_role");
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "auth_name");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "auth_token");
     }
 
     public async Task<(string? EmployeeId, string? Role, string? Name)> GetAuthAsync()
@@ -34,5 +37,10 @@ public class AuthService
         var role = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_role");
         var name = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_name");
         return (emp, role, name);
+    }
+
+    public async Task<string?> GetTokenAsync()
+    {
+        return await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_token");
     }
 }

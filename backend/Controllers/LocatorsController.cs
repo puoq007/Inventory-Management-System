@@ -2,6 +2,7 @@ using backend.Data;
 using shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -31,6 +32,7 @@ public class LocatorsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,ProdLead")]
     public async Task<ActionResult<Locator>> PostLocator(Locator locator)
     {
         if (string.IsNullOrEmpty(locator.Id))
@@ -42,6 +44,7 @@ public class LocatorsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> PutLocator(string id, Locator locator)
     {
         if (id != locator.Id) return BadRequest();
@@ -54,6 +57,7 @@ public class LocatorsController : ControllerBase
     /// Renames a Locator ID: creates new record, migrates PhysicalJig references, then deletes old record.
     /// </summary>
     [HttpPost("{oldId}/rename")]
+    [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> RenameLocator(string oldId, [FromBody] Locator updatedLocator)
     {
         var existing = await _context.Locators.FindAsync(oldId);
@@ -129,6 +133,7 @@ public class LocatorsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteLocator(string id)
     {
         var locator = await _context.Locators.FindAsync(id);

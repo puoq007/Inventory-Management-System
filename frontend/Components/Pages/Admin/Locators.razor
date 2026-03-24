@@ -1,4 +1,5 @@
 @page "/admin/locators"
+@* Version 102 (Strict RBAC) *@
 @inject frontend.Services.AuthService Auth
 @inject HttpClient Http
 @inject NavigationManager NavManager
@@ -9,30 +10,31 @@
 @using Net.Codecrete.QrCodeGenerator
 <PageTitle>Admin - Locators | Inventory</PageTitle>
 
-<div class="px-4 py-4 md:px-6 md:py-6 pb-20">
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-extrabold text-slate-900 mb-1">Locators</h1>
-            <p class="text-slate-500 text-sm">Manage storage locations for physical jigs.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <div class="flex gap-2">
-                <label class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-800 transition cursor-pointer mb-0">
-                    <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
-                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Import Excel
-                </label>
-                <label class="inline-flex items-center px-4 py-2 bg-teal-600 border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-teal-700 active:bg-teal-800 transition cursor-pointer mb-0">
-                    <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
-                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Import CSV
-                </label>
-                <button @onclick="OpenAddModal" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-800 transition gap-2">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                    New Locator
-                </button>
-            </div>
-        </div>
+<div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Locators</h1>
+        <p class="text-slate-500">Manage storage locations for physical jigs.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        @if (_currentRole == "Admin" || _currentRole == "ProdLead")
+        {
+            <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+                <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
+            </label>
+
+            <label class="px-5 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-lg hover:bg-teal-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+                <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v12m0 0l-4-4m4 4l4-4M9 3v8m0 0H5m4 0h4"></path></svg>
+                @if(_isImporting) { <span>Importing...</span> } else { <span>Import CSV</span> }
+            </label>
+            
+            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                New Locator
+            </button>
+        }
     </div>
 </div>
 
@@ -49,7 +51,7 @@
 }
 else
 {
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8 mx-4 md:mx-6 mt-[-1rem]">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
                 <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Keyword</label>
@@ -70,15 +72,12 @@ else
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Print Selected QR (@_selectedLocatorIds.Count)
                     </button>
-                    <button @onclick="() => { _selectedLocatorIds.Clear(); StateHasChanged(); }" class="ml-2 px-5 py-2.5 bg-white border border-slate-300 text-slate-600 font-medium text-sm rounded-lg hover:bg-slate-50 shadow-sm transition-colors flex items-center">
-                        Clear
-                    </button>
                 </div>
             }
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 mx-4 md:mx-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
@@ -87,52 +86,129 @@ else
                             <input type="checkbox" checked="@(_displayLocators.Any() && _displayLocators.All(l => _selectedLocatorIds.Contains(l.Id)))" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                         </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Locator ID / Name</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Zone Type</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none shrink-0" @onclick="ToggleZoneFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_zoneFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                                <span class="tracking-widest">Zone@(_zoneFilter != "All" ? $": {_zoneFilter}" : " Type")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showZoneFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
+                                    <svg class='w-3.5 h-3.5 @(_zoneFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_zoneFilter != "All")
+                                {
+                                    <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                                }
+                            </div>
+                            @if (_showZoneFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Zone</span>
+                                        @if (_zoneFilter != "All")
+                                        {
+                                            <button @onclick='() => SetZoneFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                        }
+                                    </div>
+                                    <div class="py-1.5">
+                                        @foreach (var opt in new[] { ("All", "Show All Zones"), ("Production", "Production"), ("Cleaning", "Cleaning"), ("Store", "Storage") })
+                                        {
+                                            <button @onclick="() => SetZoneFilter(opt.Item1)" 
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_zoneFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                <span>@opt.Item2</span>
+                                                @if (_zoneFilter == opt.Item1)
+                                                {
+                                                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location Details</th>
-                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                        @if (_hasActions)
+                        {
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                        }
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-200">
-                    @foreach (var loc in _displayLocators)
+                    @if (_displayLocators != null && _displayLocators.Any())
                     {
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" checked="@_selectedLocatorIds.Contains(loc.Id)" @onchange="@(e => ToggleSelection(loc.Id, e.Value))" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-bold text-slate-900 font-mono">@loc.Id</div>
-                                <div class="text-xs text-slate-500 mt-1">@loc.Name</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if (loc.Type == "Production")
+                        @foreach (var loc in _displayLocators)
+                        {
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" checked="@_selectedLocatorIds.Contains(loc.Id)" @onchange="@(e => ToggleSelection(loc.Id, e.Value))" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-bold text-slate-900 font-mono">@loc.Id</div>
+                                    <div class="text-xs text-slate-500 mt-1">@loc.Name</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if (loc.Type == "Production")
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">Production</span>
+                                    }
+                                    else if (loc.Type == "Cleaning")
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Cleaning</span>
+                                    }
+                                    else if (loc.Type == "Store")
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Storage</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">@loc.Type</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-700">Site: @loc.Site</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Cabinet)){ <div class="text-xs text-slate-500 mt-1">Cabinet: @loc.Cabinet</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Shelf)){ <div class="text-xs text-slate-500 mt-0.5">Shelf: @loc.Shelf</div> }
+                                </td>
+                                @if (_hasActions)
                                 {
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">Production</span>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <button @onclick="() => PrintQR(loc)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                            <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                            QR
+                                        </button>
+                                        @if (_currentRole == "Admin" || _currentRole == "ProdLead")
+                                        {
+                                            <button @onclick="() => OpenEditModal(loc)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                        }
+                                        @if (_currentRole == "Admin")
+                                        {
+                                            <button @onclick="() => DeleteLocator(loc)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                                        }
+                                    </td>
                                 }
-                                else if (loc.Type == "Cleaning")
-                                {
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Cleaning</span>
-                                }
-                                else if (loc.Type == "Store")
-                                {
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Storage</span>
-                                }
-                                else
-                                {
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">@loc.Type</span>
-                                }
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-700">Site: @loc.Site</div> }
-                                @if(!string.IsNullOrEmpty(loc.Cabinet)){ <div class="text-xs text-slate-500 mt-1">Cabinet: @loc.Cabinet</div> }
-                                @if(!string.IsNullOrEmpty(loc.Shelf)){ <div class="text-xs text-slate-500 mt-0.5">Shelf: @loc.Shelf</div> }
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button @onclick="() => PrintQR(loc)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
-                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                                    QR
-                                </button>
-                                <button @onclick="() => OpenEditModal(loc)" class="text-indigo-600 hover:text-indigo-900 mr-4 text-xs font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
-                                <button @onclick="() => DeleteLocator(loc)" class="text-red-600 hover:text-red-900 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="px-6 py-20 text-center">
+                                <div class="flex flex-col items-center justify-center space-y-3">
+                                    <div class="p-4 bg-slate-50 rounded-full">
+                                        <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <h3 class="text-lg font-bold text-slate-900">No locators found</h3>
+                                        <p class="text-sm text-slate-500">We couldn't find any positions matching your filters.</p>
+                                    </div>
+                                    <button @onclick='() => { _searchQuery = ""; _zoneFilter = "All"; FilterData(); }' 
+                                            class="mt-4 px-4 py-2 bg-white border border-slate-200 text-blue-600 font-bold text-sm rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm">
+                                        Clear all filters
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -145,14 +221,9 @@ else
 @if (_showModal)
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="text-lg font-bold text-slate-900">@(_isEditMode ? "Edit Locator" : "New Locator")</h3>
-                <button @onclick="CloseModal" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            <div class="p-6">
+        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left max-h-[90vh] flex flex-col">
+            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@(_isEditMode ? "Edit Locator" : "New Locator")</h3>
+            <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
@@ -193,23 +264,27 @@ else
                     </div>
                 </div>
             </div>
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button @onclick="CloseModal" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
-                <button @onclick="SaveLocator" class="px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 shadow-sm">Save</button>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
+                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">Cancel</button>
+                <button @onclick="SaveLocator" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">Save</button>
             </div>
         </div>
     </div>
 }
 
 @code {
+    private string _currentRole = "";
     private bool _isLoading = true;
     private bool _isImporting = false;
     private bool _showModal = false;
     private bool _isEditMode = false;
     private Locator _editingLocator = new();
     private string? _originalLocatorId = null;
+    private bool _hasActions => true; // Everyone currently has at least QR access
     private string _errorMessage = "";
     private string _searchQuery = "";
+    private string _zoneFilter = "All";
+    private bool _showZoneFilter = false;
     private HashSet<string> _selectedLocatorIds = new();
 
     private List<Locator> _allLocators = new();
@@ -218,7 +293,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         var auth = await Auth.GetAuthAsync();
-        if (auth.Role != "Admin" && auth.Role != "Engineer" && auth.Role != "ProdLead")
+        _currentRole = auth.Role ?? "";
+        
+        if (_currentRole != "Admin" && _currentRole != "Engineer" && _currentRole != "ProdLead")
         {
             NavManager.NavigateTo("/");
             return;
@@ -242,21 +319,26 @@ else
         }
     }
 
+    private void ToggleZoneFilter() { _showZoneFilter = !_showZoneFilter; }
+
+    private void SetZoneFilter(string val)
+    {
+        _zoneFilter = val;
+        FilterData();
+        _showZoneFilter = false;
+    }
+
     private void FilterData()
     {
-        if (string.IsNullOrWhiteSpace(_searchQuery))
-        {
-            _displayLocators = _allLocators.ToList();
-            return;
-        }
-
-        var lowerQuery = _searchQuery.ToLowerInvariant();
+        var lowerQuery = (_searchQuery ?? "").ToLowerInvariant();
         _displayLocators = _allLocators.Where(l => 
-            (l.Id ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-            (l.Site ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-            (l.Cabinet ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-            (l.Shelf ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-            (l.Position ?? "").ToLowerInvariant().Contains(lowerQuery)
+            (string.IsNullOrWhiteSpace(lowerQuery) || 
+             (l.Id ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+             (l.Site ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+             (l.Cabinet ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+             (l.Shelf ?? "").ToLowerInvariant().Contains(lowerQuery) ||
+             (l.Position ?? "").ToLowerInvariant().Contains(lowerQuery)) &&
+            (_zoneFilter == "All" || l.Type == _zoneFilter)
         ).ToList();
     }
 

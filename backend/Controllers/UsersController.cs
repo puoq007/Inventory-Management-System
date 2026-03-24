@@ -2,6 +2,7 @@ using backend.Data;
 using shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -17,6 +18,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAccount>>> GetUsers()
     {
         return await _context.Users.ToListAsync();
@@ -34,6 +36,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<UserAccount>> PostUser(UserAccount userAccount)
     {
         _context.Users.Add(userAccount);
@@ -43,6 +46,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{employeeId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> PutUser(string employeeId, UserAccount userAccount)
     {
         if (employeeId != userAccount.EmployeeId)
@@ -72,6 +76,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{employeeId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(string employeeId)
     {
         var user = await _context.Users.FindAsync(employeeId);
@@ -87,7 +92,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<UserAccount>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId);
         if (user == null || user.Password != request.Password)
@@ -95,12 +100,39 @@ public class UsersController : ControllerBase
             return Unauthorized();
         }
 
-        // Return user without password
-        return Ok(new UserAccount
+        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var key = System.Text.Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? "SuperSecretKeyForJigInventorySystem12345!");
+        
+        var claims = new List<System.Security.Claims.Claim>
         {
-            EmployeeId = user.EmployeeId,
-            Name = user.Name,
-            Role = user.Role
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.EmployeeId),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Name),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, user.Role)
+        };
+
+        var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+        {
+            Subject = new System.Security.Claims.ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddDays(1),
+            Issuer = configuration["Jwt:Issuer"],
+            Audience = configuration["Jwt:Audience"],
+            SigningCredentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(
+                new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
+                Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return Ok(new
+        {
+            token = tokenHandler.WriteToken(token),
+            user = new UserAccount
+            {
+                EmployeeId = user.EmployeeId,
+                Name = user.Name,
+                Role = user.Role
+            }
         });
     }
 

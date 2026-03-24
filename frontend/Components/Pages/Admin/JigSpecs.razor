@@ -1,4 +1,5 @@
 @page "/admin/jig-specs"
+@* Version 102 (Strict RBAC) *@
 @inject frontend.Services.AuthService Auth
 @inject HttpClient Http
 @inject NavigationManager NavManager
@@ -15,22 +16,25 @@
         <p class="text-slate-500">Manage jig models and base requirements.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-        <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
-            <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
-        </label>
+        @if (_currentRole == "Admin" || _currentRole == "Engineer")
+        {
+            <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+                <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
+            </label>
 
-        <label class="px-5 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-lg hover:bg-teal-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
-            <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v12m0 0l-4-4m4 4l4-4M9 3v8m0 0H5m4 0h4"></path></svg>
-            @if(_isImporting) { <span>Importing...</span> } else { <span>Import CSV</span> }
-        </label>
-        
-        <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            New Spec
-        </button>
+            <label class="px-5 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-lg hover:bg-teal-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+                <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v12m0 0l-4-4m4 4l4-4M9 3v8m0 0H5m4 0h4"></path></svg>
+                @if(_isImporting) { <span>Importing...</span> } else { <span>Import CSV</span> }
+            </label>
+            
+            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                New Spec
+            </button>
+        }
     </div>
 </div>
 
@@ -80,7 +84,10 @@ else
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Part Info</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig & Tool Type</th>
-                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                        @if (_hasActions)
+                        {
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                        }
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-200">
@@ -121,14 +128,23 @@ else
                                 <div class="text-sm text-slate-900">@spec.JigType</div>
                                 <div class="text-xs text-slate-500 mt-1">@spec.ToolType</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button @onclick="() => PrintQR(spec)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
-                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                                    QR
-                                </button>
-                                <button @onclick="() => OpenEditModal(spec)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
-                                <button @onclick="() => DeleteSpec(spec)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
-                            </td>
+                            @if (_hasActions)
+                            {
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <button @onclick="() => PrintQR(spec)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                        <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                        QR
+                                    </button>
+                                    @if (_currentRole == "Admin" || _currentRole == "Engineer")
+                                    {
+                                        <button @onclick="() => OpenEditModal(spec)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                    }
+                                    @if (_currentRole == "Admin")
+                                    {
+                                        <button @onclick="() => DeleteSpec(spec)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -247,6 +263,7 @@ else
 }
 
 @code {
+    private string _currentRole = "";
     private bool _isLoading = true;
     private bool _isImporting = false;
     private bool _showModal = false;
@@ -254,6 +271,7 @@ else
     private JigSpec _editingSpec = new();
     private string _mappedPartNumbers = "";
     private string _originalSpecId = "";
+    private bool _hasActions => true; // Everyone currently has at least QR access in management pages
     private string _errorMessage = "";
     private string _searchQuery = "";
     private List<JigSpec> _allSpecs = new();
@@ -268,6 +286,7 @@ else
         {
             var auth = await Auth.GetAuthAsync();
             var role = auth.Role ?? "";
+            _currentRole = role;
 
             if (string.IsNullOrEmpty(role) || (role != "Admin" && role != "Engineer" && role != "ProdLead"))
             {

@@ -28,60 +28,130 @@
 }
 else
 {
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8 max-w-2xl">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Employee ID, Name, or Role</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
+                <label for="search" class="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    Search Users
+                </label>
+                <div class="relative group">
                     <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. 9005, John, Admin" />
+                           class="block w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all sm:text-sm outline-none" 
+                           placeholder="Search Employee ID, Name, or Role..." />
+                    @if (!string.IsNullOrEmpty(_searchQuery))
+                    {
+                        <button @onclick='() => { _searchQuery = ""; FilterData(); }' class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    }
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
-        <div class="overflow-x-auto">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-8 max-w-full">
+        <div class="block w-full overflow-x-auto pb-44 -mb-44">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Employee ID</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleRoleFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_roleFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                                <span class="tracking-widest">Role@(_roleFilter != "All" ? $": {_roleFilter}" : "")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
+                                    <svg class='w-3.5 h-3.5 @(_roleFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_roleFilter != "All")
+                                {
+                                    <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                                }
+                            </div>
+                            @if (_showRoleFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Role</span>
+                                        @if (_roleFilter != "All")
+                                        {
+                                            <button @onclick='() => SetRoleFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                        }
+                                    </div>
+                                    <div class="py-1.5">
+                                        @foreach (var opt in new[] { ("All", "Show All Roles"), ("Admin", "Admin"), ("Engineer", "Engineer"), ("ProdLead", "Prod Lead"), ("Operator", "Operator"), ("Guest", "Guest") })
+                                        {
+                                            <button @onclick="() => SetRoleFilter(opt.Item1)" 
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_roleFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                <span>@opt.Item2</span>
+                                                @if (_roleFilter == opt.Item1)
+                                                {
+                                                    <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Password</th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-200">
-                    @foreach (var user in _displayUsers ?? Enumerable.Empty<UserAccount>())
+                    @if (_displayUsers != null && _displayUsers.Any())
                     {
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                                @user.EmployeeId
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                @user.Name
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border 
-                                    @(user.Role == "Admin" ? "bg-purple-100 text-purple-800 border-purple-200" :
-                                      user.Role == "Engineer" ? "bg-blue-100 text-blue-800 border-blue-200" :
-                                      user.Role == "ProdLead" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
-                                      "bg-slate-100 text-slate-800 border-slate-200")">
-                                    @user.Role
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono tracking-widest text-lg">
-                                ••••
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button @onclick="() => OpenEditModal(user)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
-                                <button @onclick="() => DeleteUser(user)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                        @foreach (var user in _displayUsers)
+                        {
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">
+                                    @user.EmployeeId
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    @user.Name
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border shadow-sm
+                                        @(user.Role == "Admin" ? "bg-purple-100 text-purple-800 border-purple-200" :
+                                          user.Role == "Engineer" ? "bg-blue-100 text-blue-800 border-blue-200" :
+                                          user.Role == "ProdLead" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                                          "bg-slate-100 text-slate-800 border-slate-200")">
+                                        @user.Role
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono tracking-[0.3em] text-lg">
+                                    ••••
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <button @onclick="() => OpenEditModal(user)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                    <button @onclick="() => DeleteUser(user)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="px-6 py-20 text-center">
+                                <div class="flex flex-col items-center justify-center space-y-3">
+                                    <div class="p-4 bg-slate-50 rounded-full">
+                                        <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <h3 class="text-lg font-bold text-slate-900">No users found</h3>
+                                        <p class="text-sm text-slate-500">We couldn't find any accounts matching your search.</p>
+                                    </div>
+                                    <button @onclick='() => { _searchQuery = ""; _roleFilter = "All"; FilterData(); }' 
+                                            class="mt-4 px-4 py-2 bg-white border border-slate-200 text-blue-600 font-bold text-sm rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm">
+                                        Clear all filters
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -143,6 +213,8 @@ else
     private string _errorMessage = "";
     private string _currentRole = "";
     private string _searchQuery = "";
+    private string _roleFilter = "All";
+    private bool _showRoleFilter = false;
     private List<UserAccount> _allUsers = new();
     private IEnumerable<UserAccount>? _displayUsers;
 
@@ -180,19 +252,24 @@ else
         }
     }
 
+    private void ToggleRoleFilter() { _showRoleFilter = !_showRoleFilter; }
+
+    private void SetRoleFilter(string val)
+    {
+        _roleFilter = val;
+        FilterData();
+        _showRoleFilter = false;
+    }
+
     private void FilterData()
     {
-        if (string.IsNullOrWhiteSpace(_searchQuery))
-        {
-            _displayUsers = _allUsers.ToList();
-            return;
-        }
-
-        var lowerQuery = _searchQuery.ToLowerInvariant();
+        var lowerQuery = (_searchQuery ?? "").ToLowerInvariant();
         _displayUsers = _allUsers.Where(u => 
-            u.EmployeeId.ToLowerInvariant().Contains(lowerQuery) ||
-            u.Name.ToLowerInvariant().Contains(lowerQuery) ||
-            u.Role.ToLowerInvariant().Contains(lowerQuery)
+            (string.IsNullOrWhiteSpace(lowerQuery) || 
+             u.EmployeeId.ToLowerInvariant().Contains(lowerQuery) ||
+             u.Name.ToLowerInvariant().Contains(lowerQuery) ||
+             u.Role.ToLowerInvariant().Contains(lowerQuery)) &&
+            (_roleFilter == "All" || u.Role == _roleFilter)
         ).ToList();
     }
 

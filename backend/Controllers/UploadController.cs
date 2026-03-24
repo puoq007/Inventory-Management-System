@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
@@ -16,6 +17,7 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("jigspecs")]
+    [Authorize(Roles = "Admin,Engineer")]
     public async Task<IActionResult> UploadJigSpecs(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
@@ -25,6 +27,7 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("physicaljigs")]
+    [Authorize(Roles = "Admin,Engineer,ProdLead")]
     public async Task<IActionResult> UploadPhysicalJigs(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
