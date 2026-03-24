@@ -3,7 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
-@using shared.Models
+@inject LanguageService Lang
 @using System.Threading.Tasks
 @using System.Net.Http.Json
 @implements IAsyncDisposable
@@ -12,8 +12,8 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Current Status</h1>
-        <p class="text-slate-500">Search and manage physical jigs</p>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("สถานะปัจจุบัน", "Current Status")</h1>
+        <p class="text-slate-500">@Lang.T("ค้นหาและจัดการจิกกายภาพ", "Search and manage physical jigs")</p>
     </div>
     @if (!string.IsNullOrEmpty(_role))
     {
@@ -26,7 +26,7 @@
 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
-            <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Part Number or Jig ID</label>
+            <label for="search" class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ค้นหารหัสรุ่น หรือ รหัสจิก", "Search Part Number or Jig ID")</label>
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,16 +34,16 @@
                     </svg>
                 </div>
                 <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" 
-                       class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. PN-1001 or J001" />
+                       class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: PN-1001 หรือ J001", "e.g. PN-1001 or J001")" />
             </div>
         </div>
         <div class="flex items-end space-x-3 w-full md:w-auto mt-4 md:mt-0">
             <button @onclick="OpenScanModal" class="w-full md:w-auto px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 focus:outline-none transition-colors border border-slate-200 flex items-center justify-center">
                 <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                Scan QR
+                @Lang.T("สแกนคิวอาร์", "Scan QR")
             </button>
             <button @onclick="FilterData" class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                Search
+                @Lang.T("ค้นหา", "Search")
             </button>
         </div>
     </div>
@@ -53,9 +53,9 @@
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
         <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-center">
-            <h3 class="text-xl font-bold text-slate-900 mb-4">Scan QR Code</h3>
+            <h3 class="text-xl font-bold text-slate-900 mb-4">@Lang.T("สแกนคิวอาร์โค้ด", "Scan QR Code")</h3>
             <div id="qr-reader" class="mx-auto w-full mb-4 overflow-hidden rounded-lg bg-slate-50 border border-slate-200" style="min-height: 250px;"></div>
-            <button @onclick="CloseScanModal" class="px-6 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">Cancel</button>
+            <button @onclick="CloseScanModal" class="px-6 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">@Lang.T("ยกเลิก", "Cancel")</button>
         </div>
     </div>
 }
@@ -79,8 +79,8 @@ else
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig ID</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Specification</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสจิก", "Jig ID")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รุ่น/ข้อมูลจำเพาะ", "Specification")</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleStatusFilter">
                             <div class="flex items-center gap-2 transition-colors @(_statusFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
                                 <span class="tracking-widest">Status@(_statusFilter != "All" ? $": {(_statusFilter == "InUse" ? "In Use" : _statusFilter)}" : "")</span>
@@ -98,10 +98,10 @@ else
                             {
                                 <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
                                     <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Status</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@Lang.T("กรองสถานะ", "Filter Status")</span>
                                         @if (_statusFilter != "All")
                                         {
-                                            <button @onclick='() => SetStatusFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                            <button @onclick='() => SetStatusFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">@Lang.T("ล้าง", "RESET")</button>
                                         }
                                     </div>
                                     <div class="py-1.5">
@@ -122,7 +122,7 @@ else
                                 </div>
                             }
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ตำแหน่ง", "Location")</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleConditionFilter">
                             <div class="flex items-center gap-2 transition-colors @(_conditionFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
                                 <span class="tracking-widest">Condition@(_conditionFilter != "All" ? $": {(_conditionFilter == "NeedsCleaning" ? "Needs Clean" : _conditionFilter == "UnderRepair" ? "Repair" : _conditionFilter)}" : "")</span>
@@ -140,10 +140,10 @@ else
                             {
                                 <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
                                     <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Condition</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@Lang.T("กรองสภาพ", "Filter Condition")</span>
                                         @if (_conditionFilter != "All")
                                         {
-                                            <button @onclick='() => SetConditionFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">RESET</button>
+                                            <button @onclick='() => SetConditionFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">@Lang.T("ล้าง", "RESET")</button>
                                         }
                                     </div>
                                     <div class="py-1.5">
@@ -164,9 +164,10 @@ else
                                 </div>
                             }
                         </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("สภาพ", "Condition")</th>
                         @if (_role != "Guest" && _role != "")
                         {
-                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("การดำเนินการ", "Action")</th>
                         }
                     </tr>
                 </thead>
@@ -208,70 +209,51 @@ else
                                 }
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if (item.Status == "Available")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        Available
-                                    </span>
-                                }
-                                else if (item.Status == "InUse")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                                        In Use
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                                        @item.Status
-                                    </span>
-                                }
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border @(GetStatusBadgeClass(item.Status))">
+                                    @Lang.T(GetStatusThai(item.Status), item.Status == "InUse" ? "In Use" : item.Status)
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    @(_allLocators.FirstOrDefault(l => l.Id == item.LocatorId)?.Name ?? "Unknown")
-                                </div>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">
+                                @(_allLocators.FirstOrDefault(l => l.Id == item.LocatorId)?.Name ?? "Unknown")
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                @item.Condition
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border @(GetConditionBadgeClass(item.Condition))">
+                                    @Lang.T(GetConditionThai(item.Condition), item.Condition)
+                                </span>
                             </td>
                             @if (_role != "Guest" && _role != "")
                             {
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     @if (_role != "Guest")
                                     {
-                                        <div class="flex items-center justify-end gap-4 @(_role == "Admin" ? "flex-nowrap" : "")">
+                                        <div class="flex items-center justify-center gap-4 @(_role == "Admin" ? "flex-nowrap" : "")">
                                             @if (item.Status == "Available")
                                             {
                                                 <button @onclick="() => ReportIssue(item.Id)" class="text-amber-600 hover:text-amber-900 font-semibold px-2 py-1 rounded hover:bg-amber-50 transition-colors">
-                                                    Report Issue
+                                                    @Lang.T("แจ้งปัญหา", "Report Issue")
                                                 </button>
                                                 <button @onclick="() => ProcessBorrow(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
-                                                    Borrow
+                                                    @Lang.T("ยืม", "Borrow")
                                                 </button>
                                             }
                                             else if (item.Status == "InUse")
                                             {
                                                 <button @onclick="() => ProcessReturn(item.Id)" class="text-emerald-600 hover:text-emerald-900 font-semibold px-3 py-1 rounded hover:bg-emerald-50 transition-colors">
-                                                    Return
+                                                    @Lang.T("คืน", "Return")
                                                 </button>
                                             }
 
                                             @if (item.Status != "Available" && (_role == "Admin" || _role == "ProdLead"))
                                             {
                                                 <button @onclick="() => ForceCheckIn(item.Id)" class="text-indigo-600 hover:text-indigo-900 font-semibold px-3 py-1 rounded hover:bg-indigo-50 transition-colors">
-                                                    Force Return
+                                                    @Lang.T("บังคับคืน", "Force Return")
                                                 </button>
                                             }
 
                                             @if ((item.Status == "Available" || item.Status == "Evaluation") && (_role == "Admin" || _role == "ProdLead"))
                                             {
                                                 <button @onclick="() => ProcessScrap(item.Id)" class="text-red-600 hover:text-red-900 font-semibold px-3 py-1 rounded hover:bg-red-50 transition-colors">
-                                                    Scrap
+                                                    @Lang.T("ตัดบัญชี", "Scrap")
                                                 </button>
                                             }
                                         </div>
@@ -337,11 +319,57 @@ else
         _showStatusFilter = false;
     }
 
-    private void SetConditionFilter(string val)
+    private void SetConditionFilter(string condition)
     {
-        _conditionFilter = val;
-        FilterData();
+        _conditionFilter = condition;
         _showConditionFilter = false;
+        FilterData();
+    }
+
+    private string GetStatusThai(string status) => status switch
+    {
+        "Available" => "พร้อมใช้งาน",
+        "InUse" => "กำลังใช้งาน",
+        "Cleaning" => "กำลังทำความสะอาด",
+        "Evaluation" => "รอประเมินสภาพ",
+        _ => status
+    };
+
+    private string GetConditionThai(string condition) => condition switch
+    {
+        "Good" => "ใช้งานได้ดี",
+        "NeedsCleaning" => "ต้องทำความสะอาด",
+        "UnderRepair" => "กำลังซ่อมแซม",
+        "Broken" => "ชำรุดเสียหาย",
+        _ => condition
+    };
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        "Available" => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "InUse" => "bg-blue-50 text-blue-700 border-blue-200",
+        "Cleaning" => "bg-amber-50 text-amber-700 border-amber-200",
+        "Evaluation" => "bg-purple-50 text-purple-700 border-purple-200",
+        _ => "bg-slate-50 text-slate-700 border-slate-200"
+    };
+
+    private string GetConditionBadgeClass(string condition) => condition switch
+    {
+        "Good" => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "NeedsCleaning" => "bg-amber-50 text-amber-700 border-amber-200",
+        "UnderRepair" => "bg-blue-50 text-blue-700 border-blue-100",
+        "Broken" => "bg-red-50 text-red-700 border-red-200",
+        _ => "bg-slate-50 text-slate-700 border-slate-200"
+    };
+
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= StateHasChanged;
     }
 
     private IEnumerable<PhysicalJig>? _displayJigs;

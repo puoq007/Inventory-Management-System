@@ -73,7 +73,8 @@ public class Locator
     public string Type { get; set; } = "Store"; // Store, Production, Cleaning
 
 
-    public string Name => (Cabinet == "-") ? $"{Site} {Shelf}" : $"{Site} Cabinet {Cabinet} Shelf {Shelf}";
+    public string GetName(string lang) => (Cabinet == "-") ? $"{Site} {Shelf}" : (lang == "TH" ? $"{Site} ตู้ {Cabinet} ชั้น {Shelf}" : $"{Site} Cabinet {Cabinet} Shelf {Shelf}");
+    public string Name => GetName("EN"); // Default for backward compatibility
 }
 
 public class TransactionRow

@@ -1,11 +1,8 @@
 @page "/admin/jig-specs"
-@* Version 102 (Strict RBAC) *@
 @inject frontend.Services.AuthService Auth
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
-@inject LanguageService Lang
-@implements IDisposable
 @using shared.Models
 @using System.Net.Http.Json
 @using System.Net.Http.Headers
@@ -14,36 +11,33 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("ข้อมูลทางเทคนิคของจิก", "Jig Specifications")</h1>
-        <p class="text-slate-500">@Lang.T("จัดการรุ่นของจิกและข้อกำหนดพื้นฐาน", "Manage jig models and base requirements.")</p>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Jig Specifications</h1>
+        <p class="text-slate-500">Manage jig models and base requirements.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-        @if (_currentRole == "Admin" || _currentRole == "Engineer")
-        {
-            <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
-                <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
-                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                @if(_isImporting) { <span>@Lang.T("กำลังนำเข้า...", "Importing...")</span> } else { <span>@Lang.T("นำเข้า Excel", "Import Excel")</span> }
-            </label>
+        <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+            <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            @if(_isImporting) { <span>Importing...</span> } else { <span>Import Excel</span> }
+        </label>
 
-            <label class="px-5 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-lg hover:bg-teal-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
-                <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
-                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v12m0 0l-4-4m4 4l4-4M9 3v8m0 0H5m4 0h4"></path></svg>
-                @if(_isImporting) { <span>@Lang.T("กำลังนำเข้า...", "Importing...")</span> } else { <span>@Lang.T("นำเข้า CSV", "Import CSV")</span> }
-            </label>
-            
-            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
-                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                @Lang.T("เพิ่มข้อมูลรุ่นใหม่", "New Spec")
-            </button>
-        }
+        <label class="px-5 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-lg hover:bg-teal-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+            <InputFile OnChange="ImportExcel" class="hidden" accept=".csv" />
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v12m0 0l-4-4m4 4l4-4M9 3v8m0 0H5m4 0h4"></path></svg>
+            @if(_isImporting) { <span>Importing...</span> } else { <span>Import CSV</span> }
+        </label>
+        
+        <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            New Spec
+        </button>
     </div>
 </div>
 
 @if (_isLoading)
 {
     <div class="flex justify-center items-center py-12">
-        <div class="text-slate-500 font-medium">@Lang.T("กำลังโหลดข้อมูลรุ่น...", "Loading specifications...")</div>
+        <div class="text-slate-500 font-medium">Loading specifications...</div>
     </div>
 }
 else
@@ -51,7 +45,7 @@ else
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ค้นหารหัสรุ่น หรือ ชื่อรุ่น", "Search Spec ID or Name")</label>
+                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">Search Spec ID or Name</label>
                 <form class="relative" @onsubmit="FilterData" @onsubmit:preventDefault="true">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,7 +53,7 @@ else
                         </svg>
                     </div>
                     <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: Toy Number, Part Number, Rev, ฯลฯ", "e.g. Toy Number, Part Number, Rev, etc.")" />
+                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Toy Number, Part Number, Rev, etc." />
                 </form>
             </div>
             @if (_selectedSpecs.Any())
@@ -67,7 +61,7 @@ else
                 <div class="flex items-end mb-[2px]">
                     <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        @Lang.T($"พิมพ์คิวอาร์ที่เลือก ({_selectedSpecs.Count})", $"Print Selected QR ({_selectedSpecs.Count})")
+                        Print Selected QR (@_selectedSpecs.Count)
                     </button>
                 </div>
             }
@@ -82,14 +76,11 @@ else
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12 shrink-0">
                             <input type="checkbox" checked="@IsAllSelected" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสรุ่น / Rev", "Spec ID / Rev")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ชื่อความหมาย", "Name")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ข้อมูลชิ้นงาน", "Part Info")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ประเภทจิก&เครื่องมือ", "Jig & Tool Type")</th>
-                        @if (_hasActions)
-                        {
-                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("การดำเนินการ", "Actions")</th>
-                        }
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Spec ID / Rev</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Part Info</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jig & Tool Type</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-200">
@@ -130,23 +121,14 @@ else
                                 <div class="text-sm text-slate-900">@spec.JigType</div>
                                 <div class="text-xs text-slate-500 mt-1">@spec.ToolType</div>
                             </td>
-                            @if (_hasActions)
-                            {
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <button @onclick="() => PrintQR(spec)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="@Lang.T("พิมพ์คิวอาร์", "Print QR Code")">
-                                        <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                                        @Lang.T("คิวอาร์", "QR")
-                                    </button>
-                                    @if (_currentRole == "Admin" || _currentRole == "Engineer")
-                                    {
-                                        <button @onclick="() => OpenEditModal(spec)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
-                                    }
-                                    @if (_currentRole == "Admin")
-                                    {
-                                        <button @onclick="() => DeleteSpec(spec)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">@Lang.T("ลบ", "Delete")</button>
-                                    }
-                                </td>
-                            }
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button @onclick="() => PrintQR(spec)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                    QR
+                                </button>
+                                <button @onclick="() => OpenEditModal(spec)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">Edit</button>
+                                <button @onclick="() => DeleteSpec(spec)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -159,20 +141,20 @@ else
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
         <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left max-h-[90vh] flex flex-col">
-            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@Lang.T(_isEditMode ? "แก้ไขข้อมูลรุ่น" : "เพิ่มข้อมูลรุ่นใหม่", _isEditMode ? "Edit Spec" : "Add New Spec")</h3>
+            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@(_isEditMode ? "Edit Spec" : "Add New Spec")</h3>
 
             <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสรุ่น *", "Specification ID *")</label>
-                        <input type="text" @bind="_editingSpec.Id" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: SB3", "e.g. S4")" />
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Specification ID *</label>
+                        <input type="text" @bind="_editingSpec.Id" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. S4" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ชื่อเรียก / รายละเอียด *", "Name / Description *")</label>
-                        <input type="text" @bind="_editingSpec.Name" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ชื่อรุ่นหรือรายละเอียดเบื้องต้น", "Description or Name")" />
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Name / Description *</label>
+                        <input type="text" @bind="_editingSpec.Name" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g. Clamp D for Widget W" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("จำนวนที่กำหนด", "Required Quantity")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Required Quantity</label>
                         <input type="number" min="1" @bind="_editingSpec.JigRequired" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
                     <div>
@@ -180,39 +162,39 @@ else
                         <input type="text" @bind="_editingSpec.Rev" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัส Toy (Toy Number)", "Toy Number")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Toy Number</label>
                         <input type="text" @bind="_editingSpec.ToyNumber" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("สัปดาห์ (Week)", "Week")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Week</label>
                         <input type="text" @bind="_editingSpec.Week" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รายการ (Item)", "Item")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Item</label>
                         <input type="text" @bind="_editingSpec.Item" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Part Type</label>
                         <input type="text" @bind="_editingSpec.PartType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ประเภท JIG (JIG Type)", "JIG Type")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">JIG Type</label>
                         <input type="text" @bind="_editingSpec.JigType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสเครื่องมือ (NO.Tool)", "NO.Tool")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">NO.Tool</label>
                         <input type="text" @bind="_editingSpec.ToolNo" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ประเภทเครื่องมือ (Tool Type)", "Tool Type")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tool Type</label>
                         <input type="text" @bind="_editingSpec.ToolType" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("จำนวนขั้นตอนพิมพ์ (Step Print)", "Total Step Print")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Total Step Print</label>
                         <input type="text" @bind="_editingSpec.TotalStepPrint" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("จำนวน/บอร์ด (Unit Amount)", "Unit Amount")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Unit Amount (จำนวน/บอร์ด(ชิ้น))</label>
                         <input type="text" @bind="_editingSpec.UnitAmount" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
@@ -224,11 +206,11 @@ else
                         <input type="text" @bind="_editingSpec.Scan" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รูปภาพระบุรุ่น (Picture URL)", "Picture URL")</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Picture URL</label>
                         <div class="flex items-center space-x-2">
                             <input type="text" @bind="_editingSpec.PictureUrl" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="/images/specs/..." />
                             <label class="cursor-pointer bg-slate-100 px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors whitespace-nowrap">
-                                <span>@Lang.T("อัปโหลด", "Upload")</span>
+                                <span>Upload</span>
                                 <InputFile OnChange="UploadImage" class="hidden" accept="image/*" />
                             </label>
                         </div>
@@ -242,9 +224,9 @@ else
                 </div>
                 
                 <div class="mt-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสชิ้นงานที่เกี่ยวข้อง (Mapped Part Numbers)", "Mapped Part Numbers (Comma-separated)")</label>
-                    <textarea @bind="_mappedPartNumbers" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" rows="2" placeholder="@Lang.T("เช่น: PN-1001, PN-1002, PN-1003", "e.g. PN-1001, PN-1002, PN-1003")"></textarea>
-                    <p class="text-xs text-slate-500 mt-1">@Lang.T("รหัสเหล่านี้จะถูกเชื่อมโยงกับรุ่นจิกนี้ในระบบ", "These parts will be linked to this Jig Spec in the system.")</p>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mapped Part Numbers (Comma-separated)</label>
+                    <textarea @bind="_mappedPartNumbers" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" rows="2" placeholder="e.g. PN-1001, PN-1002, PN-1003"></textarea>
+                    <p class="text-xs text-slate-500 mt-1">These parts will be linked to this Jig Spec in the system.</p>
                 </div>
             </div>
 
@@ -257,15 +239,14 @@ else
             </div>
 
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
-                <button @onclick="SaveSpec" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">@Lang.T("บันทึกการเปลี่ยนแปลง", "Save Changes")</button>
+                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">Cancel</button>
+                <button @onclick="SaveSpec" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">Save Changes</button>
             </div>
         </div>
     </div>
 }
 
 @code {
-    private string _currentRole = "";
     private bool _isLoading = true;
     private bool _isImporting = false;
     private bool _showModal = false;
@@ -273,22 +254,11 @@ else
     private JigSpec _editingSpec = new();
     private string _mappedPartNumbers = "";
     private string _originalSpecId = "";
-    private bool _hasActions => true; // Everyone currently has at least QR access in management pages
     private string _errorMessage = "";
     private string _searchQuery = "";
     private List<JigSpec> _allSpecs = new();
     private IEnumerable<JigSpec>? _displaySpecs;
     private HashSet<string> _selectedSpecs = new();
-
-    protected override void OnInitialized()
-    {
-        Lang.OnChange += StateHasChanged;
-    }
-
-    public void Dispose()
-    {
-        Lang.OnChange -= StateHasChanged;
-    }
     
     private bool IsAllSelected => _displaySpecs != null && _displaySpecs.Any() && _selectedSpecs.Count == _displaySpecs.Count();
 
@@ -298,7 +268,6 @@ else
         {
             var auth = await Auth.GetAuthAsync();
             var role = auth.Role ?? "";
-            _currentRole = role;
 
             if (string.IsNullOrEmpty(role) || (role != "Admin" && role != "Engineer" && role != "ProdLead"))
             {
