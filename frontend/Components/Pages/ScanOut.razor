@@ -403,7 +403,8 @@
 
     private async Task ProcessScan(string jigId)
     {
-        jigId = jigId?.ToUpperInvariant() ?? "";
+        jigId = CleanAllSpaces(jigId)?.ToUpperInvariant() ?? "";
+        _selectedLocatorId = CleanAllSpaces(_selectedLocatorId) ?? "";
         try
         {
             _isProcessing = true;
@@ -529,6 +530,12 @@
             await Task.Delay(50);
             await SetFocusAsync();
         }
+    }
+
+    private string? CleanAllSpaces(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
+        return new string(val.Where(c => !char.IsWhiteSpace(c)).ToArray());
     }
 
     public ValueTask DisposeAsync()

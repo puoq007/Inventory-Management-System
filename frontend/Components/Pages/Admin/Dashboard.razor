@@ -96,28 +96,7 @@ else
                     </svg>
                     @Lang.T("รายการที่ต้องดำเนินการ (พบปัญหา)", "Action Required (Issues)")
                 </h2>
-                @if (_actionRequiredList.Any())
-                {
-                    <div class="space-y-3">
-                        @foreach (var jig in _actionRequiredList)
-                        {
-                            var spec = _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId);
-                            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                <div>
-                                    <span class="font-mono text-sm font-semibold text-slate-900 mr-2">@jig.Id</span>
-                                    <span class="text-sm text-slate-600">@spec?.Name</span>
-                                </div>
-                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                                    @jig.Condition
-                                </span>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-slate-500 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
-                }
+                <div class="text-slate-500 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
             </div>
         }
         else
@@ -175,7 +154,11 @@ else
                         </div>
                         <div class="ml-3">
                             <p class="text-sm font-medium text-slate-900">
-                                <span class="font-mono mr-1">@txn.JigId</span> 
+                                @{
+                                   var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
+                                   var jigIdDisplay = jig?.Id ?? txn.JigUid;
+                                }
+                                <span class="font-mono mr-1">@jigIdDisplay</span> 
                                 @if (txn.Action == "CheckOut") { <span>@Lang.T("ถูกเบิกไปโดย", "was borrowed by")</span> }
                                 else if (txn.Action == "CheckIn") { <span>@Lang.T("ถูกนำมาคืนโดย", "was returned by")</span> }
                                 else if (txn.Action == "ForceCheckIn") { <span>@Lang.T("ถูกบังคับคืนโดย", "was force-returned by")</span> }
@@ -396,15 +379,13 @@ else
     private int[] _cleaningCounts = new int[6];
     private DateTime _startOfWeek;
     
-    private List<PhysicalJig> _actionRequiredList = new();
     private Dictionary<string, int> _topUsedJigs = new();
     private int _totalCheckouts = 0;
     
-    private List<JigSpec> _allSpecs = new();
     private List<TransactionRow> _recentTxns = new();
-    private List<PhysicalJig> _allJigs = new();
     private List<TransactionRow> _allTxns = new();
-    private bool _isGuest = false;
+    private List<Jig> _allJigs = new();
+    // Removed unused _isGuest field
 
     protected override void OnInitialized()
     {
@@ -439,15 +420,13 @@ else
     {
         try
         {
-            var jigsTask = Http.GetFromJsonAsync<List<PhysicalJig>>("api/physicaljigs");
-            var specsTask = Http.GetFromJsonAsync<List<JigSpec>>("api/jigspecs");
             var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
+            var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
 
-            await Task.WhenAll(jigsTask, specsTask, txnsTask);
+            await Task.WhenAll(txnsTask, jigsTask);
 
-            _allJigs = await jigsTask ?? new List<PhysicalJig>();
-            _allSpecs = await specsTask ?? new List<JigSpec>();
             _allTxns = await txnsTask ?? new List<TransactionRow>();
+            _allJigs = await jigsTask ?? new List<Jig>();
 
             CalculateStats();
         }
@@ -464,27 +443,30 @@ else
         _totalJigs = _allJigs.Count;
         _availableJigs = _allJigs.Count(j => j.Status == "Available");
         _inUseCount = _allJigs.Count(j => j.Status == "InUse");
-        _actionRequiredCount = _allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair");
+        _actionRequiredCount = _allJigs.Count(j => j.Condition == "NeedsCleaning" || j.Condition == "UnderRepair" || j.Condition == "Broken");
         
         var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-        _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo && t.Action != "CheckInToCleaning");
+        _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo);
 
-        if (_allJigs.Any())
+        if (_totalJigs > 0)
         {
-            _utilizationRate = Math.Round((double)_allJigs.Count(j => j.Status == "InUse") / _allJigs.Count * 100, 1);
-            _repairRate = Math.Round((double)_allJigs.Count(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning") / _allJigs.Count * 100, 1);
+            _utilizationRate = Math.Round((double)_inUseCount * 100 / _totalJigs, 1);
+            _repairRate = Math.Round((double)_actionRequiredCount * 100 / _totalJigs, 1);
         }
-        
-        _actionRequiredList = _allJigs
-            .Where(j => j.Status == "Evaluation" || j.Condition == "Broken" || j.Condition == "UnderRepair" || j.Condition == "NeedsCleaning")
-            .OrderBy(j => j.Status)
-            .ToList();
+        else
+        {
+            _utilizationRate = 0;
+            _repairRate = 0;
+        }
 
         // Calculate Analytics
         var checkouts = _allTxns.Where(t => t.Action == "CheckOut").ToList();
         _totalCheckouts = checkouts.Count;
         _topUsedJigs = checkouts
-            .GroupBy(t => t.JigId?.ToUpperInvariant())
+            .GroupBy(t => {
+                var jig = _allJigs.FirstOrDefault(j => j.Uid == t.JigUid);
+                return jig?.Id ?? t.JigUid ?? "UNKNOWN";
+            })
             .Select(g => new { JigId = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(5)
@@ -540,10 +522,6 @@ else
 
         sb.AppendLine("Action Required / Broken");
         sb.AppendLine("JigId,SpecId,Condition,Status");
-        foreach(var jig in _actionRequiredList)
-        {
-            sb.AppendLine($"{jig.Id},{jig.SpecId},{jig.Condition},{jig.Status}");
-        }
 
         var csvContent = sb.ToString();
         var fileName = $"analytics_report_{DateTime.Now.ToString("yyyyMMdd")}.csv";

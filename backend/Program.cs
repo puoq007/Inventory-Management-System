@@ -7,6 +7,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -20,9 +22,6 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 builder.Services.AddScoped<SeedDataService>();
 
-// Required for ExcelDataReader
-System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-builder.Services.AddScoped<ExcelImportService>();
 
 builder.Services.AddCors(options =>
 {

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using shared.Models;
-using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
@@ -24,141 +23,138 @@ namespace backend.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<TransactionRow>> PostTransaction(TransactionRow transaction)
         {
+            SanitizeTransaction(transaction);
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
-
             return CreatedAtAction(nameof(GetTransactions), new { id = transaction.Id }, transaction);
         }
 
-        [HttpPost("checkout")]
-        [Authorize(Roles = "Admin,ProdLead,Operator")]
-        public async Task<ActionResult> CheckOut([FromBody] CheckoutRequest req)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTransaction(string id)
         {
-            req.JigId = req.JigId?.ToUpperInvariant();
-            var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
-            if (jig == null) return NotFound("Jig not found.");
-            if (jig.Status == "InUse") return BadRequest("Jig is already checked out.");
+            var txn = await _context.Transactions.FindAsync(id);
+            if (txn == null) return NotFound();
+            _context.Transactions.Remove(txn);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        [HttpPost("checkout")]
+        public async Task<IActionResult> CheckOut([FromBody] ScanRequest request)
+        {
+            var jigId = CleanAllSpaces(request.JigId)?.ToUpperInvariant();
+            if (string.IsNullOrEmpty(jigId)) return BadRequest("Jig ID is required");
+
+            var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
+            if (jig == null) return NotFound($"Jig '{jigId}' not found");
+
+            if (jig.Status == "InUse") return BadRequest("Jig is already checked out");
 
             jig.Status = "InUse";
-            jig.CurrentDestination = req.Destination;
+            jig.LocatorId = request.Destination; // Store production zone name
+            jig.UpdatedAt = DateTime.UtcNow;
 
-            var transaction = new TransactionRow
+            var txn = new TransactionRow
             {
-                JigId = req.JigId,
+                JigUid = jig.Uid,
                 Action = "CheckOut",
-                Destination = req.Destination,
-                User = req.User,
+                Destination = request.Destination ?? "Production",
+                User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
             };
 
-            _context.Transactions.Add(transaction);
+            _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(transaction);
+            return Ok(new { message = "Checked out successfully", jig });
         }
-        
+
         [HttpPost("checkin")]
-        [Authorize(Roles = "Admin,ProdLead,Operator")]
-        public async Task<ActionResult> CheckIn([FromBody] CheckinRequest req)
+        public async Task<IActionResult> CheckIn([FromBody] ScanRequest request)
         {
-            req.JigId = req.JigId?.ToUpperInvariant();
-            var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
-            if (jig == null) return NotFound("Jig not found.");
-            
-            // Allow going to cleaning from any state (Available, InUse, etc) so dusty jigs can be cleaned.
-            if (jig.Status == "Cleaning" && jig.LocatorId == req.LocatorId) 
-                return BadRequest("Jig is already at this cleaning station.");
+            var jigId = CleanAllSpaces(request.JigId)?.ToUpperInvariant();
+            if (string.IsNullOrEmpty(jigId)) return BadRequest("Jig ID is required");
 
-            if (string.IsNullOrEmpty(req.LocatorId))
-                return BadRequest("Destination locator is required.");
-
-            var cleaningLoc = await _context.Locators.FindAsync(req.LocatorId);
-            if (cleaningLoc == null)
-                return BadRequest($"Invalid cleaning destination: Locator '{req.LocatorId}' not found in database.");
-            if (cleaningLoc.Type != "Cleaning")
-                return BadRequest($"Invalid cleaning destination: Locator '{req.LocatorId}' has type '{cleaningLoc.Type}' instead of 'Cleaning'.");
+            var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
+            if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
             jig.Status = "Cleaning";
-            jig.CurrentDestination = "";
-            jig.LocatorId = req.LocatorId;
+            jig.Condition = "NeedsCleaning";
+            jig.LocatorId = request.LocatorId; // Cleaning station ID
+            jig.UpdatedAt = DateTime.UtcNow;
 
-            var transaction = new TransactionRow
+            var txn = new TransactionRow
             {
-                JigId = req.JigId,
+                JigUid = jig.Uid,
                 Action = "CheckInToCleaning",
-                Destination = req.LocatorId,
-                User = req.User,
+                Destination = "Cleaning Station",
+                User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
             };
 
-            _context.Transactions.Add(transaction);
+            _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(transaction);
+            return Ok(new { message = "Checked in to cleaning successfully", jig });
         }
 
         [HttpPost("returntostore")]
-        [Authorize(Roles = "Admin,ProdLead,Operator")]
-        public async Task<ActionResult> ReturnToStore([FromBody] ReturnToStoreRequest req)
+        public async Task<IActionResult> ReturnToStore([FromBody] ScanRequest request)
         {
-            req.JigId = req.JigId?.ToUpperInvariant();
-            var jig = await _context.PhysicalJigs.FindAsync(req.JigId);
-            if (jig == null) return NotFound("Jig not found.");
-            
-            if (jig.Status == "Available" && jig.LocatorId == req.LocatorId) 
-                return BadRequest("Jig is already stored at this location.");
+            var jigId = CleanAllSpaces(request.JigId)?.ToUpperInvariant();
+            if (string.IsNullOrEmpty(jigId)) return BadRequest("Jig ID is required");
 
-            if (string.IsNullOrEmpty(req.LocatorId))
-                return BadRequest("Destination locator is required.");
-
-            var storeLoc = await _context.Locators.FindAsync(req.LocatorId);
-            if (storeLoc == null)
-                return BadRequest($"Invalid storage destination: Locator '{req.LocatorId}' not found in database.");
-            if (storeLoc.Type == "Production" || storeLoc.Type == "Cleaning")
-                return BadRequest($"Invalid storage destination: Locator '{req.LocatorId}' is a {storeLoc.Type} zone, not a storage location.");
+            var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
+            if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
             jig.Status = "Available";
-            jig.LocatorId = req.LocatorId;
-            jig.HomeLocatorId = req.LocatorId; // Update home locator to wherever they put it back
-            jig.Condition = "Good"; // Auto-reset condition when securely stored in cabinet
+            jig.Condition = "Good";
+            jig.LocatorId = request.LocatorId; // Storage locator ID
+            jig.UpdatedAt = DateTime.UtcNow;
 
-            var transaction = new TransactionRow
+            var txn = new TransactionRow
             {
-                JigId = req.JigId,
+                JigUid = jig.Uid,
                 Action = "ReturnToStore",
-                Destination = req.LocatorId,
-                User = req.User,
+                Destination = "Storage",
+                User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
             };
 
-            _context.Transactions.Add(transaction);
+            _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(transaction);
-        }
-        
-        public class CheckoutRequest
-        {
-            public string JigId { get; set; } = "";
-            public string User { get; set; } = "";
-            public string Destination { get; set; } = "";
+            return Ok(new { message = "Returned to store successfully", jig });
         }
 
-        public class CheckinRequest
+        public class ScanRequest
         {
             public string JigId { get; set; } = "";
             public string User { get; set; } = "";
-            public string LocatorId { get; set; } = "";
+            public string? Destination { get; set; }
+            public string? LocatorId { get; set; }
         }
 
-        public class ReturnToStoreRequest
+        private void SanitizeTransaction(TransactionRow txn)
         {
-            public string JigId { get; set; } = "";
-            public string User { get; set; } = "";
-            public string LocatorId { get; set; } = "";
+            if (txn == null) return;
+            txn.User = NormalizeSpaces(txn.User) ?? "Unknown";
+            txn.Action = NormalizeSpaces(txn.Action) ?? "Unknown";
+            txn.Destination = NormalizeSpaces(txn.Destination) ?? "";
+            txn.JigUid = CleanAllSpaces(txn.JigUid) ?? "";
+        }
+
+        private string? CleanAllSpaces(string? val)
+        {
+            if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
+            return new string(val.Where(c => !char.IsWhiteSpace(c)).ToArray());
+        }
+
+        private string? NormalizeSpaces(string? val)
+        {
+            if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
+            return System.Text.RegularExpressions.Regex.Replace(val.Trim(), @"\s+", " ");
         }
     }
 }

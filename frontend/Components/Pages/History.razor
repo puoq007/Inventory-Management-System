@@ -84,9 +84,9 @@ else
                 <tbody class="bg-white divide-y divide-slate-200">
                     @foreach (var txn in _displayTransactions ?? Enumerable.Empty<TransactionRow>())
                     {
-                        var jig = _allJigs.FirstOrDefault(j => string.Equals(j.Id, txn.JigId, StringComparison.OrdinalIgnoreCase));
-                        var spec = jig != null ? _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId) : null;
-                        var specName = spec?.Name ?? "Unknown";
+                        var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
+                        var jigIdDisplay = jig?.Id ?? txn.JigUid;
+                        var specName = jig?.SmartCodeName ?? "Unknown";
 
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
@@ -94,7 +94,7 @@ else
                                 <div class="text-xs text-slate-400">@txn.Timestamp.ToString("HH:mm:ss")</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-mono text-sm font-semibold text-slate-900 border border-slate-200 bg-slate-100 px-2 py-1 rounded mr-2">@txn.JigId</span>
+                                <span class="font-mono text-sm font-semibold text-slate-900 border border-slate-200 bg-slate-100 px-2 py-1 rounded mr-2">@txn.JigUid</span>
                                 <span class="text-xs text-slate-500">(@specName)</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -157,9 +157,8 @@ else
     private string _searchQuery = "";
     private IEnumerable<TransactionRow>? _displayTransactions;
     private bool _hasTransactions = false;
-    private List<PhysicalJig> _allJigs = new();
-    private List<JigSpec> _allSpecs = new();
     private List<TransactionRow> _allTransactions = new();
+    private List<Jig> _allJigs = new();
 
     protected override void OnInitialized()
     {
@@ -196,14 +195,12 @@ else
         try
         {
             var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
-            var jigsTask = Http.GetFromJsonAsync<List<PhysicalJig>>("api/physicaljigs");
-            var specsTask = Http.GetFromJsonAsync<List<JigSpec>>("api/jigspecs");
+            var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
 
-            await Task.WhenAll(txnsTask, jigsTask, specsTask);
+            await Task.WhenAll(txnsTask, jigsTask);
 
             _allTransactions = await txnsTask ?? new List<TransactionRow>();
-            _allJigs = await jigsTask ?? new List<PhysicalJig>();
-            _allSpecs = await specsTask ?? new List<JigSpec>();
+            _allJigs = await jigsTask ?? new List<Jig>();
 
             FilterData();
         }
@@ -225,25 +222,28 @@ else
 
         var lowerQuery = _searchQuery.ToLowerInvariant();
         _displayTransactions = _allTransactions.Where(t => 
-            t.JigId.ToLowerInvariant().Contains(lowerQuery) ||
-            t.Action.ToLowerInvariant().Contains(lowerQuery) ||
-            t.User.ToLowerInvariant().Contains(lowerQuery)
-        ).ToList();
+        {
+            var jig = _allJigs.FirstOrDefault(j => j.Uid == t.JigUid);
+            return (jig?.Id?.ToLowerInvariant().Contains(lowerQuery) == true) ||
+                   (t.JigUid?.ToLowerInvariant().Contains(lowerQuery) == true) ||
+                   t.Action.ToLowerInvariant().Contains(lowerQuery) ||
+                   t.User.ToLowerInvariant().Contains(lowerQuery);
+        }).ToList();
     }
 
     private async Task ExportCsv()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Timestamp,JigId,SpecName,Action,User");
+        sb.AppendLine("Timestamp,JigUid,SpecName,Action,User");
 
         foreach (var txn in _allTransactions)
         {
-            var jig = _allJigs.FirstOrDefault(j => string.Equals(j.Id, txn.JigId, StringComparison.OrdinalIgnoreCase));
-            var spec = jig != null ? _allSpecs.FirstOrDefault(s => s.Id == jig.SpecId) : null;
-            var specName = spec?.Name ?? "Unknown";
+            var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
+            var jigIdDisplay = jig?.Id ?? txn.JigUid;
+            var specName = jig?.SmartCodeName ?? "Unknown";
 
             var timeStr = txn.Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
-            sb.AppendLine($"{timeStr},{txn.JigId},{specName},{txn.Action},{txn.User}");
+            sb.AppendLine($"{timeStr},{jigIdDisplay},{specName},{txn.Action},{txn.User}");
         }
 
         var csvContent = sb.ToString();

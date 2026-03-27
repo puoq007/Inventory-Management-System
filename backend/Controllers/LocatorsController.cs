@@ -93,19 +93,7 @@ public class LocatorsController : ControllerBase
                 _context.Locators.Add(newLocator);
                 await _context.SaveChangesAsync();
 
-                // 2. Migrate PhysicalJigs references
-                var jigsToUpdate = await _context.PhysicalJigs
-                    .Where(j => j.LocatorId == oldId || j.HomeLocatorId == oldId)
-                    .ToListAsync();
-
-                foreach (var jig in jigsToUpdate)
-                {
-                    if (jig.LocatorId     == oldId) jig.LocatorId     = newId;
-                    if (jig.HomeLocatorId == oldId) jig.HomeLocatorId = newId;
-                }
-                await _context.SaveChangesAsync();
-
-                // 3. Delete old locator
+                // 2. Delete old locator
                 _context.Locators.Remove(existing);
                 await _context.SaveChangesAsync();
 
