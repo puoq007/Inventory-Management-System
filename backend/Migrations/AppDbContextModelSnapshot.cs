@@ -98,6 +98,48 @@ namespace backend.Migrations
                     b.ToTable("Jigs");
                 });
 
+            modelBuilder.Entity("shared.Models.JigPartMapping", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PartNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ToolNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ToolNo", "PartNumber")
+                        .IsUnique();
+
+                    b.ToTable("JigPartMappings");
+                });
+
+            modelBuilder.Entity("shared.Models.JigToyMapping", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ToolNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ToyNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ToolNo", "ToyNumber")
+                        .IsUnique();
+
+                    b.ToTable("JigToyMappings");
+                });
+
             modelBuilder.Entity("shared.Models.Locator", b =>
                 {
                     b.Property<string>("Id")
@@ -126,6 +168,19 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Locators");
+                });
+
+            modelBuilder.Entity("shared.Models.PartMaster", b =>
+                {
+                    b.Property<string>("PartNumber")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ToyNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PartNumber");
+
+                    b.ToTable("PartMasters");
                 });
 
             modelBuilder.Entity("shared.Models.TransactionRow", b =>
