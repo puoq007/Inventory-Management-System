@@ -19,8 +19,49 @@ public class Locator
     public string Position { get; set; } = ""; // e.g., "1", "2", ... "10"
     public string Type { get; set; } = "Store"; // Store, Production, Cleaning
 
+    public string GetGeneratedId()
+    {
+        string s = (Site ?? "").Trim();
+        string c = (Cabinet ?? "").Trim();
+        string h = (Shelf ?? "").Trim();
+
+        if (string.IsNullOrEmpty(s) && string.IsNullOrEmpty(c) && string.IsNullOrEmpty(h))
+            return Id; // Keep current ID if everything is empty (shouldn't happen on new/save)
+
+        // Pattern: MBK{Site}-{Cabinet}-{Shelf}
+        // If Cabinet or Shelf is "-", we might omit them or keep them?
+        // Let's stick to the user's "MBK1-AO-1" example.
+        string final = $"MBK{s}";
+        if (!string.IsNullOrEmpty(c)) final += $"-{c}";
+        if (!string.IsNullOrEmpty(h)) final += $"-{h}";
+        return final;
+    }
+
     public string GetName(string lang) => (Cabinet == "-") ? $"{Site} {Shelf}" : (lang == "TH" ? $"{Site} ตู้ {Cabinet} ชั้น {Shelf}" : $"{Site} Cabinet {Cabinet} Shelf {Shelf}");
     public string Name => GetName("EN");
+}
+
+public class PartMaster
+{
+    [Key]
+    public string PartNumber { get; set; } = string.Empty;
+    public string? ToyNumber { get; set; }
+}
+
+public class JigPartMapping
+{
+    [Key]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string ToolNo { get; set; } = string.Empty; // Maps to Jig.ToolNo
+    public string PartNumber { get; set; } = string.Empty; // Maps to PartMaster.PartNumber
+}
+
+public class JigToyMapping
+{
+    [Key]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string ToolNo { get; set; } = string.Empty; // Maps to Jig.ToolNo
+    public string ToyNumber { get; set; } = string.Empty;
 }
 
 public class TransactionRow
