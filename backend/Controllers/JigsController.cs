@@ -23,6 +23,132 @@ public class JigsController : ControllerBase
         return await _context.Jigs.ToListAsync();
     }
 
+    [HttpGet("parts")]
+    public async Task<ActionResult<IEnumerable<PartMaster>>> GetAllParts()
+    {
+        return await _context.PartMasters.ToListAsync();
+    }
+
+    [HttpGet("parts/{toolNo}")]
+    public async Task<ActionResult<IEnumerable<PartMaster>>> GetPartsForTool(string toolNo)
+    {
+        var partNumbers = await _context.JigPartMappings
+            .Where(m => m.ToolNo == toolNo)
+            .Select(m => m.PartNumber)
+            .ToListAsync();
+            
+        return await _context.PartMasters
+            .Where(p => partNumbers.Contains(p.PartNumber))
+            .ToListAsync();
+    }
+
+    [HttpPost("parts/{toolNo}")]
+    public async Task<IActionResult> UpdatePartsForTool(string toolNo, [FromBody] List<PartMaster> parts)
+    {
+        if (string.IsNullOrWhiteSpace(toolNo)) return BadRequest();
+        
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.PartNumber))
+                         .GroupBy(p => p.PartNumber)
+                         .Select(g => g.First())
+                         .ToList();
+
+            foreach (var part in parts)
+            {
+                var existing = await _context.PartMasters.FindAsync(part.PartNumber);
+                if (existing == null)
+                {
+                    _context.PartMasters.Add(new PartMaster { PartNumber = part.PartNumber, ToyNumber = "-" });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            var oldMappings = await _context.JigPartMappings.Where(m => m.ToolNo == toolNo).ToListAsync();
+            _context.JigPartMappings.RemoveRange(oldMappings);
+
+            foreach (var part in parts)
+            {
+                _context.JigPartMappings.Add(new JigPartMapping { ToolNo = toolNo, PartNumber = part.PartNumber });
+            }
+            
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpGet("toys/{toolNo}")]
+    public async Task<ActionResult<IEnumerable<string>>> GetToysForTool(string toolNo)
+    {
+        var toys = await _context.JigToyMappings
+            .Where(m => m.ToolNo == toolNo)
+            .Select(m => m.ToyNumber)
+            .ToListAsync();
+
+        // On-demand migration: If no toys in the new table, check PartMaster through JigPartMapping
+        if (!toys.Any())
+        {
+            var legacyToys = await _context.JigPartMappings
+                .Where(m => m.ToolNo == toolNo)
+                .Join(_context.PartMasters, m => m.PartNumber, p => p.PartNumber, (m, p) => p.ToyNumber)
+                .Where(t => !string.IsNullOrEmpty(t) && t != "-")
+                .Distinct()
+                .ToListAsync();
+            
+            if (legacyToys.Any())
+            {
+                // Auto-populate the new table for next time
+                foreach (var t in legacyToys)
+                {
+                    if (t != null) _context.JigToyMappings.Add(new JigToyMapping { ToolNo = toolNo, ToyNumber = t });
+                }
+                await _context.SaveChangesAsync();
+                return legacyToys!;
+            }
+        }
+
+        return toys;
+    }
+
+    [HttpPost("toys/{toolNo}")]
+    public async Task<IActionResult> UpdateToysForTool(string toolNo, [FromBody] List<string> toys)
+    {
+        if (string.IsNullOrWhiteSpace(toolNo)) return BadRequest();
+        
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            toys = toys.Where(t => !string.IsNullOrWhiteSpace(t))
+                       .Select(t => t.Trim())
+                       .Distinct()
+                       .ToList();
+
+            var oldMappings = await _context.JigToyMappings.Where(m => m.ToolNo == toolNo).ToListAsync();
+            _context.JigToyMappings.RemoveRange(oldMappings);
+
+            foreach (var toy in toys)
+            {
+                _context.JigToyMappings.Add(new JigToyMapping { ToolNo = toolNo, ToyNumber = toy });
+            }
+            
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, ex.Message);
+        }
+    }
+
     [HttpGet("{uid}")]
     public async Task<ActionResult<Jig>> GetJig(string uid)
     {
@@ -160,6 +286,8 @@ public class JigsController : ControllerBase
 
         // For sequential ID tracking in same batch
         var nextSuffixMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var partMappingsToAdd = new HashSet<(string ToolNo, string PartNumber, string ToyNumber)>();
+        var toyMappingsToAdd = new HashSet<(string ToolNo, string ToyNumber)>();
 
         try
         {
@@ -197,10 +325,28 @@ public class JigsController : ControllerBase
                     // Helper to get value by fuzzy matching and handling duplicates
                     string GetVal(string key, int occurrence = 0) {
                         var std = key.Replace(".", "").Replace(" ", "").ToLower();
-                        if (colMap.TryGetValue(std, out var indices) && occurrence < indices.Count) {
-                            var idx = indices[occurrence];
-                            return reader.GetValue(idx)?.ToString()?.Trim() ?? "";
+                        
+                        // Try exact standardized match
+                        if (colMap.TryGetValue(std, out var indices)) {
+                            if (occurrence < indices.Count) return reader.GetValue(indices[occurrence])?.ToString()?.Trim() ?? "";
                         }
+                        
+                        // Try common abbreviations
+                        var altKeys = new Dictionary<string, string> {
+                            { "toynumber", "toyno" },
+                            { "partnumber", "partno" },
+                            { "toolno", "toolnumber" }
+                        };
+                        
+                        foreach (var alt in altKeys) {
+                            if (std == alt.Key && colMap.TryGetValue(alt.Value, out var altIndices)) {
+                                if (occurrence < altIndices.Count) return reader.GetValue(altIndices[occurrence])?.ToString()?.Trim() ?? "";
+                            }
+                            if (std == alt.Value && colMap.TryGetValue(alt.Key, out var primaryIndices)) {
+                                if (occurrence < primaryIndices.Count) return reader.GetValue(primaryIndices[occurrence])?.ToString()?.Trim() ?? "";
+                            }
+                        }
+                        
                         return "";
                     }
 
@@ -223,6 +369,15 @@ public class JigsController : ControllerBase
                     var rev = GetVal("Rev.");
 
                     if (string.IsNullOrEmpty(toolNo) && string.IsNullOrEmpty(toyNumber) && string.IsNullOrEmpty(partNumber)) continue;
+                    
+                    if (!string.IsNullOrWhiteSpace(toolNo))
+                    {
+                        if (!string.IsNullOrWhiteSpace(partNumber))
+                            partMappingsToAdd.Add((toolNo.Trim(), partNumber.Trim(), (toyNumber ?? "").Trim()));
+                        
+                        if (!string.IsNullOrWhiteSpace(toyNumber))
+                            toyMappingsToAdd.Add((toolNo.Trim(), toyNumber.Trim()));
+                    }
 
                     // Re-generate SmartCodeName based on the same logic as UI
                     var smartCodeParts = new List<string>();
@@ -308,6 +463,39 @@ public class JigsController : ControllerBase
             }
 
             await _context.SaveChangesAsync();
+
+            // Process Part Mappings
+            foreach (var map in partMappingsToAdd)
+            {
+                var partMaster = await _context.PartMasters.FindAsync(map.PartNumber);
+                if (partMaster == null) 
+                {
+                    _context.PartMasters.Add(new PartMaster { PartNumber = map.PartNumber, ToyNumber = string.IsNullOrWhiteSpace(map.ToyNumber) ? "-" : map.ToyNumber });
+                    await _context.SaveChangesAsync();
+                }
+                else if ((partMaster.ToyNumber == "-" || string.IsNullOrWhiteSpace(partMaster.ToyNumber)) && !string.IsNullOrWhiteSpace(map.ToyNumber))
+                {
+                    partMaster.ToyNumber = map.ToyNumber; 
+                    await _context.SaveChangesAsync();
+                }
+
+                if (!await _context.JigPartMappings.AnyAsync(m => m.ToolNo == map.ToolNo && m.PartNumber == map.PartNumber))
+                {
+                    _context.JigPartMappings.Add(new JigPartMapping { ToolNo = map.ToolNo, PartNumber = map.PartNumber });
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // Process Toy Mappings
+            foreach (var map in toyMappingsToAdd)
+            {
+                if (!await _context.JigToyMappings.AnyAsync(m => m.ToolNo == map.ToolNo && m.ToyNumber == map.ToyNumber))
+                {
+                    _context.JigToyMappings.Add(new JigToyMapping { ToolNo = map.ToolNo, ToyNumber = map.ToyNumber });
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             return Ok(new { inserted, updated, errors });
         }
         catch (Exception ex)

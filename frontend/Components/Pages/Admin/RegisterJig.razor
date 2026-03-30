@@ -7,11 +7,11 @@
 @inject IJSRuntime JSRuntime
 @inject LanguageService Lang
 
-<PageTitle>@Lang.T("จัดการจิ๊ก (Jigs Master)", "Jigs Master") | Inventory</PageTitle>
+<PageTitle>@Lang.T("การจัดการ Jig", "Jigs Management") | Inventory</PageTitle>
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("จัดการจิ๊ก (Jigs Master)", "Jigs Master")</h1>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("การจัดการ Jig", "Jigs Management")</h1>
         <p class="text-slate-500">@Lang.T("ลงทะเบียนจิ๊กใหม่และดูรายละเอียดทั้งหมดแบบตาราง", "Register and view all jigs in a data table.")</p>
     </div>
     
@@ -127,14 +127,14 @@
 @if (_showModal)
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[95vh]">
-            <div class="p-6 border-b border-slate-100 shrink-0">
+        <div class="relative w-full max-w-xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-100 shrink-0 bg-white z-10">
                 <h3 class="text-2xl font-bold text-slate-900">@Lang.T(_isEditMode ? "แก้ไขข้อมูลจิ๊ก" : "ลงทะเบียนจิ๊กใหม่", _isEditMode ? "Edit Jig" : "Register New Jig")</h3>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-1">
+            <div class="p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0 w-full custom-scrollbar" style="max-height: calc(90vh - 140px);">
                 @if (!string.IsNullOrEmpty(_modalError))
-                { <div class="mb-4 p-4 bg-red-50 text-red-700 rounded">@_modalError</div> }
+                { <div class="mb-4 p-4 bg-red-50 text-red-700 rounded-xl">@_modalError</div> }
 
                 <EditForm Model="_editingJig" OnValidSubmit="SaveJig">
                     <div class="flex flex-col gap-4">
@@ -149,14 +149,14 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-blue-800 mb-1">Smart Code Preview</label>
-                                    <div class="w-full px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-blue-900 font-mono text-xs min-h-[32px] flex items-center">
+                                    <div class="w-full px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-blue-900 font-mono text-xs min-h-[32px] flex items-center shadow-inner break-words">
                                         @GenerateSmartCodePreview()
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Smart Code Specs -->
+                        <!-- Specifications -->
                         <div class="pb-3 border-b border-slate-100">
                             <h3 class="text-sm font-bold text-slate-800 mb-2">Specifications</h3>
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -173,15 +173,50 @@
                             </div>
                         </div>
 
-                        <!-- Extra info -->
+                        <!-- Other References -->
                         <div>
                             <h3 class="text-sm font-bold text-slate-800 mb-2">Other References</h3>
+                            
+                            <!-- Part Numbers -->
+                            <div class="mb-3">
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Compatible Part Numbers (Press Enter)</label>
+                                <input type="text" @bind="_newPartInput" @onkeydown="HandlePartKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. P-1234" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
+                                @if (_compatiblePartsModel.Any())
+                                {
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        @foreach (var part in _compatiblePartsModel)
+                                        {
+                                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-gray-100 border border-gray-200 text-gray-700">
+                                                <span>@part.PartNumber</span>
+                                                <button type="button" @onclick="() => RemovePartNumber(part.PartNumber)" class="text-gray-400 hover:text-red-500 font-bold">×</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Toy Numbers -->
+                            <div class="mb-3">
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Compatible Toy Numbers (Press Enter)</label>
+                                <input type="text" @bind="_newToyInput" @onkeydown="HandleToyKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. T-5678" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
+                                @if (_compatibleToysModel.Any())
+                                {
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        @foreach (var toy in _compatibleToysModel)
+                                        {
+                                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-gray-100 border border-gray-200 text-gray-700">
+                                                <span>@toy</span>
+                                                <button type="button" @onclick="() => RemoveToyNumber(toy)" class="text-gray-400 hover:text-red-500 font-bold">×</button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Toy Number</label><input type="text" @bind="_editingJig.ToyNumber" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Part Number</label><input type="text" @bind="_editingJig.PartNumber" class="w-full px-2 py-1 border rounded text-sm" /></div>
                                 <div>
                                     <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Locator</label>
-                                    <select @bind="_editingJig.LocatorId" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <select @bind="_editingJig.LocatorId" class="w-full px-2 py-1.5 border rounded text-sm bg-white">
                                         <option value="">-- No Location --</option>
                                         @foreach (var loc in _allLocators)
                                         {
@@ -189,7 +224,7 @@
                                         }
                                     </select>
                                 </div>
-                                <div class="col-span-2"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Rev.</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Rev.</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
                             </div>
                         </div>
                     </div>
@@ -197,7 +232,7 @@
                 </EditForm>
             </div>
             
-            <div class="p-6 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+            <div class="p-6 flex justify-end gap-3 bg-slate-50 border-t border-slate-100 rounded-b-2xl shrink-0 w-full z-10">
                 <button @onclick="CloseModal" class="px-5 py-2.5 bg-white border rounded-xl hover:bg-slate-100">Cancel</button>
                 <button disabled="@_isSubmitting" onclick="document.getElementById('hiddenSubmitBtn').click()" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
                     @(_isSubmitting ? "Saving..." : "Save Jig")
@@ -221,6 +256,11 @@
     private string _modalError = "";
     private Jig _editingJig = new Jig { Status = "Available", Condition = "Good" };
     private HashSet<string> _selectedJigIds = new();
+    
+    private List<PartMaster> _compatiblePartsModel = new();
+    private List<string> _compatibleToysModel = new();
+    private string _newPartInput = "";
+    private string _newToyInput = "";
 
     protected override void OnInitialized() { Lang.OnChange += StateHasChanged; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -259,6 +299,10 @@
         _isEditMode = false;
         _editingJig = new Jig { Status = "Available", Condition = "Good" };
         _modalError = "";
+        _compatiblePartsModel.Clear();
+        _compatibleToysModel.Clear();
+        _newPartInput = "";
+        _newToyInput = "";
         _showModal = true;
     }
 
@@ -287,7 +331,85 @@
             LocatorId = jig.LocatorId 
         };
         _modalError = "";
+        _compatiblePartsModel.Clear();
+        _compatibleToysModel.Clear();
+        _newPartInput = "";
+        _newToyInput = "";
         _showModal = true;
+        
+        // Fire and forget data loading for mapped parts/toys
+        _ = LoadPartsForJig(_editingJig.ToolNo);
+        _ = LoadToysForJig(_editingJig.ToolNo);
+    }
+
+    private async Task LoadPartsForJig(string toolNo)
+    {
+        if (string.IsNullOrWhiteSpace(toolNo)) return;
+        try
+        {
+            var parts = await Http.GetFromJsonAsync<List<PartMaster>>($"api/jigs/parts/{toolNo}");
+            if (parts != null) 
+            {
+                _compatiblePartsModel = parts;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch { /* ignore */ }
+    }
+
+    private async Task LoadToysForJig(string toolNo)
+    {
+        if (string.IsNullOrWhiteSpace(toolNo)) return;
+        try
+        {
+            var toys = await Http.GetFromJsonAsync<List<string>>($"api/jigs/toys/{toolNo}");
+            if (toys != null) 
+            {
+                _compatibleToysModel = toys;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch { /* ignore */ }
+    }
+
+    private void AddPartNumber()
+    {
+        var p = CleanAllSpaces(_newPartInput) ?? "";
+        if (!string.IsNullOrWhiteSpace(p) && !_compatiblePartsModel.Any(x => x.PartNumber.Equals(p, StringComparison.OrdinalIgnoreCase)))
+        {
+            _compatiblePartsModel.Add(new PartMaster { PartNumber = p, ToyNumber = "-" });
+        }
+        _newPartInput = "";
+    }
+
+    private void RemovePartNumber(string part)
+    {
+        _compatiblePartsModel.RemoveAll(x => x.PartNumber == part);
+    }
+
+    private void AddToyNumber()
+    {
+        var t = CleanAllSpaces(_newToyInput) ?? "";
+        if (!string.IsNullOrWhiteSpace(t) && !_compatibleToysModel.Any(x => x.Equals(t, StringComparison.OrdinalIgnoreCase)))
+        {
+            _compatibleToysModel.Add(t);
+        }
+        _newToyInput = "";
+    }
+
+    private void RemoveToyNumber(string toy)
+    {
+        _compatibleToysModel.RemoveAll(x => x == toy);
+    }
+
+    private void HandlePartKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") AddPartNumber();
+    }
+
+    private void HandleToyKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") AddToyNumber();
     }
 
     private void CloseModal() => _showModal = false;
@@ -332,6 +454,12 @@
         _editingJig.Condition = CleanAllSpaces(_editingJig.Condition) ?? "Good";
 
         if (string.IsNullOrWhiteSpace(_editingJig.Id)) { _modalError = "ID Required"; return; }
+        if (string.IsNullOrWhiteSpace(_editingJig.ToolNo)) { _modalError = "Tool No Required for Product Mapping"; return; }
+        
+        // Auto-fill legacy Toy/Part fields based on first mapping if available (for list view)
+        _editingJig.PartNumber = _compatiblePartsModel.FirstOrDefault()?.PartNumber ?? "";
+        _editingJig.ToyNumber = _compatibleToysModel.FirstOrDefault() ?? "";
+
         _isSubmitting = true; _modalError = "";
         try
         {
@@ -339,7 +467,16 @@
             var response = _isEditMode 
                 ? await Http.PutAsJsonAsync($"api/jigs/{_editingJig.Uid}", _editingJig) 
                 : await Http.PostAsJsonAsync("api/jigs", _editingJig);
-            if (response.IsSuccessStatusCode) { await LoadData(); _showModal = false; }
+                
+            if (response.IsSuccessStatusCode) 
+            { 
+                // Save independent mappings
+                await Http.PostAsJsonAsync($"api/jigs/parts/{_editingJig.ToolNo}", _compatiblePartsModel);
+                await Http.PostAsJsonAsync($"api/jigs/toys/{_editingJig.ToolNo}", _compatibleToysModel);
+
+                await LoadData(); 
+                _showModal = false; 
+            }
             else { _modalError = await response.Content.ReadAsStringAsync(); }
         }
         catch (Exception ex) { _modalError = ex.Message; }
@@ -429,7 +566,15 @@
     {
         var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
         var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-        var data = new { id = jig.Id, toyNumber = jig.ToyNumber, partNumber = jig.PartNumber, part = jig.PartType, stepPrint = jig.StepPrint, jigType = jig.JigType };
+        var data = new { 
+            id = jig.Id, 
+            date = jig.Date, 
+            feed = jig.Feed, 
+            scan = jig.Scan, 
+            heightJig = jig.HeightJig,
+            stepPrint = jig.StepPrint, 
+            jigType = jig.JigType 
+        };
         await JSRuntime.InvokeVoidAsync("printQR", svgStr, data);
     }
 
@@ -443,7 +588,16 @@
             if (jig == null) continue;
             var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
             var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
-            qrList.Add(new { id = jig.Id, svg = svgStr, toyNumber = jig.ToyNumber, partNumber = jig.PartNumber, part = jig.PartType, stepPrint = jig.StepPrint, jigType = jig.JigType });
+            qrList.Add(new { 
+                id = jig.Id, 
+                svg = svgStr, 
+                date = jig.Date, 
+                feed = jig.Feed, 
+                scan = jig.Scan, 
+                heightJig = jig.HeightJig,
+                stepPrint = jig.StepPrint, 
+                jigType = jig.JigType 
+            });
         }
         await JSRuntime.InvokeVoidAsync("printQRs", qrList);
         _selectedJigIds.Clear();
