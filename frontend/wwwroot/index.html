@@ -67,22 +67,34 @@
         };
 
         const cssTemplate = `
-            body { font-family: Arial, sans-serif; margin: 0; padding: 0mm; }
+            @page { 
+                size: 4.00in 1.58in;
+                margin: 0; 
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html, body { 
+                margin: 0; 
+                padding: 0; 
+                width: 4.00in;
+                overflow: hidden;
+            }
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            }
             .card { 
                 display: flex; 
                 align-items: center; 
-                border: none; 
-                padding: 2mm 5mm; 
-                width: 75mm; 
-                height: 40mm; 
-                box-sizing: border-box; 
-                gap: 4mm; 
-                margin: 0; 
-                overflow: hidden; 
+                width: 4.00in; 
+                height: 1.58in; 
+                padding: 0;
+                margin-left: -3mm;
                 page-break-after: always;
+                box-sizing: border-box;
+                gap: 2mm;
             }
-            .card:last-child { page-break-after: auto; }
-            .qr { flex-shrink: 0; width: 26mm; height: 26mm; }
+            .qr { flex-shrink: 0; width: 28mm; height: 28mm; display: flex; align-items: center; justify-content: center; }
             .qr svg { width: 100%; height: 100%; }
             .info { 
                 text-align: left; 
@@ -93,15 +105,15 @@
                 justify-content: center; 
                 height: 100%; 
             }
-            .id { font-size: 13pt; font-weight: bold; margin: 0 0 1.2mm 0; line-height: 1.1; display: block; }
-            .row { font-size: 8.5pt; color: #111; margin: 0.2mm 0; line-height: 1.2; word-wrap: break-word; }
-            .label { color: #555; font-weight: normal; font-size: 8pt; text-transform: uppercase; }
+            .id { font-size: 11pt; font-weight: 800; margin: 0 0 1mm 0; line-height: 1.1; display: block; color: #000; }
+            .row { font-size: 7.5pt; color: #000; margin: 0.2mm 0; line-height: 1.2; word-wrap: break-word; font-weight: 600; }
+            .label { color: #333; font-weight: 700; font-size: 7pt; text-transform: uppercase; }
         `;
 
         window.printQR = function (svgHtml, data) {
             const printWnd = window.open('', '_blank', 'width=600,height=500');
             const dateStr = cleanDate(data.date);
-            printWnd.document.write(`
+            printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print QR - ${data.id}</title>
                 <style>${cssTemplate}</style>
@@ -145,7 +157,7 @@
                 `;
             });
 
-            printWnd.document.write(`
+            printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print Physical Jigs QR</title>
                 <style>${cssTemplate}</style>
@@ -161,7 +173,7 @@
 
         window.printLocatorQR = function (svgHtml, data) {
             const printWnd = window.open('', '_blank', 'width=500,height=500');
-            printWnd.document.write(`
+            printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print QR - ${data.id}</title>
                 <style>${cssTemplate}</style>
@@ -202,7 +214,7 @@
                 `;
             });
 
-            printWnd.document.write(`
+            printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print Location QR</title>
                 <style>${cssTemplate}</style>
@@ -220,7 +232,7 @@
         window.startQrScan = function (dotNetHelper, elementId) {
             try {
                 if (scanner) { scanner.clear(); }
-                scanner = new Html5QrcodeScanner(elementId, { 
+                scanner = new Html5QrcodeScanner(elementId, {
                     fps: 10, qrbox: { width: 250, height: 250 },
                     rememberLastUsedCamera: true, aspectRatio: 1.0
                 });
