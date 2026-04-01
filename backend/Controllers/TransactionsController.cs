@@ -136,6 +136,63 @@ namespace backend.Controllers
             public string? LocatorId { get; set; }
         }
 
+        public class ReportIssueRequest
+        {
+            public string JigId { get; set; } = "";
+            public string User { get; set; } = "";
+            public string IssueType { get; set; } = ""; // Broken, NeedsCleaning, Lost
+            public string Remark { get; set; } = "";
+        }
+
+        [HttpPost("reportissue")]
+        public async Task<IActionResult> ReportIssue([FromBody] ReportIssueRequest request)
+        {
+            var jigId = CleanAllSpaces(request.JigId)?.ToUpperInvariant();
+            if (string.IsNullOrEmpty(jigId)) return BadRequest("Jig ID is required");
+
+            var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
+            if (jig == null) return NotFound($"Jig '{jigId}' not found");
+
+            string newStatus;
+            string newCondition;
+
+            switch (request.IssueType)
+            {
+                case "Broken":
+                    newStatus = "Evaluation";
+                    newCondition = "Broken";
+                    break;
+                case "NeedsCleaning":
+                    newStatus = "Cleaning";
+                    newCondition = "NeedsCleaning";
+                    break;
+                case "Lost":
+                    newStatus = "Lost";
+                    newCondition = "Lost";
+                    break;
+                default:
+                    return BadRequest("Invalid Issue Type");
+            }
+
+            jig.Status = newStatus;
+            jig.Condition = newCondition;
+            jig.UpdatedAt = DateTime.UtcNow;
+
+            var txn = new TransactionRow
+            {
+                JigUid = jig.Uid,
+                Action = "ReportIssue",
+                Destination = $"Issue: {request.IssueType} | Remark: {request.Remark}",
+                User = request.User ?? "Unknown",
+                Timestamp = DateTime.Now
+            };
+
+            _context.Transactions.Add(txn);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Issue reported successfully", jig });
+        }
+
         private void SanitizeTransaction(TransactionRow txn)
         {
             if (txn == null) return;

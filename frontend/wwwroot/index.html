@@ -228,6 +228,59 @@
             printWnd.document.close();
         };
 
+        window.printUserQR = function (svgHtml, data) {
+            const printWnd = window.open('', '_blank', 'width=500,height=500');
+            printWnd.document.write(`<!DOCTYPE html>
+                <html>
+                <head><title>Print QR - ${data.id}</title>
+                <style>${cssTemplate}</style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="qr">${svgHtml}</div>
+                        <div class="info">
+                            <span class="id">${data.id}</span>
+                            <div class="row"><span class="label">Name: </span><strong>${data.name || '-'}</strong></div>
+                            <div class="row"><span class="label">Role: </span>${data.role || '-'}</div>
+                        </div>
+                    </div>
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 300); }<\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        };
+
+        window.printUserQRs = function (qrDataList) {
+            const printWnd = window.open('', '_blank', 'width=900,height=800');
+            let contentList = '';
+            qrDataList.forEach(data => {
+                contentList += `
+                    <div class="card">
+                        <div class="qr">${data.svg}</div>
+                        <div class="info">
+                            <span class="id">${data.id}</span>
+                            <div class="row"><span class="label">Name: </span><strong>${data.name || '-'}</strong></div>
+                            <div class="row"><span class="label">Role: </span>${data.role || '-'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            printWnd.document.write(`<!DOCTYPE html>
+                <html>
+                <head><title>Print User QR Badges</title>
+                <style>${cssTemplate}</style>
+                </head>
+                <body>
+                    ${contentList}
+                    <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 600); }<\/script>
+                </body>
+                </html>
+            `);
+            printWnd.document.close();
+        };
+
         let scanner = null;
         window.startQrScan = function (dotNetHelper, elementId) {
             try {

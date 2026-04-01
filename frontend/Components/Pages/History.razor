@@ -110,21 +110,27 @@ else
                                         @Lang.T("คืนเข้าตู้", "Returned")
                                     </span>
                                 }
-                                else if (txn.Action == "ForceCheckIn")
+                                else if (txn.Action == "CheckInToCleaning")
                                 {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                        @Lang.T("บังคับคืน", "Force Returned")
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                        @Lang.T("ส่งล้าง / ตรวจสอบ", "Sent to Cleaning")
+                                    </span>
+                                }
+                                else if (txn.Action == "ReturnToStore")
+                                {
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        @Lang.T("เก็บเข้าตัว/คลัง", "Returned to Store")
                                     </span>
                                 }
                                 else if (txn.Action == "ReportIssue")
                                 {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
                                         @Lang.T("แจ้งพบปัญหา", "Reported Issue")
                                     </span>
                                 }
                                 else if (txn.Action == "Scrapped")
                                 {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
                                         @Lang.T("จำหน่ายออก", "Scrapped")
                                     </span>
                                 }

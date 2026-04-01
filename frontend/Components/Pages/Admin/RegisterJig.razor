@@ -6,6 +6,8 @@
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject LanguageService Lang
+@inject frontend.Services.AuthService Auth
+@inject NavigationManager NavManager
 
 <PageTitle>@Lang.T("การจัดการ Jig", "Jigs Management") | Inventory</PageTitle>
 
@@ -16,15 +18,18 @@
     </div>
     
     <div class="flex gap-2">
-        <label class="cursor-pointer px-5 py-2.5 bg-emerald-600 text-white font-medium text-sm rounded-lg hover:bg-emerald-700 shadow-sm transition-colors flex items-center shrink-0">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            @Lang.T("นำเข้าข้อมูล (Excel)", "Import Excel")
-            <InputFile class="hidden" OnChange="UploadFiles" accept=".xlsx, .xls" />
-        </label>
-        <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center shrink-0">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            @Lang.T("ลงทะเบียนจิ๊กใหม่", "New Jig")
-        </button>
+        @if (_userRole == "Admin" || _userRole == "Engineer")
+        {
+            <label class="cursor-pointer px-5 py-2.5 bg-emerald-600 text-white font-medium text-sm rounded-lg hover:bg-emerald-700 shadow-sm transition-colors flex items-center shrink-0">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                @Lang.T("นำเข้าข้อมูล (Excel)", "Import Excel")
+                <InputFile class="hidden" OnChange="UploadFiles" accept=".xlsx, .xls" />
+            </label>
+            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center shrink-0">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                @Lang.T("ลงทะเบียนจิ๊กใหม่", "New Jig")
+            </button>
+        }
     </div>
 </div>
 
@@ -69,12 +74,12 @@
                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase w-12 shrink-0">
                         <input type="checkbox" checked="@(_displayJigs.Any() && _displayJigs.All(j => _selectedJigIds.Contains(j.Uid)))" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                     </th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Jig ID</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Smart Code Name</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Type / Part</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Locator</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("รหัส JIG", "Jig ID")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ชื่อ Smart Code", "Smart Code Name")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ประเภท / ส่วนประกอบ", "Type / Part")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("สถานะ", "Status")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ตำแหน่ง", "Locator")</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase">@Lang.T("เครื่องมือ", "Actions")</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
@@ -100,17 +105,23 @@
                                 <div class="text-xs text-slate-500 mt-1">@jig.PartType</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full border @(jig.Status == "Available" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800")">
-                                    @jig.Status
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full border @(GetStatusBadgeClass(jig.Status))">
+                                    @Lang.T(GetStatusThai(jig.Status), jig.Status)
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                 @GetLocatorName(jig.LocatorId)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:bg-slate-100 px-2 py-1 rounded mr-2" title="Print QR">QR</button>
-                                <button @onclick="() => OpenEditModal(jig)" class="text-indigo-600 hover:bg-indigo-50 px-2 py-1 rounded">Edit</button>
-                                <button @onclick="() => DeleteJig(jig)" class="text-red-600 hover:bg-red-50 px-2 py-1 rounded">Delete</button>
+                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                    <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                    QR
+                                </button>
+                                @if (_userRole == "Admin" || _userRole == "Engineer")
+                                {
+                                    <button @onclick="() => OpenEditModal(jig)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
+                                    <button @onclick="() => DeleteJig(jig)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">@Lang.T("ลบ", "Delete")</button>
+                                }
                             </td>
                         </tr>
                     }
@@ -141,14 +152,14 @@
                         
                         <!-- Primary Info -->
                         <div class="pb-3 border-b border-slate-100">
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">Primary Info</h3>
+                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลหลัก", "Primary Info")</h3>
                             <div class="grid grid-cols-1 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold mb-1">Jig ID <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-semibold mb-1">@Lang.T("รหัส JIG", "Jig ID") <span class="text-red-500">*</span></label>
                                     <input type="text" @bind="_editingJig.Id" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-1 text-sm @(_isEditMode ? "bg-amber-50" : "")" placeholder="e.g. JIG-0001" />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-blue-800 mb-1">Smart Code Preview</label>
+                                    <label class="block text-xs font-bold text-blue-800 mb-1">@Lang.T("ตัวอย่าง Smart Code", "Smart Code Preview")</label>
                                     <div class="w-full px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-blue-900 font-mono text-xs min-h-[32px] flex items-center shadow-inner break-words">
                                         @GenerateSmartCodePreview()
                                     </div>
@@ -158,28 +169,28 @@
 
                         <!-- Specifications -->
                         <div class="pb-3 border-b border-slate-100">
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">Specifications</h3>
+                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลจำเพาะ (Specifications)", "Specifications")</h3>
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Tool No.</label><input type="text" @bind="_editingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Step Print</label><input type="text" @bind="_editingJig.StepPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Part Type</label><input type="text" @bind="_editingJig.PartType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Date</label><input type="text" @bind="_editingJig.Date" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Feed</label><input type="text" @bind="_editingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Scan</label><input type="text" @bind="_editingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Q'ty / Print</label><input type="text" @bind="_editingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Height Jig</label><input type="text" @bind="_editingJig.HeightJig" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Jig Type</label><input type="text" @bind="_editingJig.JigType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Process</label><input type="text" @bind="_editingJig.Process" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="_editingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label><input type="text" @bind="_editingJig.StepPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label><input type="text" @bind="_editingJig.PartType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label><input type="text" @bind="_editingJig.Date" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="_editingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="_editingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="_editingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label><input type="text" @bind="_editingJig.HeightJig" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label><input type="text" @bind="_editingJig.JigType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label><input type="text" @bind="_editingJig.Process" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
                             </div>
                         </div>
 
                         <!-- Other References -->
                         <div>
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">Other References</h3>
+                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลอ้างอิงอื่นๆ", "Other References")</h3>
                             
                             <!-- Part Numbers -->
                             <div class="mb-3">
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Compatible Part Numbers (Press Enter)</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัสชิ้นส่วนที่รองรับ (กด Enter เพื่อเพิ่ม)", "Compatible Part Numbers (Press Enter)")</label>
                                 <input type="text" @bind="_newPartInput" @onkeydown="HandlePartKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. P-1234" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
                                 @if (_compatiblePartsModel.Any())
                                 {
@@ -197,7 +208,7 @@
 
                             <!-- Toy Numbers -->
                             <div class="mb-3">
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Compatible Toy Numbers (Press Enter)</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัส Toy ที่รองรับ (กด Enter เพื่อเพิ่ม)", "Compatible Toy Numbers (Press Enter)")</label>
                                 <input type="text" @bind="_newToyInput" @onkeydown="HandleToyKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. T-5678" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
                                 @if (_compatibleToysModel.Any())
                                 {
@@ -215,16 +226,16 @@
 
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Locator</label>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ตำแหน่งปัจจุบัน", "Locator")</label>
                                     <select @bind="_editingJig.LocatorId" class="w-full px-2 py-1.5 border rounded text-sm bg-white">
-                                        <option value="">-- No Location --</option>
+                                        <option value="">-- @Lang.T("ไม่มีตำแหน่ง", "No Location") --</option>
                                         @foreach (var loc in _allLocators)
                                         {
                                             <option value="@loc.Id">@loc.Name</option>
                                         }
                                     </select>
                                 </div>
-                                <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">Rev.</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
+                                <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("เวอร์ชัน (Rev.)", "Rev.")</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
                             </div>
                         </div>
                     </div>
@@ -233,9 +244,9 @@
             </div>
             
             <div class="p-6 flex justify-end gap-3 bg-slate-50 border-t border-slate-100 rounded-b-2xl shrink-0 w-full z-10">
-                <button @onclick="CloseModal" class="px-5 py-2.5 bg-white border rounded-xl hover:bg-slate-100">Cancel</button>
+                <button @onclick="CloseModal" class="px-5 py-2.5 bg-white border rounded-xl hover:bg-slate-100">@Lang.T("ยกเลิก", "Cancel")</button>
                 <button disabled="@_isSubmitting" onclick="document.getElementById('hiddenSubmitBtn').click()" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
-                    @(_isSubmitting ? "Saving..." : "Save Jig")
+                    @(_isSubmitting ? Lang.T("กำลังบันทึก...", "Saving...") : Lang.T("บันทึกข้อมูล", "Save Jig"))
                 </button>
             </div>
         </div>
@@ -257,15 +268,29 @@
     private Jig _editingJig = new Jig { Status = "Available", Condition = "Good" };
     private HashSet<string> _selectedJigIds = new();
     
-    private List<PartMaster> _compatiblePartsModel = new();
+    private List<shared.Models.PartMaster> _compatiblePartsModel = new();
     private List<string> _compatibleToysModel = new();
     private string _newPartInput = "";
     private string _newToyInput = "";
+    private string _userRole = "";
 
     protected override void OnInitialized() { Lang.OnChange += StateHasChanged; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) await LoadData();
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            var role = auth.Role ?? "";
+            _userRole = role;
+            
+            if (role != "Admin" && role != "Engineer" && role != "ProdLead")
+            {
+                NavManager.NavigateTo("/");
+                return;
+            }
+            
+            await LoadData();
+        }
     }
 
     private async Task LoadData()
@@ -608,4 +633,24 @@
         var loc = _allLocators.FirstOrDefault(l => l.Id == id);
         return loc?.Name ?? id;
     }
+
+    private string GetStatusThai(string? status) => status switch
+    {
+        "Available" => "พร้อมใช้งาน",
+        "InUse" => "กำลังใช้งาน",
+        "Cleaning" => "กำลังทำความสะอาด",
+        "Evaluation" => "รอประเมินสภาพ",
+        "Lost" => "สูญหาย",
+        _ => status ?? "-"
+    };
+
+    private string GetStatusBadgeClass(string? status) => status switch
+    {
+        "Available" => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "InUse" => "bg-blue-50 text-blue-700 border-blue-200",
+        "Cleaning" => "bg-amber-50 text-amber-700 border-amber-200",
+        "Evaluation" => "bg-purple-50 text-purple-700 border-purple-200",
+        "Lost" => "bg-slate-100 text-slate-500 border-slate-300",
+        _ => "bg-slate-50 text-slate-700 border-slate-200"
+    };
 }

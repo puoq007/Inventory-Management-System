@@ -141,7 +141,7 @@
             }
 
             <p class="@textStyle border-t border-slate-200 text-sm mb-2 font-semibold mt-4 pt-4">
-                Click box below and Scan QR
+                @Lang.T("คลิกที่ช่องด้านล่างแล้วสแกน QR", "Click box below and Scan QR")
             </p>
             <div class="flex space-x-2">
                 <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp"
@@ -243,7 +243,7 @@
 
     private bool IsInputDisabled => _isProcessing || string.IsNullOrEmpty(_selectedLocatorId);
 
-    private string InputPlaceholder => string.IsNullOrEmpty(_selectedLocatorId) ? "เลือก Location ก่อน..." : "Scan QR Code here...";
+    private string InputPlaceholder => string.IsNullOrEmpty(_selectedLocatorId) ? Lang.T("เลือก Location ก่อน...", "Select Location first...") : Lang.T("สแกนคิวอาร์โค้ดที่นี่...", "Scan QR Code here...");
 
     public class ScanSessionItem
     {

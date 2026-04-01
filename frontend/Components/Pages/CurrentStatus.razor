@@ -60,6 +60,48 @@
     </div>
 }
 
+@if (_showReportModal)
+{
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 border border-slate-100">
+            <h3 class="text-xl font-bold text-red-600 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                @Lang.T("แจ้งปัญหา จิ๊ก", "Report Issue for Jig ") @_reportJigId
+            </h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ปัญหาที่พบ", "Issue Type")</label>
+                <select @bind="_reportType" class="w-full border-slate-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+                    <option value="">-- @Lang.T("เลือกปัญหา", "Select Issue") --</option>
+                    <option value="Broken">🔨 @Lang.T("ชำรุด / เสีย", "Broken")</option>
+                    <option value="NeedsCleaning">🧹 @Lang.T("ต้องทำความสะอาด", "Needs Cleaning")</option>
+                    <option value="Lost">❓ @Lang.T("สูญหาย", "Lost")</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("หมายเหตุ / สาเหตุ", "Remark / Reason")</label>
+                <textarea @bind="_reportRemark" rows="3" class="w-full border-slate-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border" placeholder="@Lang.T("อธิบายปัญหาที่พบสั้นๆ...", "Briefly describe the issue...")"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button @onclick="CloseReportModal" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">@Lang.T("ยกเลิก", "Cancel")</button>
+                <button @onclick="SubmitReportIssue" disabled="@(string.IsNullOrEmpty(_reportType))" class="px-4 py-2 font-medium rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center hover:opacity-90" style="background-color: #dc2626; color: white;">
+                    @if (_isSubmittingReport)
+                    {
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4" style="color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        @Lang.T("กำลังบันทึก...", "Saving...")
+                    }
+                    else
+                    {
+                        @Lang.T("ยืนยันแจ้งปัญหา", "Confirm Report")
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_isLoading)
 {
     <div class="flex items-center justify-center py-12">
@@ -70,15 +112,15 @@
 else
 {
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-full relative">
-        <div class="block w-full overflow-x-auto pb-64 -mb-64">
+        <div class="block w-full pb-48">
             <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
+                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสจิก", "Jig ID")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รุ่น/ข้อมูลจำเพาะ", "Specification")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleStatusFilter">
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[120px]">@Lang.T("รหัสจิก", "Jig ID")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider min-w-[300px]">@Lang.T("รุ่น/ข้อมูลจำเพาะ", "Specification")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none whitespace-nowrap min-w-[180px]" @onclick="ToggleStatusFilter">
                             <div class="flex items-center gap-2 transition-colors @(_statusFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
-                                <span class="tracking-widest">Status@(_statusFilter != "All" ? $": {(_statusFilter == "InUse" ? "In Use" : _statusFilter)}" : "")</span>
+                                <span class="tracking-widest">@Lang.T("สถานะ", "Status")@(_statusFilter != "All" ? $": {(_statusFilter == "InUse" ? Lang.T("กำลังใช้งาน", "In Use") : _statusFilter)}" : "")</span>
                                 <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showStatusFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
                                     <svg class='w-3.5 h-3.5 @(_statusFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
@@ -100,7 +142,14 @@ else
                                         }
                                     </div>
                                     <div class="py-1.5">
-                                        @foreach (var opt in new[] { ("All", "Show All Statuses"), ("Available", "Available"), ("InUse", "In Use"), ("Cleaning", "Cleaning"), ("Evaluation", "Evaluation") })
+                                        @foreach (var opt in new[] { 
+                                            ("All", Lang.T("แสดงสถานะทั้งหมด", "Show All Statuses")), 
+                                            ("Available", Lang.T("ว่าง / พร้อมใช้งาน", "Available")), 
+                                            ("InUse", Lang.T("กำลังถูกใช้งาน", "In Use")), 
+                                            ("Cleaning", Lang.T("เตรียมล้าง / ล้าง", "Cleaning")), 
+                                            ("Evaluation", Lang.T("ประเมิน / ตรวจสอบ", "Evaluation")), 
+                                            ("Lost", Lang.T("หาย / สูญหาย", "Lost"))
+                                        })
                                         {
                                             <button @onclick="() => SetStatusFilter(opt.Item1)" 
                                                     class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_statusFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
@@ -117,10 +166,9 @@ else
                                 </div>
                             }
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ตำแหน่ง", "Location")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleConditionFilter">
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none whitespace-nowrap min-w-[180px]" @onclick="ToggleConditionFilter">
                             <div class="flex items-center gap-2 transition-colors @(_conditionFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
-                                <span class="tracking-widest">Condition@(_conditionFilter != "All" ? $": {(_conditionFilter == "NeedsCleaning" ? "Needs Clean" : _conditionFilter == "UnderRepair" ? "Repair" : _conditionFilter)}" : "")</span>
+                                <span class="tracking-widest">@Lang.T("สภาพ", "Condition")@(_conditionFilter != "All" ? $": {Lang.T(GetConditionThai(_conditionFilter), _conditionFilter)}" : "")</span>
                                 <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showConditionFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
                                     <svg class='w-3.5 h-3.5 @(_conditionFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
@@ -142,7 +190,14 @@ else
                                         }
                                     </div>
                                     <div class="py-1.5">
-                                        @foreach (var opt in new[] { ("All", "Show All Conditions"), ("Good", "Good"), ("NeedsCleaning", "Needs Cleaning"), ("UnderRepair", "Under Repair"), ("Broken", "Broken") })
+                                        @foreach (var opt in new[] { 
+                                            ("All", Lang.T("แสดงทั้งหมด", "Show All Conditions")), 
+                                            ("Issues", Lang.T("พบปัญหาทั้งหมด", "All Issues")),
+                                            ("Good", Lang.T("สภาพดี", "Good")), 
+                                            ("NeedsCleaning", Lang.T("ต้องทำความสะอาด", "Needs Cleaning")), 
+                                            ("Broken", Lang.T("ชำรุดเสียหาย", "Broken")), 
+                                            ("Lost", Lang.T("สูญหาย", "Lost")) 
+                                        })
                                         {
                                             <button @onclick="() => SetConditionFilter(opt.Item1)" 
                                                     class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_conditionFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
@@ -159,10 +214,11 @@ else
                                 </div>
                             }
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("สภาพ", "Condition")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[150px]">@Lang.T("ตำแหน่ง", "Location")</th>
+
                         @if (_role != "Guest" && _role != "")
                         {
-                            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("การดำเนินการ", "Action")</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[150px]">@Lang.T("การดำเนินการ", "Action")</th>
                         }
                     </tr>
                 </thead>
@@ -184,29 +240,31 @@ else
                                         @Lang.T(GetStatusThai(jig.Status), jig.Status)
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                    @GetLocatorName(jig.LocatorId)
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full border @(GetConditionBadgeClass(jig.Condition))">
                                         @Lang.T(GetConditionThai(jig.Condition), jig.Condition)
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                    @jig.Condition
+                                    @GetLocatorName(jig.LocatorId)
                                 </td>
+
                                 @if (_role != "Guest" && _role != "")
                                 {
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div class="flex items-center justify-center gap-2">
+                                        <div class="flex flex-col items-center justify-center gap-2">
                                             @if (jig.Status == "Available")
                                             {
-                                                <button @onclick='() => NavManager.NavigateTo($"/scan-out?id={jig.Id}")' class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded-lg">Check Out</button>
+                                                <button @onclick='() => NavManager.NavigateTo($"/scan-out?id={jig.Id}")' class="w-full text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded-lg">@Lang.T("เบิกออก", "Check Out")</button>
                                             }
                                             else
                                             {
-                                                <button @onclick='() => NavManager.NavigateTo($"/scan-out?id={jig.Id}")' class="text-emerald-600 hover:text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg">Check In / Store</button>
+                                                <button @onclick='() => NavManager.NavigateTo($"/scan-out?id={jig.Id}")' class="w-full text-emerald-600 hover:text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg">@Lang.T("คืน / เก็บเข้าตู้", "Check In / Store")</button>
                                             }
+                                            <button @onclick='() => OpenReportModal(jig.Id)' class="w-full mt-1 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg flex items-center justify-center gap-1 transition-colors border border-red-100">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> 
+                                                <span>@Lang.T("แจ้งปัญหา", "Report")</span>
+                                            </button>
                                         </div>
                                     </td>
                                 }
@@ -254,6 +312,13 @@ else
     private string _conditionFilter = "All";
     private bool _showStatusFilter = false;
     private bool _showConditionFilter = false;
+    
+    // Modal state for Reporting Issue
+    private bool _showReportModal = false;
+    private bool _isSubmittingReport = false;
+    private string _reportJigId = "";
+    private string _reportType = "";
+    private string _reportRemark = "";
 
     protected override void OnParametersSet()
     {
@@ -267,11 +332,11 @@ else
         }
         if (!string.IsNullOrEmpty(Filter))
         {
-            // If explicit filter is "Issues", we reset other filters to prevent conflict
+            // Map legacy Filter parameter to condition options
             if (Filter == "Issues")
             {
                 _statusFilter = "All";
-                _conditionFilter = "All";
+                _conditionFilter = "Issues";
             }
         }
         FilterData();
@@ -283,15 +348,17 @@ else
     private void SetStatusFilter(string val)
     {
         _statusFilter = val;
-        FilterData();
         _showStatusFilter = false;
+        var uri = NavManager.GetUriWithQueryParameters(new Dictionary<string, object?> { { "status", val == "All" ? null : val }, { "filter", null } });
+        NavManager.NavigateTo(uri, forceLoad: false);
     }
 
     private void SetConditionFilter(string condition)
     {
         _conditionFilter = condition;
         _showConditionFilter = false;
-        FilterData();
+        var uri = NavManager.GetUriWithQueryParameters(new Dictionary<string, object?> { { "condition", condition == "All" ? null : condition }, { "filter", null } });
+        NavManager.NavigateTo(uri, forceLoad: false);
     }
 
     private string GetStatusThai(string status) => status switch
@@ -300,6 +367,7 @@ else
         "InUse" => "กำลังใช้งาน",
         "Cleaning" => "กำลังทำความสะอาด",
         "Evaluation" => "รอประเมินสภาพ",
+        "Lost" => "สูญหาย",
         _ => status
     };
 
@@ -309,6 +377,8 @@ else
         "NeedsCleaning" => "ต้องทำความสะอาด",
         "UnderRepair" => "กำลังซ่อมแซม",
         "Broken" => "ชำรุดเสียหาย",
+        "Lost" => "สูญหาย",
+        "Issues" => "พบปัญหาทั้งหมด",
         _ => condition
     };
 
@@ -318,6 +388,7 @@ else
         "InUse" => "bg-blue-50 text-blue-700 border-blue-200",
         "Cleaning" => "bg-amber-50 text-amber-700 border-amber-200",
         "Evaluation" => "bg-purple-50 text-purple-700 border-purple-200",
+        "Lost" => "bg-slate-100 text-slate-500 border-slate-300",
         _ => "bg-slate-50 text-slate-700 border-slate-200"
     };
 
@@ -327,6 +398,7 @@ else
         "NeedsCleaning" => "bg-amber-50 text-amber-700 border-amber-200",
         "UnderRepair" => "bg-blue-50 text-blue-700 border-blue-100",
         "Broken" => "bg-red-50 text-red-700 border-red-200",
+        "Lost" => "bg-slate-100 text-slate-500 border-slate-300",
         _ => "bg-slate-50 text-slate-700 border-slate-200"
     };
 
@@ -409,14 +481,13 @@ else
             query = query.Where(j => j.Status == _statusFilter);
         }
 
-        if (_conditionFilter != "All")
+        if (_conditionFilter == "Issues")
+        {
+            query = query.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost");
+        }
+        else if (_conditionFilter != "All")
         {
             query = query.Where(j => j.Condition == _conditionFilter);
-        }
-
-        if (Filter == "Issues")
-        {
-            query = query.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "UnderRepair" || j.Condition == "Broken");
         }
 
         _displayJigs = query.ToList();
@@ -462,5 +533,58 @@ else
     {
         _dotNetRef?.Dispose();
         try { await JSRuntime.InvokeVoidAsync("stopQrScan"); } catch { }
+    }
+
+    private void OpenReportModal(string jigId)
+    {
+        _reportJigId = jigId;
+        _reportType = "";
+        _reportRemark = "";
+        _showReportModal = true;
+    }
+
+    private void CloseReportModal()
+    {
+        _showReportModal = false;
+        _isSubmittingReport = false;
+    }
+
+    private async Task SubmitReportIssue()
+    {
+        if (string.IsNullOrEmpty(_reportJigId) || string.IsNullOrEmpty(_reportType)) return;
+
+        _isSubmittingReport = true;
+        StateHasChanged();
+
+        try
+        {
+            var req = new
+            {
+                JigId = _reportJigId,
+                User = _name,
+                IssueType = _reportType,
+                Remark = _reportRemark
+            };
+
+            var res = await Http.PostAsJsonAsync("api/transactions/reportissue", req);
+            if (res.IsSuccessStatusCode)
+            {
+                await LoadData();
+                CloseReportModal();
+            }
+            else
+            {
+                // Optionally show error to user
+            }
+        }
+        catch
+        {
+            // Fallback
+        }
+        finally
+        {
+            _isSubmittingReport = false;
+            StateHasChanged();
+        }
     }
 }

@@ -121,7 +121,7 @@ public class LocatorsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> DeleteLocator(string id)
     {
         var locator = await _context.Locators.FindAsync(id);

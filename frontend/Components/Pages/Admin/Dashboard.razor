@@ -68,7 +68,7 @@ else
         </div>
 
         <!-- Needs Attention Jigs -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-rose-200 transition-colors cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?filter=Issues")'>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-rose-200 transition-colors cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?condition=Issues")'>
             <div class="flex items-center text-sm font-semibold text-slate-500 mb-4">
                 <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mr-3">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -76,7 +76,7 @@ else
                 @Lang.T("อัตราความเสียหาย (%)", "Repair Rate (%)")
             </div>
             <div class="text-3xl font-extrabold text-rose-600 tracking-tight">@_repairRate%</div>
-            <a href="/current-status?filter=Issues" class="text-xs text-slate-400 mt-2 group-hover:text-rose-500 transition-colors flex items-center">
+            <a href="/current-status?condition=Issues" class="text-xs text-slate-400 mt-2 group-hover:text-rose-500 transition-colors flex items-center">
                 @Lang.T($"ต้องได้รับการแก้ไข ({_actionRequiredCount} ชิ้น)", $"Needs attention ({_actionRequiredCount} Jigs)") <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
             <!-- Decorative bg -->
@@ -90,13 +90,42 @@ else
         @if (_role != "Guest")
         {
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
-                    <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
-                    </svg>
-                    @Lang.T("รายการที่ต้องดำเนินการ (พบปัญหา)", "Action Required (Issues)")
-                </h2>
-                <div class="text-slate-500 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
+                <div class="flex items-center justify-between mb-4 group cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?condition=Issues")'>
+                    <h2 class="text-lg font-bold text-slate-900 group-hover:text-red-700 transition-colors flex items-center">
+                        <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                        </svg>
+                        @Lang.T("รายการที่ต้องดำเนินการ (พบปัญหา)", "Action Required (Issues)")
+                    </h2>
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </div>
+                
+                @if (_actionRequiredCount > 0)
+                {
+                    <div class="space-y-3">
+                        @foreach (var jig in _allJigs.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost").Take(5))
+                        {
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100 cursor-pointer hover:bg-red-100 transition-colors" @onclick='() => NavManager.NavigateTo($"/current-status?condition=Issues")'>
+                                <div class="flex gap-3 items-center">
+                                    <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 shadow-sm border border-red-200">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> 
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-800">@jig.Id</div>
+                                        <div class="text-xs text-red-600 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                            @Lang.T(GetConditionThai(jig.Condition), jig.Condition)
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-slate-400 font-medium">@jig.UpdatedAt.ToString("dd MMM HH:mm")</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-slate-500 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
+                }
             </div>
         }
         else
@@ -443,7 +472,7 @@ else
         _totalJigs = _allJigs.Count;
         _availableJigs = _allJigs.Count(j => j.Status == "Available");
         _inUseCount = _allJigs.Count(j => j.Status == "InUse");
-        _actionRequiredCount = _allJigs.Count(j => j.Condition == "NeedsCleaning" || j.Condition == "UnderRepair" || j.Condition == "Broken");
+        _actionRequiredCount = _allJigs.Count(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost");
         
         var thirtyDaysAgo = DateTime.Now.AddDays(-30);
         _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo);
@@ -528,4 +557,14 @@ else
         
         await JSRuntime.InvokeVoidAsync("downloadTextFile", fileName, csvContent);
     }
+
+    private string GetConditionThai(string? condition) => condition switch
+    {
+        "Good" => "ใช้งานได้ดี",
+        "NeedsCleaning" => "ต้องทำความสะอาด",
+        "UnderRepair" => "กำลังซ่อมแซม",
+        "Broken" => "ชำรุดเสียหาย",
+        "Lost" => "สูญหาย",
+        _ => condition ?? "-"
+    };
 }
