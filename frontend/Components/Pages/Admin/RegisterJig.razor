@@ -97,8 +97,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap"><div class="font-mono text-sm font-bold bg-slate-100 px-2 py-1 rounded inline-block">@jig.Id</div></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-slate-700 truncate max-w-xs" title="@jig.SmartCodeName">@(jig.SmartCodeName ?? "-")</div>
-                                <div class="text-xs text-slate-500 mt-1">Tool # @(jig.ToolNo ?? "-")</div>
+                                <div class="flex items-center gap-3">
+                                    @if (!string.IsNullOrEmpty(jig.ImageUrl))
+                                    {
+                                        <img src="@GetImageSrc(jig.ImageUrl)" alt="@jig.Id" class="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-sm flex-shrink-0" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        </div>
+                                    }
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium text-slate-700 truncate max-w-xs" title="@jig.SmartCodeName">@(jig.SmartCodeName ?? "-")</div>
+                                        <div class="text-xs text-slate-500 mt-0.5">Tool # @(jig.ToolNo ?? "-")</div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm">@jig.JigType</div>
@@ -113,7 +127,7 @@
                                 @GetLocatorName(jig.LocatorId)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Sticker (2.5cm)">
                                     <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                     QR
                                 </button>
@@ -172,15 +186,59 @@
                             <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลจำเพาะ (Specifications)", "Specifications")</h3>
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="_editingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label><input type="text" @bind="_editingJig.StepPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label><input type="text" @bind="_editingJig.PartType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label><input type="text" @bind="_editingJig.Date" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label>
+                                    <div class="flex flex-col gap-2">
+                                        <select class="w-full px-2 py-1 border rounded text-sm bg-white" @onchange="AddStep">
+                                            <option value="">-- Add Step --</option>
+                                            @foreach (var opt in _stepPrintOptions) { <option value="@opt">@opt</option> }
+                                        </select>
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            @foreach (var step in _selectedSteps)
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                                                    @step
+                                                    <button type="button" @onclick="() => _selectedSteps.Remove(step)" class="ml-2 text-blue-400 hover:text-blue-600 transition-colors">✕</button>
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label>
+                                    <select @bind="_editingJig.PartType" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                        <option value="">-- Select --</option>
+                                        @foreach (var opt in _partTypeOptions) { <option value="@opt">@opt</option> }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label>
+                                    <input type="date" @bind="SelectedDate" class="w-full px-2 py-1 border rounded text-sm h-[30px]" />
+                                </div>
                                 <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="_editingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
                                 <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="_editingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
                                 <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="_editingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label><input type="text" @bind="_editingJig.HeightJig" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label><input type="text" @bind="_editingJig.JigType" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label><input type="text" @bind="_editingJig.Process" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label>
+                                    <select @bind="_editingJig.HeightJig" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                        <option value="">-- Select --</option>
+                                        @foreach (var opt in _heightJigOptions) { <option value="@opt">@{ if(opt == "HMR Plywood" || opt == "MDF Plywood") { @opt } else { @(opt + " mm") } }</option> }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label>
+                                    <select @bind="_editingJig.JigType" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                        <option value="">-- Select --</option>
+                                        @foreach (var opt in _jigTypeOptions) { <option value="@opt">@opt</option> }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label>
+                                    <select @bind="_editingJig.Process" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                        <option value="">-- Select --</option>
+                                        @foreach (var opt in _processOptions) { <option value="@opt">@opt</option> }
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -197,32 +255,16 @@
                                     <div class="flex flex-wrap gap-2 mt-2">
                                         @foreach (var part in _compatiblePartsModel)
                                         {
-                                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-gray-100 border border-gray-200 text-gray-700">
-                                                <span>@part.PartNumber</span>
-                                                <button type="button" @onclick="() => RemovePartNumber(part.PartNumber)" class="text-gray-400 hover:text-red-500 font-bold">×</button>
-                                            </div>
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">
+                                                @part.PartNumber
+                                                <button type="button" @onclick="() => RemovePartNumber(part.PartNumber)" class="ml-2 text-slate-400 hover:text-red-500 transition-colors">✕</button>
+                                            </span>
                                         }
                                     </div>
                                 }
                             </div>
 
-                            <!-- Toy Numbers -->
-                            <div class="mb-3">
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัส Toy ที่รองรับ (กด Enter เพื่อเพิ่ม)", "Compatible Toy Numbers (Press Enter)")</label>
-                                <input type="text" @bind="_newToyInput" @onkeydown="HandleToyKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. T-5678" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
-                                @if (_compatibleToysModel.Any())
-                                {
-                                    <div class="flex flex-wrap gap-2 mt-2">
-                                        @foreach (var toy in _compatibleToysModel)
-                                        {
-                                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-gray-100 border border-gray-200 text-gray-700">
-                                                <span>@toy</span>
-                                                <button type="button" @onclick="() => RemoveToyNumber(toy)" class="text-gray-400 hover:text-red-500 font-bold">×</button>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </div>
+
 
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div>
@@ -236,6 +278,42 @@
                                     </select>
                                 </div>
                                 <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("เวอร์ชัน (Rev.)", "Rev.")</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
+                            </div>
+
+                            @* Image Upload *@
+                            <div class="mt-3 pt-3 border-t border-slate-100">
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-1.5 uppercase">@Lang.T("รูปภาพจิ๊ก", "Jig Photo")</label>
+                                <div class="flex items-start gap-4">
+                                    @if (!string.IsNullOrEmpty(_imagePreview))
+                                    {
+                                        <div class="relative group">
+                                            <img src="@_imagePreview" alt="Preview" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-200 shadow-sm" />
+                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrEmpty(_editingJig.ImageUrl))
+                                    {
+                                        <div class="relative group">
+                                            <img src="@GetImageSrc(_editingJig.ImageUrl)" alt="Current" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-200 shadow-sm" />
+                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                        </div>
+                                    }
+                                    <label class="flex-1 cursor-pointer">
+                                        <div class="flex flex-col items-center justify-center py-4 px-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all">
+                                            <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <span class="text-xs font-medium text-slate-500">@Lang.T("คลิกเพื่อเลือกรูป", "Click to select image")</span>
+                                            <span class="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP (max 5MB)</span>
+                                        </div>
+                                        <InputFile class="hidden" OnChange="OnImageSelected" accept=".jpg,.jpeg,.png,.webp" />
+                                    </label>
+                                </div>
+                                @if (_isUploadingImage)
+                                {
+                                    <div class="mt-2 text-xs text-blue-600 font-medium flex items-center gap-1">
+                                        <span class="inline-block animate-spin h-3 w-3 border-2 border-blue-600 rounded-full border-t-transparent"></span>
+                                        @Lang.T("กำลังอัปโหลดรูป...", "Uploading image...")
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -269,10 +347,52 @@
     private HashSet<string> _selectedJigIds = new();
     
     private List<shared.Models.PartMaster> _compatiblePartsModel = new();
-    private List<string> _compatibleToysModel = new();
     private string _newPartInput = "";
-    private string _newToyInput = "";
     private string _userRole = "";
+    
+    // Image upload state
+    private IBrowserFile? _selectedImageFile;
+    private string? _imagePreview;
+    private bool _isUploadingImage = false;
+    private bool _removeExistingImage = false;
+
+    // Dropdown options from reference image
+    private readonly string[] _stepPrintOptions = { "1 : L", "2 : R", "3 : Hood", "4 : Roof", "5 : Re.Hood", "6 : Front", "7 : Rear", "8 : Under", "9 : Re.L", "10 : Re.R" };
+
+    // Mapping from old text-only step names to numbers
+    private static readonly Dictionary<string, string> _stepNameToNumber = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["L"] = "1", ["R"] = "2", ["Hood"] = "3", ["Roof"] = "4",
+        ["Re.Hood"] = "5", ["Front"] = "6", ["Rear"] = "7", ["Under"] = "8",
+        ["Re.L"] = "9", ["Re.R"] = "10",
+        
+        // Keep old typo mappings for backwards compatibility with existing database entries
+        ["Read Hood"] = "5", ["Read"] = "7"
+    };
+
+    private string StepNumberToLabel(string num)
+    {
+        var match = _stepPrintOptions.FirstOrDefault(o => o.StartsWith(num + " "));
+        return match ?? num;
+    }
+    private readonly string[] _partTypeOptions = { "Body", "Wing", "Window", "Interior", "Chassis", "Bumper", "Wheel", "Face", "Grill", "Teeth", "Tail", "Spoiler", "Tender" };
+    private readonly string[] _jigTypeOptions = { "Plywood", "Stack", "Flip", "Spoiler", "Hybrid", "BBQ", "Plywood Flag", "JIG Wheel" };
+    private readonly string[] _processOptions = { "PIM", "PL", "VUM", "HSP", "RB", "LQ", "TP", "AS" };
+    private readonly string[] _heightJigOptions = { "40", "45", "50", "75", "80", "90", "HMR Plywood", "MDF Plywood" };
+
+    // Multi-selection for Step Print
+    private List<string> _selectedSteps = new();
+
+    // Date helper for calendar
+    private DateTime? _selectedDate; 
+    private DateTime? SelectedDate { 
+        get => _selectedDate; 
+        set {
+            _selectedDate = value;
+            if (value.HasValue) _editingJig.Date = value.Value.ToString("dd/MM/yy");
+            else _editingJig.Date = null;
+        }
+    }
 
     protected override void OnInitialized() { Lang.OnChange += StateHasChanged; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -325,9 +445,12 @@
         _editingJig = new Jig { Status = "Available", Condition = "Good" };
         _modalError = "";
         _compatiblePartsModel.Clear();
-        _compatibleToysModel.Clear();
         _newPartInput = "";
-        _newToyInput = "";
+        _selectedImageFile = null;
+        _imagePreview = null;
+        _selectedDate = null;
+        _selectedSteps = new();
+        _removeExistingImage = false;
         _showModal = true;
     }
 
@@ -348,23 +471,61 @@
             HeightJig = jig.HeightJig, 
             JigType = jig.JigType, 
             Process = jig.Process, 
-            ToyNumber = jig.ToyNumber, 
             PartNumber = jig.PartNumber, 
             Rev = jig.Rev, 
             Status = jig.Status, 
             Condition = jig.Condition, 
-            LocatorId = jig.LocatorId 
+            LocatorId = jig.LocatorId,
+            ImageUrl = jig.ImageUrl
         };
         _modalError = "";
         _compatiblePartsModel.Clear();
-        _compatibleToysModel.Clear();
         _newPartInput = "";
-        _newToyInput = "";
+        _selectedImageFile = null;
+        _imagePreview = null;
+        _removeExistingImage = false;
+        _selectedDate = null;
+
+        // Parse date for calendar
+        if (!string.IsNullOrEmpty(_editingJig.Date))
+        {
+            if (DateTime.TryParseExact(_editingJig.Date, "dd/MM/yy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d))
+                _selectedDate = d;
+        }
+
         _showModal = true;
+
+        // Parse step print for multi-select
+        // DB stores numbers like "1-2-3", reconstruct full labels for display
+        if (!string.IsNullOrEmpty(_editingJig.StepPrint))
+        {
+            _selectedSteps = _editingJig.StepPrint
+                .Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Select(s => {
+                    // If it's already a full label like "1 : L", keep it
+                    if (s.Contains(':')) return s;
+                    // If it's a number, convert to full label
+                    if (int.TryParse(s, out _)) return StepNumberToLabel(s);
+                    // Old text format like "L", "R" → convert to full label via mapping
+                    if (_stepNameToNumber.TryGetValue(s, out var num)) return StepNumberToLabel(num);
+                    return s;
+                })
+                .ToList();
+        }
+        else _selectedSteps = new();
         
-        // Fire and forget data loading for mapped parts/toys
+        // Fire and forget data loading for mapped parts
         _ = LoadPartsForJig(_editingJig.ToolNo);
-        _ = LoadToysForJig(_editingJig.ToolNo);
+    }
+
+    private void AddStep(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(val) && !_selectedSteps.Contains(val))
+        {
+            _selectedSteps.Add(val);
+        }
     }
 
     private async Task LoadPartsForJig(string toolNo)
@@ -382,27 +543,14 @@
         catch { /* ignore */ }
     }
 
-    private async Task LoadToysForJig(string toolNo)
-    {
-        if (string.IsNullOrWhiteSpace(toolNo)) return;
-        try
-        {
-            var toys = await Http.GetFromJsonAsync<List<string>>($"api/jigs/toys/{toolNo}");
-            if (toys != null) 
-            {
-                _compatibleToysModel = toys;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-        catch { /* ignore */ }
-    }
+
 
     private void AddPartNumber()
     {
         var p = CleanAllSpaces(_newPartInput) ?? "";
         if (!string.IsNullOrWhiteSpace(p) && !_compatiblePartsModel.Any(x => x.PartNumber.Equals(p, StringComparison.OrdinalIgnoreCase)))
         {
-            _compatiblePartsModel.Add(new PartMaster { PartNumber = p, ToyNumber = "-" });
+            _compatiblePartsModel.Add(new PartMaster { PartNumber = p });
         }
         _newPartInput = "";
     }
@@ -412,38 +560,62 @@
         _compatiblePartsModel.RemoveAll(x => x.PartNumber == part);
     }
 
-    private void AddToyNumber()
-    {
-        var t = CleanAllSpaces(_newToyInput) ?? "";
-        if (!string.IsNullOrWhiteSpace(t) && !_compatibleToysModel.Any(x => x.Equals(t, StringComparison.OrdinalIgnoreCase)))
-        {
-            _compatibleToysModel.Add(t);
-        }
-        _newToyInput = "";
-    }
 
-    private void RemoveToyNumber(string toy)
-    {
-        _compatibleToysModel.RemoveAll(x => x == toy);
-    }
 
     private void HandlePartKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") AddPartNumber();
     }
 
-    private void HandleToyKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter") AddToyNumber();
-    }
+
 
     private void CloseModal() => _showModal = false;
+
+    private string GetImageSrc(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl)) return "";
+        // If it's a relative path like /uploads/xxx.jpg, prepend the backend base URL
+        if (imageUrl.StartsWith("/"))
+            return $"http://localhost:5105{imageUrl}";
+        return imageUrl;
+    }
+
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file.Size > 5_000_000)
+        {
+            _modalError = "Image is too large. Max 5MB.";
+            return;
+        }
+
+        _selectedImageFile = file;
+        _removeExistingImage = false;
+
+        // Create preview
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream(5_000_000).ReadAsync(buffer);
+        _imagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        StateHasChanged();
+    }
+
+    private void RemoveImage()
+    {
+        _selectedImageFile = null;
+        _imagePreview = null;
+        _removeExistingImage = true;
+        _editingJig.ImageUrl = null;
+        StateHasChanged();
+    }
 
     private string GenerateSmartCodePreview()
     {
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(_editingJig.ToolNo)) parts.Add(_editingJig.ToolNo);
-        if (!string.IsNullOrWhiteSpace(_editingJig.StepPrint)) parts.Add(_editingJig.StepPrint);
+        
+        var steps = string.Join("-", _selectedSteps);
+        if (!string.IsNullOrWhiteSpace(steps)) parts.Add(steps);
+
         if (!string.IsNullOrWhiteSpace(_editingJig.PartType)) parts.Add(_editingJig.PartType);
         if (!string.IsNullOrWhiteSpace(_editingJig.Date)) parts.Add(_editingJig.Date);
         if (!string.IsNullOrWhiteSpace(_editingJig.Feed) && !string.IsNullOrWhiteSpace(_editingJig.Scan)) parts.Add($"{_editingJig.Feed}/{_editingJig.Scan}");
@@ -461,7 +633,6 @@
         // Deep Sanitization
         _editingJig.Id = CleanAllSpaces(_editingJig.Id) ?? "";
         _editingJig.ToolNo = CleanAllSpaces(_editingJig.ToolNo) ?? "";
-        _editingJig.ToyNumber = CleanAllSpaces(_editingJig.ToyNumber) ?? "";
         _editingJig.PartNumber = CleanAllSpaces(_editingJig.PartNumber) ?? "";
         _editingJig.LocatorId = CleanAllSpaces(_editingJig.LocatorId) ?? "";
         _editingJig.Rev = CleanAllSpaces(_editingJig.Rev);
@@ -478,12 +649,18 @@
         _editingJig.Status = CleanAllSpaces(_editingJig.Status) ?? "Available";
         _editingJig.Condition = CleanAllSpaces(_editingJig.Condition) ?? "Good";
 
+        // Extract only the number from each step label (e.g. "1 : L" → "1") and join with hyphen
+        _editingJig.StepPrint = string.Join("-", _selectedSteps.Select(s => {
+            if (s.Contains(':')) return s.Split(':')[0].Trim();
+            if (_stepNameToNumber.TryGetValue(s, out var num)) return num;
+            return s;
+        }));
+
         if (string.IsNullOrWhiteSpace(_editingJig.Id)) { _modalError = "ID Required"; return; }
         if (string.IsNullOrWhiteSpace(_editingJig.ToolNo)) { _modalError = "Tool No Required for Product Mapping"; return; }
         
-        // Auto-fill legacy Toy/Part fields based on first mapping if available (for list view)
+        // Auto-fill legacy Part fields based on first mapping if available (for list view)
         _editingJig.PartNumber = _compatiblePartsModel.FirstOrDefault()?.PartNumber ?? "";
-        _editingJig.ToyNumber = _compatibleToysModel.FirstOrDefault() ?? "";
 
         _isSubmitting = true; _modalError = "";
         try
@@ -495,9 +672,36 @@
                 
             if (response.IsSuccessStatusCode) 
             { 
+                // For new jigs, get the Uid from the response
+                if (!_isEditMode)
+                {
+                    var created = await response.Content.ReadFromJsonAsync<Jig>();
+                    if (created != null) _editingJig.Uid = created.Uid;
+                }
+
+                // Upload image if selected
+                if (_selectedImageFile != null)
+                {
+                    _isUploadingImage = true;
+                    StateHasChanged();
+                    try
+                    {
+                        using var imgContent = new MultipartFormDataContent();
+                        var imgStream = new StreamContent(_selectedImageFile.OpenReadStream(5_000_000));
+                        imgStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(_selectedImageFile.ContentType);
+                        imgContent.Add(imgStream, "file", _selectedImageFile.Name);
+                        await Http.PostAsync($"api/jigs/{_editingJig.Uid}/image", imgContent);
+                    }
+                    catch { /* image upload failed, but jig saved */ }
+                    finally { _isUploadingImage = false; }
+                }
+                else if (_removeExistingImage)
+                {
+                    await Http.DeleteAsync($"api/jigs/{_editingJig.Uid}/image");
+                }
+
                 // Save independent mappings
                 await Http.PostAsJsonAsync($"api/jigs/parts/{_editingJig.ToolNo}", _compatiblePartsModel);
-                await Http.PostAsJsonAsync($"api/jigs/toys/{_editingJig.ToolNo}", _compatibleToysModel);
 
                 await LoadData(); 
                 _showModal = false; 
@@ -587,18 +791,50 @@
 
     private void ClearSelection() => _selectedJigIds.Clear();
 
+    private string ExtractStepNumber(string? stepStr)
+    {
+        if (string.IsNullOrEmpty(stepStr)) return "-";
+        
+        var items = stepStr.Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        var nums = items.Select(item => {
+            var trimmed = item.Trim();
+            
+            // If it contains ':', take the number before it
+            if (trimmed.Contains(':')) 
+            {
+                var prefix = trimmed.Split(':')[0].Trim();
+                if (int.TryParse(prefix, out _)) return prefix;
+            }
+            
+            // If it's already a number, use it
+            if (int.TryParse(trimmed, out _)) return trimmed;
+            
+            // Old text format: map name to number
+            if (_stepNameToNumber.TryGetValue(trimmed, out var num)) return num;
+            
+            // Fallback matching (e.g. "Roof.L" -> matches "Roof" -> returns "4")
+            foreach (var kvp in _stepNameToNumber)
+            {
+                if (trimmed.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)) return kvp.Value;
+            }
+            
+            // Drop anything that isn't a number
+            return null;
+        }).Where(n => !string.IsNullOrEmpty(n)).Distinct();
+        
+        return string.Join("-", nums);
+    }
+
     private async Task PrintQR(Jig jig)
     {
-        var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
+        var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Low); // Low for small stickers
         var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
         var data = new { 
             id = jig.Id, 
             date = jig.Date, 
-            feed = jig.Feed, 
-            scan = jig.Scan, 
-            heightJig = jig.HeightJig,
-            stepPrint = jig.StepPrint, 
-            jigType = jig.JigType 
+            toolNo = jig.ToolNo,
+            stepPrint = ExtractStepNumber(jig.StepPrint)
         };
         await JSRuntime.InvokeVoidAsync("printQR", svgStr, data);
     }
@@ -611,22 +847,20 @@
         {
             var jig = _allJigs.FirstOrDefault(j => j.Uid == uid);
             if (jig == null) continue;
-            var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Medium);
+            var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Low);
             var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
             qrList.Add(new { 
                 id = jig.Id, 
                 svg = svgStr, 
                 date = jig.Date, 
-                feed = jig.Feed, 
-                scan = jig.Scan, 
-                heightJig = jig.HeightJig,
-                stepPrint = jig.StepPrint, 
-                jigType = jig.JigType 
+                toolNo = jig.ToolNo,
+                stepPrint = ExtractStepNumber(jig.StepPrint)
             });
         }
         await JSRuntime.InvokeVoidAsync("printQRs", qrList);
         _selectedJigIds.Clear();
     }
+
     private string GetLocatorName(string? id)
     {
         if (string.IsNullOrEmpty(id)) return "-";

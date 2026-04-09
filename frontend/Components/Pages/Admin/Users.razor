@@ -101,7 +101,7 @@ else
                                             ("Admin", Lang.T("ผู้ดูแลระบบ (Admin)", "Admin")), 
                                             ("Engineer", Lang.T("วิศวกร (Engineer)", "Engineer")), 
                                             ("ProdLead", Lang.T("หน้าหน้าฝ่ายผลิต (ProdLead)", "Prod Lead")), 
-                                            ("Operator", Lang.T("พนักงาน (Operator)", "Operator")), 
+                                            ("Operator", Lang.T("พนักงานปฏิบัติการ (Operator)", "Operator")), 
                                             ("Guest", Lang.T("ผู้เข้าชม (Guest)", "Guest")) 
                                         })
                                         {
@@ -144,8 +144,9 @@ else
                                         @(user.Role == "Admin" ? "bg-purple-100 text-purple-800 border-purple-200" :
                                           user.Role == "Engineer" ? "bg-blue-100 text-blue-800 border-blue-200" :
                                           user.Role == "ProdLead" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                                          user.Role == "Operator" ? "bg-amber-100 text-amber-800 border-amber-200" :
                                           "bg-slate-100 text-slate-800 border-slate-200")">
-                                        @Lang.T(user.Role == "Admin" ? "ผู้ดูแลระบบ" : user.Role == "Engineer" ? "วิศวกร" : user.Role == "ProdLead" ? "หัวหน้าฝ่ายผลิต" : user.Role, user.Role)
+                                        @Lang.T(user.Role == "Admin" ? "ผู้ดูแลระบบ" : user.Role == "Engineer" ? "วิศวกร" : user.Role == "ProdLead" ? "หัวหน้าฝ่ายผลิต" : user.Role == "Operator" ? "พนักงานปฏิบัติการ" : user.Role, user.Role)
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono tracking-[0.3em] text-lg">
@@ -208,11 +209,11 @@ else
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ตำแหน่ง / สิทธิ์", "Role")</label>
                     <select @bind="_editingUser.Role" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option value="Admin">Admin</option>
-                        <option value="Engineer">Engineer</option>
-                        <option value="ProdLead">@Lang.T("Production Lead", "Production Lead")</option>
-                        <option value="Operator">Operator</option>
-                        <option value="Guest">Guest</option>
+                        <option value="Admin">@Lang.T("ผู้ดูแลระบบ (Admin)", "Admin")</option>
+                        <option value="Engineer">@Lang.T("วิศวกร (Engineer)", "Engineer")</option>
+                        <option value="ProdLead">@Lang.T("หัวหน้าฝ่ายผลิต (ProdLead)", "Production Lead")</option>
+                        <option value="Operator">@Lang.T("พนักงานปฏิบัติการ (Operator)", "Operator")</option>
+                        <option value="Guest">@Lang.T("ผู้เข้าชม (Guest)", "Guest")</option>
                     </select>
                 </div>
                 <div>

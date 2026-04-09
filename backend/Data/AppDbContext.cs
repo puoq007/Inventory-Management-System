@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Jig> Jigs { get; set; } = null!;
     public DbSet<PartMaster> PartMasters { get; set; } = null!;
     public DbSet<JigPartMapping> JigPartMappings { get; set; } = null!;
-    public DbSet<JigToyMapping> JigToyMappings { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,7 +30,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<JigPartMapping>().HasKey(m => m.Id);
         modelBuilder.Entity<JigPartMapping>().HasIndex(m => new { m.ToolNo, m.PartNumber }).IsUnique();
 
-        modelBuilder.Entity<JigToyMapping>().HasKey(m => m.Id);
-        modelBuilder.Entity<JigToyMapping>().HasIndex(m => new { m.ToolNo, m.ToyNumber }).IsUnique();
+
     }
 }

@@ -65,69 +65,89 @@
             const match = d.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
             return match ? match[1] : d.split(' ')[0].split('T')[0];
         };
-
         const cssTemplate = `
-            @page { 
-                size: 4.00in 1.58in;
-                margin: 0; 
-            }
-            * {
-                box-sizing: border-box;
-            }
+            @page { margin: 0; }
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
             html, body { 
                 margin: 0; 
                 padding: 0; 
-                width: 4.00in;
-                overflow: hidden;
+                background: white; 
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             }
-            body { 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            }
-            .card { 
-                display: flex; 
-                align-items: center; 
-                width: 4.00in; 
-                height: 1.58in; 
-                padding: 0;
-                margin-left: -3mm;
+            .print-page {
                 page-break-after: always;
-                box-sizing: border-box;
-                gap: 2mm;
+                padding: 5mm; /* Top/Left padding to prevent sticking to edges */
+                display: block;
             }
-            .qr { flex-shrink: 0; width: 28mm; height: 28mm; display: flex; align-items: center; justify-content: center; }
-            .qr svg { width: 100%; height: 100%; }
-            .info { 
-                text-align: left; 
-                flex: 1; 
-                min-width: 0; 
-                display: flex; 
-                flex-direction: column; 
-                justify-content: center; 
-                height: 100%; 
+            .plate { 
+                width: 25mm; 
+                height: 25mm; 
+                position: relative; 
+                background: white;
+                border: 1.5px solid #000; /* Dark, solid guide for cutting */
+                page-break-inside: avoid;
             }
-            .id { font-size: 11pt; font-weight: 800; margin: 0 0 1mm 0; line-height: 1.1; display: block; color: #000; }
-            .row { font-size: 7.5pt; color: #000; margin: 0.2mm 0; line-height: 1.2; word-wrap: break-word; font-weight: 600; }
-            .label { color: #333; font-weight: 700; font-size: 7pt; text-transform: uppercase; }
+            /* QR code: centered, slightly offset left to give date room */
+            .plate-qr {
+                position: absolute;
+                top: 4.5mm;
+                left: 2.5mm;
+                width: 16mm;
+                height: 16mm;
+            }
+            .plate-qr svg { width: 100%; height: 100%; }
+            /* Tool: top-left, offset to avoid hole */
+            .plate-tool {
+                position: absolute;
+                top: 0.5mm;
+                left: 4.5mm;
+                font-size: 9.5pt; /* Increased size requested by user */
+                font-weight: 800;
+                color: #000;
+                line-height: 1;
+                white-space: nowrap;
+            }
+            /* Step number: bottom-center */
+            .plate-step {
+                position: absolute;
+                bottom: 0.5mm;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 9pt;
+                font-weight: 900;
+                color: #000;
+                line-height: 1;
+                white-space: nowrap;
+            }
+            /* Date: right side, rotated 90° */
+            .plate-date {
+                position: absolute;
+                right: 0mm; /* Pushed as far right as possible */
+                top: 50%;
+                transform: translateY(-50%) rotate(90deg);
+                transform-origin: center center;
+                font-size: 6.5pt;
+                font-weight: 800;
+                color: #000;
+                white-space: nowrap;
+            }
         `;
 
         window.printQR = function (svgHtml, data) {
-            const printWnd = window.open('', '_blank', 'width=600,height=500');
+            const printWnd = window.open('', '_blank', 'width=400,height=400');
             const dateStr = cleanDate(data.date);
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
-                <head><title>Print QR - ${data.id}</title>
+                <head><title>Plate QR - ${data.id}</title>
                 <style>${cssTemplate}</style>
                 </head>
                 <body>
-                    <div class="card">
-                        <div class="qr">${svgHtml}</div>
-                        <div class="info">
-                            <span class="id">${data.id}</span>
-                            <div class="row"><span class="label">DATE: </span>${dateStr}</div>
-                            <div class="row"><span class="label">STEP PRINT: </span><strong>${data.stepPrint || '-'}</strong></div>
-                            <div class="row"><span class="label">HEIGHT JIG: </span>${data.heightJig || '-'}</div>
-                            <div class="row"><span class="label">FEED: </span><strong>${data.feed || '-'}</strong> &nbsp; <span class="label">SCAN: </span><strong>${data.scan || '-'}</strong></div>
-                            <div class="row"><span class="label">JIG TYPE: </span>${data.jigType || '-'}</div>
+                    <div class="print-page">
+                        <div class="plate">
+                            <div class="plate-qr">${svgHtml}</div>
+                            <div class="plate-tool">${data.toolNo || '-'}</div>
+                            <div class="plate-step">${data.stepPrint || '-'}</div>
+                            <div class="plate-date">${dateStr}</div>
                         </div>
                     </div>
                     <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 300); }<\/script>
@@ -138,20 +158,18 @@
         };
 
         window.printQRs = function (qrDataList) {
-            const printWnd = window.open('', '_blank', 'width=900,height=800');
+            const printWnd = window.open('', '_blank', 'width=800,height=600');
             let contentList = '';
+            
             qrDataList.forEach(data => {
                 const dateStr = cleanDate(data.date);
                 contentList += `
-                    <div class="card">
-                        <div class="qr">${data.svg}</div>
-                        <div class="info">
-                            <span class="id">${data.id}</span>
-                            <div class="row"><span class="label">DATE: </span>${dateStr}</div>
-                            <div class="row"><span class="label">STEP PRINT: </span><strong>${data.stepPrint || '-'}</strong></div>
-                            <div class="row"><span class="label">HEIGHT JIG: </span>${data.heightJig || '-'}</div>
-                            <div class="row"><span class="label">FEED: </span><strong>${data.feed || '-'}</strong> &nbsp; <span class="label">SCAN: </span><strong>${data.scan || '-'}</strong></div>
-                            <div class="row"><span class="label">JIG TYPE: </span>${data.jigType || '-'}</div>
+                    <div class="print-page">
+                        <div class="plate">
+                            <div class="plate-qr">${data.svg}</div>
+                            <div class="plate-tool">${data.toolNo || '-'}</div>
+                            <div class="plate-step">${data.stepPrint || '-'}</div>
+                            <div class="plate-date">${dateStr}</div>
                         </div>
                     </div>
                 `;
@@ -159,7 +177,7 @@
 
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
-                <head><title>Print Physical Jigs QR</title>
+                <head><title>Print Multiple Plates</title>
                 <style>${cssTemplate}</style>
                 </head>
                 <body>

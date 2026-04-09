@@ -10,7 +10,7 @@
     <!-- Mobile header -->
     <div class="md:hidden flex items-center justify-between bg-slate-900 text-slate-100 p-4 sticky top-0 z-50 shadow-md">
         <div class="text-xl font-bold tracking-tight">
-            <span class="text-blue-400">Jig</span> Inventory
+            <span class="text-blue-400">JIG</span> Inventory
         </div>
         <button @onclick="ToggleMenu" class="p-2 focus:outline-none hover:bg-slate-800 rounded transition duration-200">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +26,7 @@
     <!-- Sidebar / Nav -->
     <nav class="@(_isMenuOpen ? "flex" : "hidden") md:flex w-full md:w-64 bg-slate-900 text-slate-100 flex-col items-center py-6 shadow-xl shrink-0 md:h-[100dvh] md:sticky md:top-0 overflow-y-auto z-40">
         <div class="hidden md:block text-2xl font-bold tracking-tight mb-8 px-4 text-center w-full">
-            <span class="text-blue-400">Jig</span> Inventory
+            <span class="text-blue-400">JIG</span> Inventory
         </div>
 
         <div class="flex-grow w-full px-4 space-y-2">
@@ -69,7 +69,7 @@
             </div>
             <div class="bg-slate-800 rounded-lg p-3 text-center">
                 <p class="text-sm font-semibold truncate" title="@_name">@_name</p>
-                <p class="text-xs text-slate-400 mb-2">@_role</p>
+                <p class="text-xs text-slate-400 mb-2">@Lang.T("สิทธิ์:", "Role:") @_role</p>
                 <button @onclick="Logout" class="text-xs font-bold bg-slate-700 hover:bg-red-600 w-full py-1.5 rounded transition-colors duration-200">@Lang.T("ออกจากระบบ", "Logout")</button>
             </div>
         </div>

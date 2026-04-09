@@ -60,7 +60,7 @@ public class JigsController : ControllerBase
                 var existing = await _context.PartMasters.FindAsync(part.PartNumber);
                 if (existing == null)
                 {
-                    _context.PartMasters.Add(new PartMaster { PartNumber = part.PartNumber, ToyNumber = "-" });
+                    _context.PartMasters.Add(new PartMaster { PartNumber = part.PartNumber });
                 }
             }
             await _context.SaveChangesAsync();
@@ -84,70 +84,7 @@ public class JigsController : ControllerBase
         }
     }
 
-    [HttpGet("toys/{toolNo}")]
-    public async Task<ActionResult<IEnumerable<string>>> GetToysForTool(string toolNo)
-    {
-        var toys = await _context.JigToyMappings
-            .Where(m => m.ToolNo == toolNo)
-            .Select(m => m.ToyNumber)
-            .ToListAsync();
 
-        // On-demand migration: If no toys in the new table, check PartMaster through JigPartMapping
-        if (!toys.Any())
-        {
-            var legacyToys = await _context.JigPartMappings
-                .Where(m => m.ToolNo == toolNo)
-                .Join(_context.PartMasters, m => m.PartNumber, p => p.PartNumber, (m, p) => p.ToyNumber)
-                .Where(t => !string.IsNullOrEmpty(t) && t != "-")
-                .Distinct()
-                .ToListAsync();
-            
-            if (legacyToys.Any())
-            {
-                // Auto-populate the new table for next time
-                foreach (var t in legacyToys)
-                {
-                    if (t != null) _context.JigToyMappings.Add(new JigToyMapping { ToolNo = toolNo, ToyNumber = t });
-                }
-                await _context.SaveChangesAsync();
-                return legacyToys!;
-            }
-        }
-
-        return toys;
-    }
-
-    [HttpPost("toys/{toolNo}")]
-    public async Task<IActionResult> UpdateToysForTool(string toolNo, [FromBody] List<string> toys)
-    {
-        if (string.IsNullOrWhiteSpace(toolNo)) return BadRequest();
-        
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            toys = toys.Where(t => !string.IsNullOrWhiteSpace(t))
-                       .Select(t => t.Trim())
-                       .Distinct()
-                       .ToList();
-
-            var oldMappings = await _context.JigToyMappings.Where(m => m.ToolNo == toolNo).ToListAsync();
-            _context.JigToyMappings.RemoveRange(oldMappings);
-
-            foreach (var toy in toys)
-            {
-                _context.JigToyMappings.Add(new JigToyMapping { ToolNo = toolNo, ToyNumber = toy });
-            }
-            
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            return StatusCode(500, ex.Message);
-        }
-    }
 
     [HttpGet("{uid}")]
     public async Task<ActionResult<Jig>> GetJig(string uid)
@@ -260,6 +197,65 @@ public class JigsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{uid}/image")]
+    [RequestSizeLimit(5_000_000)] // 5MB limit
+    public async Task<IActionResult> UploadImage(string uid, IFormFile file)
+    {
+        if (file == null || file.Length == 0) return BadRequest("No file uploaded");
+        
+        var jig = await _context.Jigs.FindAsync(uid);
+        if (jig == null) return NotFound();
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest("Only JPEG, PNG, and WebP images are allowed");
+
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        Directory.CreateDirectory(uploadsDir);
+
+        // Delete old image if exists
+        if (!string.IsNullOrEmpty(jig.ImageUrl))
+        {
+            var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", jig.ImageUrl.TrimStart('/'));
+            if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+        var fileName = $"{uid}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        jig.ImageUrl = $"/uploads/{fileName}";
+        jig.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { imageUrl = jig.ImageUrl });
+    }
+
+    [HttpDelete("{uid}/image")]
+    public async Task<IActionResult> DeleteImage(string uid)
+    {
+        var jig = await _context.Jigs.FindAsync(uid);
+        if (jig == null) return NotFound();
+
+        if (!string.IsNullOrEmpty(jig.ImageUrl))
+        {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", jig.ImageUrl.TrimStart('/'));
+            if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+        }
+
+        jig.ImageUrl = null;
+        jig.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpDelete("{uid}")]
     public async Task<IActionResult> DeleteJig(string uid)
     {
@@ -287,7 +283,7 @@ public class JigsController : ControllerBase
         // For sequential ID tracking in same batch
         var nextSuffixMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var partMappingsToAdd = new HashSet<(string ToolNo, string PartNumber, string ToyNumber)>();
-        var toyMappingsToAdd = new HashSet<(string ToolNo, string ToyNumber)>();
+
 
         try
         {
@@ -351,7 +347,9 @@ public class JigsController : ControllerBase
                     }
 
                     var toolNo = GetVal("Tool No.");
-                    var stepPrint = GetVal("Step Print");
+                    var stepPrint = GetVal("Total Step Print");
+                    if (string.IsNullOrEmpty(stepPrint)) stepPrint = GetVal("Step Print");
+
                     var partType = GetVal("Part Type", 0); // 1st Part Type
                     var jigType = GetVal("JIG Type"); 
                     if (string.IsNullOrEmpty(jigType)) jigType = GetVal("Part Type", 1); // 2nd Part Type fallback
@@ -364,19 +362,15 @@ public class JigsController : ControllerBase
                     
                     var heightJig = GetVal("Height Jig");
                     var process = GetVal("Process");
-                    var toyNumber = GetVal("Toy Number");
                     var partNumber = GetVal("Part Number");
                     var rev = GetVal("Rev.");
 
-                    if (string.IsNullOrEmpty(toolNo) && string.IsNullOrEmpty(toyNumber) && string.IsNullOrEmpty(partNumber)) continue;
+                    if (string.IsNullOrEmpty(toolNo) && string.IsNullOrEmpty(partNumber)) continue;
                     
                     if (!string.IsNullOrWhiteSpace(toolNo))
                     {
                         if (!string.IsNullOrWhiteSpace(partNumber))
-                            partMappingsToAdd.Add((toolNo.Trim(), partNumber.Trim(), (toyNumber ?? "").Trim()));
-                        
-                        if (!string.IsNullOrWhiteSpace(toyNumber))
-                            toyMappingsToAdd.Add((toolNo.Trim(), toyNumber.Trim()));
+                            partMappingsToAdd.Add((toolNo.Trim(), partNumber.Trim(), ""));
                     }
 
                     // Re-generate SmartCodeName based on the same logic as UI
@@ -409,7 +403,6 @@ public class JigsController : ControllerBase
                         existing.HeightJig = heightJig;
                         existing.JigType = jigType;
                         existing.Process = process;
-                        existing.ToyNumber = toyNumber;
                         existing.PartNumber = partNumber;
                         existing.Rev = rev;
                         SanitizeJig(existing);
@@ -443,7 +436,6 @@ public class JigsController : ControllerBase
                             HeightJig = heightJig,
                             JigType = jigType,
                             Process = process,
-                            ToyNumber = toyNumber,
                             PartNumber = partNumber,
                             Rev = rev,
                             Status = "Available",
@@ -470,12 +462,7 @@ public class JigsController : ControllerBase
                 var partMaster = await _context.PartMasters.FindAsync(map.PartNumber);
                 if (partMaster == null) 
                 {
-                    _context.PartMasters.Add(new PartMaster { PartNumber = map.PartNumber, ToyNumber = string.IsNullOrWhiteSpace(map.ToyNumber) ? "-" : map.ToyNumber });
-                    await _context.SaveChangesAsync();
-                }
-                else if ((partMaster.ToyNumber == "-" || string.IsNullOrWhiteSpace(partMaster.ToyNumber)) && !string.IsNullOrWhiteSpace(map.ToyNumber))
-                {
-                    partMaster.ToyNumber = map.ToyNumber; 
+                    _context.PartMasters.Add(new PartMaster { PartNumber = map.PartNumber });
                     await _context.SaveChangesAsync();
                 }
 
@@ -486,15 +473,7 @@ public class JigsController : ControllerBase
                 }
             }
 
-            // Process Toy Mappings
-            foreach (var map in toyMappingsToAdd)
-            {
-                if (!await _context.JigToyMappings.AnyAsync(m => m.ToolNo == map.ToolNo && m.ToyNumber == map.ToyNumber))
-                {
-                    _context.JigToyMappings.Add(new JigToyMapping { ToolNo = map.ToolNo, ToyNumber = map.ToyNumber });
-                    await _context.SaveChangesAsync();
-                }
-            }
+
 
             return Ok(new { inserted, updated, errors });
         }
@@ -538,7 +517,6 @@ public class JigsController : ControllerBase
         // Fields where NO spaces should exist (Identifiers)
         jig.Id = CleanAllSpaces(jig.Id) ?? "";
         jig.ToolNo = CleanAllSpaces(jig.ToolNo);
-        jig.ToyNumber = CleanAllSpaces(jig.ToyNumber);
         jig.PartNumber = CleanAllSpaces(jig.PartNumber);
         jig.LocatorId = CleanAllSpaces(jig.LocatorId);
         jig.Rev = CleanAllSpaces(jig.Rev);

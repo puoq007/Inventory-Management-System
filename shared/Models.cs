@@ -45,7 +45,6 @@ public class PartMaster
 {
     [Key]
     public string PartNumber { get; set; } = string.Empty;
-    public string? ToyNumber { get; set; }
 }
 
 public class JigPartMapping
@@ -56,13 +55,7 @@ public class JigPartMapping
     public string PartNumber { get; set; } = string.Empty; // Maps to PartMaster.PartNumber
 }
 
-public class JigToyMapping
-{
-    [Key]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string ToolNo { get; set; } = string.Empty; // Maps to Jig.ToolNo
-    public string ToyNumber { get; set; } = string.Empty;
-}
+
 
 public class TransactionRow
 {
@@ -96,9 +89,11 @@ public class Jig
     public string? Process { get; set; }
     
     // Extra Details from Excel
-    public string? ToyNumber { get; set; }
     public string? PartNumber { get; set; }
     public string? Rev { get; set; }
+
+    // Image
+    public string? ImageUrl { get; set; } // Base64 data URI or file path
 
     // Status Trackers
     public string Status { get; set; } = "Available"; // Available, InUse, Evaluation, Scrapped
