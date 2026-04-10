@@ -49,16 +49,20 @@ namespace backend.Controllers
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
-            if (jig.Status == "InUse") return BadRequest("Jig is already checked out");
+            if (jig.Status == "Cleaning" || jig.Status == "Evaluation" || jig.Status == "Lost")
+                return BadRequest($"ไม่สามารถทำรายการได้ สถานะปัจจุบันของจิ๊กคือ '{jig.Status}'");
+
+            string actionType = (jig.Status == "InUse") ? "Transfer" : "CheckOut";
+            string msg = (actionType == "Transfer") ? "Transferred successfully" : "Checked out successfully";
 
             jig.Status = "InUse";
-            jig.LocatorId = request.Destination; // Store production zone name
+            jig.LocatorId = string.IsNullOrEmpty(request.LocatorId) ? request.Destination : request.LocatorId; 
             jig.UpdatedAt = DateTime.UtcNow;
 
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
-                Action = "CheckOut",
+                Action = actionType,
                 Destination = request.Destination ?? "Production",
                 User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
@@ -67,7 +71,7 @@ namespace backend.Controllers
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Checked out successfully", jig });
+            return Ok(new { message = msg, actionType, jig });
         }
 
         [HttpPost("checkin")]

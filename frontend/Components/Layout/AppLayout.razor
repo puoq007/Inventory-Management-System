@@ -6,77 +6,157 @@
 @inject AuthService Auth
 @inject HttpClient Http
 
-<div class="min-h-[100dvh] bg-slate-50 text-slate-900 font-sans flex text-sm flex-col md:flex-row">
-    <!-- Mobile header -->
-    <div class="md:hidden flex items-center justify-between bg-slate-900 text-slate-100 p-4 sticky top-0 z-50 shadow-md">
-        <div class="text-xl font-bold tracking-tight">
-            <span class="text-blue-400">JIG</span> Inventory
-        </div>
-        <button @onclick="ToggleMenu" class="p-2 focus:outline-none hover:bg-slate-800 rounded transition duration-200">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                @if (_isMenuOpen) {
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                } else {
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                }
-            </svg>
-        </button>
-    </div>
+<div class="min-h-[100dvh] bg-slate-900 text-slate-300 font-sans flex flex-col text-sm w-full">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md relative w-full">
+        <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16">
+            <div class="flex items-center justify-between h-full">
+                
+                <!-- Left: Logo & Links -->
+                <div class="flex items-center h-full">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center cursor-pointer mr-8" @onclick='() => NavManager.NavigateTo("/")'>
+                        <div class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-1.5 pt-1">
+                            <span class="text-mattel-red bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-[0_0_10px_rgba(238,0,36,0.4)] select-none">MATTEL</span>
+                        </div>
+                    </div>
 
-    <!-- Sidebar / Nav -->
-    <nav class="@(_isMenuOpen ? "flex" : "hidden") md:flex w-full md:w-64 bg-slate-900 text-slate-100 flex-col items-center py-6 shadow-xl shrink-0 md:h-[100dvh] md:sticky md:top-0 overflow-y-auto z-40">
-        <div class="hidden md:block text-2xl font-bold tracking-tight mb-8 px-4 text-center w-full">
-            <span class="text-blue-400">JIG</span> Inventory
-        </div>
+                    <!-- Desktop Navigation Links -->
+                    <div class="hidden md:flex items-center space-x-1 h-full">
+                        <NavLink class="inline-flex items-center px-4 py-2 text-[13px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/" Match="NavLinkMatch.All">@Lang.T("Dashboard", "Dashboard")</NavLink>
+                        <NavLink class="inline-flex items-center px-4 py-2 text-[13px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/current-status">@Lang.T("Inventory", "Inventory")</NavLink>
+                        @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
+                            <NavLink class="inline-flex items-center px-4 py-2 text-[13px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/scan-out">@Lang.T("Scan In/Out", "Orders")</NavLink>
+                        }
+                        @if (_role != "Guest") {
+                            <NavLink class="inline-flex items-center px-4 py-2 text-[13px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/history">@Lang.T("Reports", "Reports")</NavLink>
+                        }
 
-        <div class="flex-grow w-full px-4 space-y-2">
-            <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors font-medium" href="/" Match="NavLinkMatch.All">@Lang.T("แผงควบคุม", "Dashboard")</NavLink>
-            <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/current-status">@Lang.T("สถานะปัจจุบัน", "Current Status")</NavLink>
-            @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
-                <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/scan-out">@Lang.T("เบิก/คืน จิก", "Scan In / Out")</NavLink>
-            }
-            @if (_role != "Guest") {
-                <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/history">@Lang.T("ประวัติการใช้งาน", "History")</NavLink>
-            }
-
-            @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead" || _role == "Operator")
-            {
-                <div class="mt-4 pt-4 border-t border-slate-700">
-                    <p class="text-[10px] text-slate-500 uppercase font-bold px-4 mb-2 tracking-widest">@Lang.T("การจัดการระบบ", "Management")</p>
-                    @if (_role == "Admin")
-                    {
-                        <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/users">@Lang.T("ผู้ใช้งาน", "Users")</NavLink>
-                    }
-                    @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
-                    {
-                        <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/register-jig">@Lang.T("การจัดการ Jig", "Jig Management")</NavLink>
-                        <NavLink class="block px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors" href="/admin/locators">@Lang.T("ตำแหน่งเก็บ", "Locators")</NavLink>
-                    }
+                        @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead" || _role == "Operator")
+                        {
+                            <div class="relative h-full flex items-center" @onmouseenter="() => _isManagementMenuOpen = true" @onmouseleave="() => _isManagementMenuOpen = false">
+                                <button class="inline-flex items-center px-4 py-2 text-[13px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full @(_isManagementMenuOpen ? "text-white !border-mattel-red bg-slate-900/50" : "")">
+                                    @Lang.T("Management", "Management")
+                                    <svg class="ml-1 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                                @if (_isManagementMenuOpen)
+                                {
+                                    <div class="absolute top-full left-0 w-48 bg-slate-800 border-x border-b border-slate-700 rounded-b-lg shadow-xl py-2 z-50">
+                                        @if (_role == "Admin")
+                                        {
+                                            <NavLink class="block px-4 py-2 text-[13px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/admin/users">@Lang.T("System Users", "System Users")</NavLink>
+                                        }
+                                        @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
+                                        {
+                                            <NavLink class="block px-4 py-2 text-[13px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/admin/register-jig">@Lang.T("Jig Catalog", "Jig Catalog")</NavLink>
+                                            <NavLink class="block px-4 py-2 text-[13px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/admin/locators">@Lang.T("Storage Zones", "Storage Zones")</NavLink>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
-            }
-        </div>
-        
-        <div class="mt-auto px-4 w-full pt-4">
-            <div class="flex items-center justify-center space-x-1 mb-3 bg-slate-800/50 p-1 rounded-lg border border-slate-700/50">
-                <button @onclick='() => Lang.SetLanguage("TH")' 
-                        class='flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all duration-200 @(Lang.Current == "TH" ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800")'>
-                    TH
-                </button>
-                <button @onclick='() => Lang.SetLanguage("EN")' 
-                        class='flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all duration-200 @(Lang.Current == "EN" ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800")'>
-                    EN
-                </button>
+
+                <!-- Right: Icons, Profile, Language -->
+                <div class="hidden md:flex items-center space-x-6 h-full">
+                    
+                    <div class="flex items-center space-x-2 text-[11px] uppercase tracking-wider font-bold">
+                        <button @onclick='() => Lang.SetLanguage("EN")' 
+                                class='transition-colors px-1 @(Lang.Current == "EN" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
+                            EN
+                        </button>
+                        <span class="text-slate-700 select-none pb-[1px]">|</span>
+                        <button @onclick='() => Lang.SetLanguage("TH")' 
+                                class='transition-colors px-1 @(Lang.Current == "TH" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
+                            TH
+                        </button>
+                    </div>
+
+                    <!-- Fake Search Icon -->
+                    <button class="text-slate-500 hover:text-white transition-colors">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </button>
+
+                    <!-- Profile Dropdown -->
+                    <div class="relative flex items-center h-full" @onmouseenter="() => _isProfileOpen = true" @onmouseleave="() => _isProfileOpen = false">
+                        <button class="flex items-center focus:outline-none hover:text-white transition-colors gap-2 cursor-pointer outline-none group">
+                            <div class="bg-mattel-red text-white w-7 h-7 rounded-full flex items-center justify-center text-[8px] font-black shadow-[0_0_8px_rgba(238,0,36,0.3)] select-none">MATTEL</div>
+                            <span class="text-[13px] font-semibold text-slate-200 group-hover:text-white">Mattel</span>
+                            <svg class="h-4 w-4 text-slate-500 group-hover:text-slate-300 -ml-1 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+
+                        @if (_isProfileOpen)
+                        {
+                            <div class="absolute right-0 top-full w-56 bg-slate-800 border-x border-b border-slate-700 rounded-b-xl shadow-2xl py-2 z-50">
+                                <div class="px-4 py-3 border-b border-slate-700/50 mb-2 bg-slate-800/50">
+                                    <p class="text-sm font-bold text-slate-100 truncate" title="@_name">@_name</p>
+                                    <p class="text-xs text-slate-400 font-medium">@_role</p>
+                                </div>
+                                <button @onclick="Logout" class="w-full text-left px-4 py-2 text-sm text-mattel-red font-bold hover:bg-slate-700 transition-colors flex items-center gap-2">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                    @Lang.T("ออกจากระบบ", "Logout")
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button @onclick="ToggleMenu" class="p-2 text-slate-300 focus:outline-none hover:bg-slate-700 rounded transition duration-200">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            @if (_isMenuOpen) {
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            } else {
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            }
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div class="bg-slate-800 rounded-lg p-3 text-center">
-                <p class="text-sm font-semibold truncate" title="@_name">@_name</p>
-                <p class="text-xs text-slate-400 mb-2">@Lang.T("สิทธิ์:", "Role:") @_role</p>
-                <button @onclick="Logout" class="text-xs font-bold bg-slate-700 hover:bg-red-600 w-full py-1.5 rounded transition-colors duration-200">@Lang.T("ออกจากระบบ", "Logout")</button>
-            </div>
         </div>
+
+        <!-- Mobile Menu -->
+        @if (_isMenuOpen)
+        {
+            <div class="md:hidden border-t border-slate-700 bg-slate-800 shadow-xl absolute w-full left-0 z-50">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
+                    <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/current-status">Inventory</NavLink>
+                    @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
+                        <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/scan-out">Scan In/Out</NavLink>
+                    }
+                    @if (_role != "Guest") {
+                        <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/history">Reports</NavLink>
+                    }
+                    <div class="border-t border-slate-700 my-2"></div>
+                    <div class="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest">Management</div>
+                    
+                    @if (_role == "Admin") {
+                        <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/users">Users</NavLink>
+                    }
+                    @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead") {
+                        <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/register-jig">Jig Catalog</NavLink>
+                        <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/locators">Locators</NavLink>
+                    }
+                    
+                    <div class="border-t border-slate-700 my-2"></div>
+                    <div class="flex items-center px-4 space-x-3 mb-2 pt-2">
+                        <div class="bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm select-none">MAT</div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-200">@_name</div>
+                            <div class="text-xs text-slate-400">@_role</div>
+                        </div>
+                    </div>
+                    <button @onclick="Logout" class="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-mattel-red hover:bg-slate-700">Logout</button>
+                </div>
+            </div>
+        }
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow p-4 md:p-8">
+    <main class="flex-grow p-4 md:p-8 w-full max-w-[1500px] mx-auto">
         <RoleGate AllowedRoles="@(_allRoles)">
             @Body
         </RoleGate>
@@ -88,6 +168,8 @@
     private string _name = "";
     private readonly string[] _allRoles = new[] { "Admin", "Engineer", "ProdLead", "Operator", "Guest" };
     private bool _isMenuOpen = false;
+    private bool _isProfileOpen = false;
+    private bool _isManagementMenuOpen = false;
 
     private void ToggleMenu() => _isMenuOpen = !_isMenuOpen;
 

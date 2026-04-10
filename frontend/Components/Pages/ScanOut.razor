@@ -22,33 +22,33 @@
 
 
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center">
+    <div class="bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6 flex flex-col items-center">
         @if (!String.IsNullOrEmpty(_errorMessage) && !_sessionHistory.Any())
         {
-            <div class="mb-4 bg-red-50 text-red-700 p-3 rounded-lg border border-red-200 w-full max-w-md">
+            <div class="mb-4 bg-red-900/40 text-red-400 p-3 rounded-lg border border-red-900/40 w-full max-w-md">
                 @_errorMessage
             </div>
         }
 
         @if (!String.IsNullOrEmpty(_successMessage) && !_sessionHistory.Any())
         {
-            <div class="mb-4 bg-green-50 text-green-700 p-3 rounded-lg border border-green-200 w-full max-w-md">
+            <div class="mb-4 bg-green-900/40 text-green-400 p-3 rounded-lg border border-green-900/40 w-full max-w-md">
                 @_successMessage
             </div>
         }
 
         @* Physical Scanner section *@
         @{
-            var containerStyle = "bg-blue-50 border-blue-200";
-            var textStyle = "text-blue-900";
-            var iconStyle = "text-blue-600";
+            var containerStyle = "bg-slate-900 border-slate-700";
+            var textStyle = "text-slate-200";
+            var iconStyle = "text-mattel-red";
                             
             var title = Lang.T("ทำรายการ", "Scan Transaction");
 
             var locLabel = Lang.T("สแกนป้ายระบุตำแหน่ง *", "Scan Locator ID / Zone *");
             var locHint  = Lang.T("สแกนสถานที่ก่อนตามด้วยจิ๊ก", "Scan Location first, then Jig");
                            
-            var btnStyle = "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
+            var btnStyle = "bg-mattel-red hover:bg-mattel-hover focus:ring-red-500";
             var btnText = Lang.T("ยืนยัน", "Confirm");
 
             var selId = _selectedLocatorId;
@@ -62,10 +62,10 @@
                 @title
             </h3>
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">@locLabel</label>
+                <label class="block text-sm font-medium text-slate-300 mb-1">@locLabel</label>
                 @if (_locators == null)
                 {
-                    <div class="text-xs text-slate-400 py-2">กำลังโหลด...</div>
+                    <div class="text-xs text-slate-500 py-2">กำลังโหลด...</div>
                 }
                 else
                 {
@@ -76,20 +76,20 @@
                                @bind:event="oninput"
                                @onkeyup="HandleLocationKeyUp"
                                placeholder="@Lang.T("🔍 พิมพ์หรือสแกนสถานที่...", "🔍 Search or Scan Location...")"
-                               class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-500" />
+                               class="w-full rounded-lg bg-slate-800 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-500" />
                     </div>
                 }
-                <p class="text-xs text-slate-500 mt-1">@locHint</p>
+                <p class="text-xs text-slate-400 mt-1">@locHint</p>
             </div>
 
-            <p class="@textStyle border-t border-slate-200 text-sm mb-2 font-semibold mt-4 pt-4">
+            <p class="@textStyle border-t border-slate-700 text-sm mb-2 font-semibold mt-4 pt-4">
                 @Lang.T("สแกนคิวอาร์โค้ดจิ๊ก", "Scan Jig QR Code")
             </p>
             <div class="flex space-x-2">
                 <input type="text" @ref="_jigInputRef" @bind="_manualJigId" @bind:event="oninput" @onkeyup="HandleKeyUp"
                        disabled="@IsInputDisabled"
                        placeholder="@InputPlaceholder"
-                       class="flex-grow rounded-lg border-slate-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-100 disabled:cursor-not-allowed" />
+                       class="flex-grow rounded-lg bg-slate-800 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-900 disabled:cursor-not-allowed" />
                 <button @onclick="ProcessManualEntry"
                         disabled="@(_isProcessing || IsInputDisabled)"
                         class="@btnStyle text-white px-6 py-3 rounded-lg font-bold disabled:opacity-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 w-28">
@@ -106,27 +106,27 @@
         </div>
 
         @* Session History Log *@
-        <div class="w-full max-w-2xl mt-4 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in mb-10">
-            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div class="w-full max-w-2xl mt-4 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden animate-fade-in mb-10">
+            <div class="px-4 py-3 bg-slate-900 border-b border-slate-700">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">@Lang.T("ประวัติการทำรายการล่าสุด", "Recently Scanned / Activity")</h3>
-                    <button @onclick="ClearSessionHistory" class="text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest">@Lang.T("ล้างประวัติ", "Clear")</button>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">@Lang.T("ประวัติการทำรายการล่าสุด", "Recently Scanned / Activity")</h3>
+                    <button @onclick="ClearSessionHistory" class="text-[10px] font-bold text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest">@Lang.T("ล้างประวัติ", "Clear")</button>
                 </div>
             </div>
             <div class="max-h-80 overflow-y-auto">
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-white sticky top-0 border-b border-slate-100 shadow-sm text-xs uppercase text-slate-500 z-10">
+                    <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 shadow-sm text-xs uppercase text-slate-400 z-10">
                         <tr>
                             <th class="px-4 py-2 font-semibold w-24">@Lang.T("เวลา", "Time")</th>
                             <th class="px-4 py-2 font-semibold">@Lang.T("รหัสจิก", "Jig ID")</th>
                             <th class="px-4 py-2 font-semibold">@Lang.T("ตำแหน่ง / สถานะ", "Location / Status")</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-slate-700">
                         @if (!_sessionHistory.Any())
                         {
                             <tr>
-                                <td colspan="3" class="px-4 py-8 text-center text-slate-400 italic">
+                                <td colspan="3" class="px-4 py-8 text-center text-slate-500 italic">
                                     @Lang.T("ยังไม่มีรายการในขณะนี้", "No activity found.")
                                 </td>
                             </tr>
@@ -135,9 +135,9 @@
                         {
                             @foreach (var item in _sessionHistory.OrderByDescending(h => h.Timestamp))
                             {
-                                <tr class="@(item.IsError ? "bg-red-50/50" : "hover:bg-slate-50 transition-colors")">
-                                    <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap text-xs">@item.Timestamp.ToString("HH:mm:ss")</td>
-                                    <td class="px-4 py-2.5 font-mono font-semibold @(item.IsError ? "text-red-700" : "text-slate-900")">
+                                <tr class="@(item.IsError ? "bg-red-900/20" : "hover:bg-slate-700 transition-colors")">
+                                    <td class="px-4 py-2.5 text-slate-400 whitespace-nowrap text-xs">@item.Timestamp.ToString("HH:mm:ss")</td>
+                                    <td class="px-4 py-2.5 font-mono font-semibold @(item.IsError ? "text-red-400" : "text-slate-100")">
                                         @item.JigId
                                     </td>
                                     <td class="px-4 py-2.5">
@@ -151,10 +151,14 @@
                                         else
                                         {
                                             <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
-                                                @(item.Action.Contains("Out") ? "bg-blue-100 text-blue-700 border border-blue-200" : 
-                                                  item.Action.Contains("Clean") ? "bg-amber-100 text-amber-700 border border-amber-200" : 
-                                                  "bg-emerald-100 text-emerald-700 border border-emerald-200")">
-                                                @(item.Action.Contains("Out") ? Lang.T("เบิกไปที่:", "Out to:") : item.Action.Contains("Clean") ? Lang.T("ส่งล้างที่:", "Cleaning at:") : Lang.T("เก็บที่:", "Stored at:")) @TranslateLocation(item.Location)
+                                                @(item.Action.Contains("Transfer") ? "bg-purple-900/40 text-purple-400 border border-purple-900/40" :
+                                                  item.Action.Contains("Out") ? "bg-blue-900/40 text-blue-400 border border-blue-900/40" : 
+                                                  item.Action.Contains("Clean") ? "bg-amber-900/40 text-amber-400 border border-amber-900/40" : 
+                                                  "bg-emerald-900/40 text-emerald-400 border border-emerald-900/40")">
+                                                @(item.Action.Contains("Transfer") ? Lang.T("โอนย้ายไปที่:", "Transferred to:") :
+                                                  item.Action.Contains("Out") ? Lang.T("เบิกไปที่:", "Out to:") : 
+                                                  item.Action.Contains("Clean") ? Lang.T("ส่งล้างที่:", "Cleaning at:") : 
+                                                  Lang.T("เก็บที่:", "Stored at:")) @TranslateLocation(item.Location)
                                             </span>
                                         }
                                     </td>
@@ -164,8 +168,8 @@
                     </tbody>
                 </table>
             </div>
-            <div class="p-3 bg-slate-50 border-t border-slate-100 text-center">
-                <a href="/history" class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest inline-flex items-center gap-1.5">
+            <div class="p-3 bg-slate-900 border-t border-slate-700 text-center">
+                <a href="/history" class="text-[10px] font-bold text-mattel-red hover:text-mattel-hover transition-colors uppercase tracking-widest inline-flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -369,7 +373,7 @@
             if (matchedLoc.Type == "Production")
             {
                 modeString = "Out to";
-                var request = new { JigId = jigId, User = _currentUser, Destination = destName };
+                var request = new { JigId = jigId, User = _currentUser, Destination = destName, LocatorId = actualLocatorId };
                 response = await Http.PostAsJsonAsync("api/transactions/checkout", request);
             }
             else if (matchedLoc.Type == "Cleaning")
@@ -387,16 +391,24 @@
 
             if (response.IsSuccessStatusCode)
             {
-                var action = matchedLoc.Type == "Production" ? "เบิกออกสำเร็จ" : 
-                             matchedLoc.Type == "Cleaning" ? "ส่งล้างสำเร็จ" : 
-                             "เก็บเข้าตู้สำเร็จ";
-                _successMessage = $"{action}: {jigId}";
+                var responseContent = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                string actionTypeReturned = "";
+                if (responseContent.TryGetProperty("actionType", out var at)) {
+                    actionTypeReturned = at.GetString() ?? "";
+                }
+
+                var actionText = "เบิกออกสำเร็จ";
+                if (actionTypeReturned == "Transfer") actionText = "โอนย้ายสำเร็จ";
+                else if (matchedLoc.Type == "Cleaning") actionText = "ส่งล้างสำเร็จ";
+                else if (matchedLoc.Type != "Production") actionText = "เก็บเข้าตู้สำเร็จ";
+
+                _successMessage = $"{actionText}: {jigId}";
                 
                 // Add to history
                 _sessionHistory.Insert(0, new ScanSessionItem
                 {
                     JigId = jigId,
-                    Action = modeString,
+                    Action = (actionTypeReturned == "Transfer") ? "Transfer" : modeString,
                     Location = destName,
                     Timestamp = DateTime.Now,
                     IsError = false
@@ -411,7 +423,7 @@
                 _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
                 {
                     title = "Success!",
-                    text = $"{action}\nJig: {jigId}",
+                    text = $"{actionText}\nJig: {jigId}",
                     icon = "success",
                     timer = 2000,
                     showConfirmButton = false,
@@ -477,6 +489,16 @@
     private string TranslateLocation(string loc)
     {
         if (string.IsNullOrEmpty(loc)) return loc;
+
+        if (loc.IndexOf("Zone", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            var cleaned = loc.Replace("1 Cabinet Shelf", "").Replace("Cabinet Shelf", "")
+                             .Replace("Cabinet", "").Replace("Shelf", "")
+                             .Trim();
+            if (cleaned.StartsWith("1 ")) cleaned = cleaned.Substring(2).Trim();
+            return cleaned;
+        }
+
         return loc switch {
             "Storage" => Lang.T("คลังสินค้า / ที่เก็บ (Storage)", "Storage"),
             "Production" => Lang.T("สายการผลิต (Production)", "Production"),

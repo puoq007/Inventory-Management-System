@@ -13,20 +13,20 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("ประวัติการใช้งาน", "History")</h1>
-        <p class="text-slate-500">@Lang.T("ดูรายการเบิกและคืนจิกย้อนหลัง", "View recent jig check-outs and returns")</p>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("ประวัติการใช้งาน", "History")</h1>
+        <p class="text-slate-400">@Lang.T("ดูรายการเบิกและคืนจิกย้อนหลัง", "View recent jig check-outs and returns")</p>
     </div>
     @if (!string.IsNullOrEmpty(_role))
     {
         <div class="flex items-center space-x-4">
-            <button @onclick="ExportCsv" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center">
-                <svg class="w-4 h-4 mr-2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button @onclick="ExportCsv" class="px-4 py-2 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 @Lang.T("ส่งออก CSV", "Export CSV")
             </button>
-            <div class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
-                Role: <span class="text-slate-800">@_role</span>
+            <div class="text-sm font-medium text-slate-400 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-700">
+                Role: <span class="text-slate-200">@_role</span>
             </div>
         </div>
     }
@@ -35,115 +35,139 @@
 @if (_isLoading)
 {
     <div class="flex items-center justify-center py-12">
-        <div class="text-slate-500 font-medium tracking-wide">@Lang.T("กำลังโหลดข้อมูลประวัติ...", "Loading history...")</div>
+        <div class="text-slate-400 font-medium tracking-wide">@Lang.T("กำลังโหลดข้อมูลประวัติ...", "Loading history...")</div>
     </div>
 }
 else if (!_hasTransactions)
 {
-    <div class="flex flex-col items-center justify-center py-16 text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-100">
-        <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="flex flex-col items-center justify-center py-16 text-slate-400 bg-slate-800 rounded-2xl shadow-xl border border-slate-700">
+        <svg class="w-16 h-16 mb-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <div class="text-lg font-medium">@Lang.T("ยังไม่พบรายการ", "No Transactions Yet")</div>
-        <p class="text-sm mt-1 text-slate-400">@Lang.T("เบิกหรือคืนจิกที่หน้าสถานะปัจจุบัน เพื่อดูรายการย้อนหลังที่นี่", "Borrow or return a jig on the Current Status page to see history here.")</p>
-        <a href="/current-status" class="mt-6 px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">
+        <div class="text-lg font-medium text-slate-100">@Lang.T("ยังไม่พบรายการ", "No Transactions Yet")</div>
+        <p class="text-sm mt-1 text-slate-500">@Lang.T("เบิกหรือคืนจิกที่หน้าสถานะปัจจุบัน เพื่อดูรายการย้อนหลังที่นี่", "Borrow or return a jig on the Current Status page to see history here.")</p>
+        <a href="/current-status" class="mt-6 px-4 py-2 bg-slate-900 text-slate-300 font-medium rounded-lg hover:bg-slate-700 transition-colors border border-slate-700">
             @Lang.T("ไปที่หน้าสถานะปัจจุบัน", "Go to Current Status")
         </a>
     </div>
 }
 else
 {
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+    <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ค้นหาผู้ใช้งาน, การดำเนินการ หรือ รหัสจิก", "Search User, Action, or Jig ID")</label>
+                <label for="search" class="block text-sm font-medium text-slate-200 mb-1">@Lang.T("ค้นหาผู้ใช้งาน, การดำเนินการ หรือ รหัสจิก", "Search User, Action, or Jig ID")</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: สมชาย, เบิกออก, J003", "e.g. John Doe, Borrowed, J003")" />
+                           class="block w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 text-slate-200 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm outline-none" placeholder="@Lang.T("ตัวอย่าง: สมชาย, เบิกออก, J003", "e.g. John Doe, Borrowed, J003")" />
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 max-w-full relative">
+        <div class="block w-full pb-48">
+            <table class="min-w-full divide-y divide-slate-700">
+                <thead class="bg-slate-900">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("วันเวลา", "Date & Time")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสจิก", "Jig ID")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("การดำเนินการ", "Action")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ผู้ใช้งาน", "User")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("วันเวลา", "Date & Time")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("รหัสจิก", "Jig ID")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none whitespace-nowrap min-w-[200px]" @onclick="ToggleActionFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_actionFilter != "All" ? "text-slate-100" : "text-slate-400 hover:text-slate-200")">
+                                <span class="tracking-widest">@Lang.T("การดำเนินการ", "Action")@(_actionFilter != "All" ? $": {Lang.T(GetActionThai(_actionFilter), _actionFilter)}" : "")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showActionFilter ? "bg-slate-700 rotate-180" : "group-hover:bg-slate-800")'>
+                                    <svg class='w-3.5 h-3.5 @(_actionFilter != "All" ? "text-mattel-red" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_actionFilter != "All") { <span class="flex h-2 w-2 rounded-full bg-mattel-red animate-pulse shadow-[0_0_8px_rgba(238,0,36,0.5)]"></span> }
+                            </div>
+                            @if (_showActionFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-56 bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900/50 border-b border-slate-700">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Action</span>
+                                        @if (_actionFilter != "All") { <button @onclick='() => SetActionFilter("All")' class="text-[10px] font-bold text-mattel-red">RESET</button> }
+                                    </div>
+                                    <div class="py-1.5 max-h-64 overflow-y-auto">
+                                        @foreach (var opt in (new[] { "All", "CheckOut", "Transfer", "CheckIn", "CheckInToCleaning", "ReturnToStore", "ReportIssue", "Scrapped" }))
+                                        {
+                                            <button @onclick="() => SetActionFilter(opt)" class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_actionFilter == opt ? "bg-slate-700 text-mattel-red font-bold" : "text-slate-300 hover:bg-slate-700")'>
+                                                <span>@(opt == "All" ? Lang.T("ทั้งหมด", "All Actions") : Lang.T(GetActionThai(opt), opt))</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none whitespace-nowrap min-w-[200px]" @onclick="ToggleRoleFilter">
+                            <div class="flex items-center gap-2 transition-colors @(_roleFilter != "All" ? "text-slate-100" : "text-slate-400 hover:text-slate-200")">
+                                <span class="tracking-widest">@Lang.T("ผู้ใช้งาน", "User")@(_roleFilter != "All" ? $": {_roleFilter}" : "")</span>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-slate-700 rotate-180" : "group-hover:bg-slate-800")'>
+                                    <svg class='w-3.5 h-3.5 @(_roleFilter != "All" ? "text-mattel-red" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                @if (_roleFilter != "All") { <span class="flex h-2 w-2 rounded-full bg-mattel-red animate-pulse shadow-[0_0_8px_rgba(238,0,36,0.5)]"></span> }
+                            </div>
+                            @if (_showRoleFilter)
+                            {
+                                <div class="absolute left-6 top-full z-20 mt-2 w-56 bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900/50 border-b border-slate-700">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Role</span>
+                                        @if (_roleFilter != "All") { <button @onclick='() => SetRoleFilter("All")' class="text-[10px] font-bold text-mattel-red">RESET</button> }
+                                    </div>
+                                    <div class="py-1.5 max-h-64 overflow-y-auto">
+                                        <button @onclick='() => SetRoleFilter("All")' class='flex items-center w-full px-4 py-2 text-xs text-left transition-all @(_roleFilter == "All" ? "bg-slate-700 text-mattel-red font-bold" : "text-slate-300 hover:bg-slate-700")'>
+                                            @Lang.T("ทุกตำแหน่ง", "All Roles")
+                                        </button>
+                                        @foreach (var r in new[] { "Admin", "Engineer", "ProdLead", "Operator", "Unknown" })
+                                        {
+                                            <button @onclick="() => SetRoleFilter(r)" class='flex items-center w-full px-4 py-2 text-xs text-left transition-all @(_roleFilter == r ? "bg-slate-700 text-mattel-red font-bold" : "text-slate-300 hover:bg-slate-700")'>
+                                                @r
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-slate-200">
+                <tbody class="bg-slate-800 divide-y divide-slate-700">
                     @foreach (var txn in _displayTransactions ?? Enumerable.Empty<TransactionRow>())
                     {
                         var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
                         var jigIdDisplay = jig?.Id ?? txn.JigUid;
                         var specName = jig?.SmartCodeName ?? "Unknown";
 
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                <div class="font-medium text-slate-700">@txn.Timestamp.ToString("MMM dd, yyyy")</div>
-                                <div class="text-xs text-slate-400">@txn.Timestamp.ToString("HH:mm:ss")</div>
+                        <tr class="hover:bg-slate-700 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                                <div class="font-medium text-slate-200">@txn.Timestamp.ToString("MMM dd, yyyy")</div>
+                                <div class="text-xs text-slate-500">@txn.Timestamp.ToString("HH:mm:ss")</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-mono text-sm font-semibold text-slate-900 border border-slate-200 bg-slate-100 px-2 py-1 rounded mr-2">@jigIdDisplay</span>
-                                <span class="text-xs text-slate-500">(@specName)</span>
+                                <span class="font-mono text-sm font-semibold text-slate-100 border border-slate-700 bg-slate-900 px-2 py-1 rounded mr-2">@jigIdDisplay</span>
+                                <span class="text-xs text-slate-400">(@specName)</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if (txn.Action == "CheckOut")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                                        @Lang.T("เบิกออก", "Borrowed")
-                                    </span>
-                                }
-                                else if (txn.Action == "CheckIn")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        @Lang.T("คืนเข้าตู้", "Returned")
-                                    </span>
-                                }
-                                else if (txn.Action == "CheckInToCleaning")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                                        @Lang.T("ส่งล้าง / ตรวจสอบ", "Sent to Cleaning")
-                                    </span>
-                                }
-                                else if (txn.Action == "ReturnToStore")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        @Lang.T("เก็บเข้าตัว/คลัง", "Returned to Store")
-                                    </span>
-                                }
-                                else if (txn.Action == "ReportIssue")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                                        @Lang.T("แจ้งพบปัญหา", "Reported Issue")
-                                    </span>
-                                }
-                                else if (txn.Action == "Scrapped")
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                                        @Lang.T("จำหน่ายออก", "Scrapped")
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                                        @txn.Action
-                                    </span>
-                                }
+                                <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border @(txn.Action == "CheckOut" ? "bg-blue-900/40 text-blue-400 border-blue-900/40" :
+                                                                          txn.Action == "CheckIn" ? "bg-emerald-900/40 text-emerald-400 border-emerald-900/40" :
+                                                                          txn.Action == "CheckInToCleaning" ? "bg-amber-900/40 text-amber-400 border-amber-900/40" :
+                                                                          txn.Action == "ReturnToStore" ? "bg-emerald-900/40 text-emerald-400 border-emerald-900/40" :
+                                                                          txn.Action == "ReportIssue" ? "bg-red-900/40 text-red-400 border-red-900/40" :
+                                                                          txn.Action == "Transfer" ? "bg-purple-900/40 text-purple-400 border-purple-900/40" :
+                                                                          "bg-slate-800 text-slate-300 border-slate-700")">
+                                    @Lang.T(GetActionThai(txn.Action), txn.Action)
+                                </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-100 font-medium">
                                 <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold mr-2">
+                                    <div class="w-6 h-6 rounded bg-indigo-900/50 text-indigo-400 flex items-center justify-center text-xs font-bold mr-2">
                                         @(string.IsNullOrEmpty(txn.User) ? "?" : txn.User.Substring(0, 1).ToUpper())
                                     </div>
                                     @txn.User
@@ -165,6 +189,18 @@ else
     private bool _hasTransactions = false;
     private List<TransactionRow> _allTransactions = new();
     private List<Jig> _allJigs = new();
+    private List<UserAccount> _allUsers = new();
+
+    private string _actionFilter = "All";
+    private string _roleFilter = "All";
+    private bool _showActionFilter = false;
+    private bool _showRoleFilter = false;
+
+    private void ToggleActionFilter() { _showActionFilter = !_showActionFilter; _showRoleFilter = false; }
+    private void ToggleRoleFilter() { _showRoleFilter = !_showRoleFilter; _showActionFilter = false; }
+    
+    private void SetActionFilter(string val) { _actionFilter = val; _showActionFilter = false; FilterData(); }
+    private void SetRoleFilter(string val) { _roleFilter = val; _showRoleFilter = false; FilterData(); }
 
     protected override void OnInitialized()
     {
@@ -202,11 +238,13 @@ else
         {
             var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
             var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
+            var usersTask = Http.GetFromJsonAsync<List<UserAccount>>("api/users");
 
-            await Task.WhenAll(txnsTask, jigsTask);
+            await Task.WhenAll(txnsTask, jigsTask, usersTask);
 
             _allTransactions = await txnsTask ?? new List<TransactionRow>();
             _allJigs = await jigsTask ?? new List<Jig>();
+            _allUsers = await usersTask ?? new List<UserAccount>();
 
             FilterData();
         }
@@ -220,22 +258,44 @@ else
     {
         _hasTransactions = _allTransactions.Any();
         
-        if (string.IsNullOrWhiteSpace(_searchQuery))
+        var query = _allTransactions.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
         {
-            _displayTransactions = _allTransactions.Take(200).ToList();
-            return;
+            var lowerQuery = _searchQuery.ToLowerInvariant();
+            query = query.Where(t => 
+            {
+                var jig = _allJigs.FirstOrDefault(j => j.Uid == t.JigUid);
+                return (jig?.Id?.ToLowerInvariant().Contains(lowerQuery) == true) ||
+                       (t.JigUid?.ToLowerInvariant().Contains(lowerQuery) == true) ||
+                       t.Action.ToLowerInvariant().Contains(lowerQuery) ||
+                       t.User.ToLowerInvariant().Contains(lowerQuery);
+            });
         }
 
-        var lowerQuery = _searchQuery.ToLowerInvariant();
-        _displayTransactions = _allTransactions.Where(t => 
-        {
-            var jig = _allJigs.FirstOrDefault(j => j.Uid == t.JigUid);
-            return (jig?.Id?.ToLowerInvariant().Contains(lowerQuery) == true) ||
-                   (t.JigUid?.ToLowerInvariant().Contains(lowerQuery) == true) ||
-                   t.Action.ToLowerInvariant().Contains(lowerQuery) ||
-                   t.User.ToLowerInvariant().Contains(lowerQuery);
-        }).ToList();
+        if (_actionFilter != "All")
+            query = query.Where(t => t.Action == _actionFilter);
+            
+        if (_roleFilter != "All")
+            query = query.Where(t => {
+                var userAcct = _allUsers.FirstOrDefault(u => u.Name == t.User);
+                var r = userAcct != null ? userAcct.Role : "Unknown";
+                return r == _roleFilter;
+            });
+
+        _displayTransactions = query.Take(200).ToList();
     }
+
+    private string GetActionThai(string action) => action switch {
+        "CheckOut" => "เบิกออก",
+        "CheckIn" => "คืนเข้าตู้",
+        "CheckInToCleaning" => "ส่งล้าง",
+        "ReturnToStore" => "เก็บเข้าคลัง",
+        "ReportIssue" => "แจ้งพบปัญหา",
+        "Scrapped" => "จำหน่ายออก",
+        "Transfer" => "โอนย้าย",
+        _ => action
+    };
 
     private async Task ExportCsv()
     {

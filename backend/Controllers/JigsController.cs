@@ -347,14 +347,17 @@ public class JigsController : ControllerBase
                     }
 
                     var toolNo = GetVal("Tool No.");
-                    var stepPrint = GetVal("Total Step Print");
-                    if (string.IsNullOrEmpty(stepPrint)) stepPrint = GetVal("Step Print");
+                    
+                    var rawStep = GetVal("Total Step Print");
+                    if (string.IsNullOrEmpty(rawStep)) rawStep = GetVal("Step Print");
+                    var stepPrint = ExtractStepNumber(rawStep);
+                    if (stepPrint == "-") stepPrint = ""; // Clean it up if nothing matched
 
                     var partType = GetVal("Part Type", 0); // 1st Part Type
                     var jigType = GetVal("JIG Type"); 
                     if (string.IsNullOrEmpty(jigType)) jigType = GetVal("Part Type", 1); // 2nd Part Type fallback
                     
-                    var date = GetVal("Date");
+                    var date = FormatExcelDate(GetVal("Date"));
                     var feed = GetVal("Feed");
                     var scan = GetVal("Scan");
                     var qtyPrint = GetVal("Qty / Print");
@@ -553,5 +556,76 @@ public class JigsController : ControllerBase
     private bool JigExists(string uid)
     {
         return _context.Jigs.Any(e => e.Uid == uid);
+    }
+
+    private static readonly Dictionary<string, string> _stepNameToNumber = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["L"] = "1", ["R"] = "2", ["Hood"] = "3", ["Roof"] = "4",
+        ["Re.Hood"] = "5", ["Front"] = "6", ["Rear"] = "7", ["Under"] = "8",
+        ["Re.L"] = "9", ["Re.R"] = "10",
+        ["Read Hood"] = "5", ["Read"] = "7"
+    };
+
+    private string ExtractStepNumber(string? stepStr)
+    {
+        if (string.IsNullOrEmpty(stepStr)) return "-";
+        
+        var items = stepStr.Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        var resultNums = new List<string>();
+        
+        foreach (var item in items)
+        {
+            var trimmed = item.Trim();
+            
+            if (trimmed.Contains(':')) 
+            {
+                var prefix = trimmed.Split(':')[0].Trim();
+                if (int.TryParse(prefix, out _)) { resultNums.Add(prefix); continue; }
+            }
+            
+            if (int.TryParse(trimmed, out _)) { resultNums.Add(trimmed); continue; }
+            
+            var lower = trimmed.ToLowerInvariant();
+            if (lower.Contains("re.hood") || lower.Contains("read hood")) { resultNums.Add("5"); continue; }
+            if (lower.Contains("re.l")) { resultNums.Add("9"); continue; }
+            if (lower.Contains("re.r")) { resultNums.Add("10"); continue; }
+            
+            var tokens = trimmed.Split(new[] { ' ', '.', '_', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var token in tokens)
+            {
+                if (_stepNameToNumber.TryGetValue(token, out var num))
+                {
+                    resultNums.Add(num);
+                }
+            }
+        }
+        
+        var finalNums = resultNums.Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+        return finalNums.Any() ? string.Join("-", finalNums) : "-";
+    }
+
+    private string FormatExcelDate(string? dString)
+    {
+        if (string.IsNullOrWhiteSpace(dString) || dString == "-") return "";
+        try {
+            var d = dString.Split(' ')[0].Split('T')[0];
+            d = d.Replace("-", "/");
+            var parts = d.Split('/');
+            if (parts.Length == 3) {
+                if (!int.TryParse(parts[0], out int p1)) return dString;
+                if (!int.TryParse(parts[1], out int p2)) return dString;
+                if (!int.TryParse(parts[2], out int p3)) return dString;
+                
+                int day, month, year;
+                if (p1 > 31) { year = p1; month = p2; day = p3; }
+                else { day = p1; month = p2; year = p3; }
+                
+                if (year >= 2500) year -= 543;
+                if (year < 100) year += 2000;
+                
+                return $"{day:D2}/{month:D2}/{year}";
+            }
+        } catch { }
+        return dString ?? "";
     }
 }

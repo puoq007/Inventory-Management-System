@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
-<body>
+<body style="background-color: #0f172a; color: #cbd5e1; margin: 0;">
     <div id="app">
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />
@@ -60,10 +60,34 @@
             }
         };
 
-        const cleanDate = (d) => {
-            if (!d || d === '-') return '-';
-            const match = d.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
-            return match ? match[1] : d.split(' ')[0].split('T')[0];
+        const cleanDate = (dString) => {
+            if (!dString || dString === '-') return '-';
+            // Strip time
+            let d = dString.split(' ')[0].split('T')[0];
+            d = d.replace(/-/g, '/');
+            
+            let parts = d.split('/');
+            if (parts.length === 3) {
+                let p1 = parseInt(parts[0], 10);
+                let p2 = parseInt(parts[1], 10);
+                let p3 = parseInt(parts[2], 10);
+                
+                let day, month, year;
+                // Detect YYYY/MM/DD vs DD/MM/YYYY
+                if (p1 > 31) {
+                    year = p1; month = p2; day = p3;
+                } else {
+                    day = p1; month = p2; year = p3;
+                }
+                
+                if (year >= 2500) year -= 543;
+                if (year < 100) year += 2000;
+                
+                let dd = day.toString().padStart(2, '0');
+                let mm = month.toString().padStart(2, '0');
+                return `${dd}/${mm}/${year}`;
+            }
+            return d;
         };
         const cssTemplate = `
             @page { margin: 0; }
@@ -76,60 +100,65 @@
             }
             .print-page {
                 page-break-after: always;
-                padding: 5mm; /* Top/Left padding to prevent sticking to edges */
+                padding: 1mm; /* Very small padding avoids overflowing hardware page heights */
                 display: block;
             }
             .plate { 
-                width: 25mm; 
-                height: 25mm; 
-                position: relative; 
+                width: 98mm; /* Slightly under 100mm to perfectly fit hardware margins */
+                height: 42mm; /* Slightly under 44mm for margins */
+                display: flex;
+                align-items: stretch;
                 background: white;
-                border: 1.5px solid #000; /* Dark, solid guide for cutting */
+                border: 1.5px solid #000;
                 page-break-inside: avoid;
+                padding: 3mm;
             }
-            /* QR code: centered, slightly offset left to give date room */
             .plate-qr {
-                position: absolute;
-                top: 4.5mm;
-                left: 2.5mm;
-                width: 16mm;
-                height: 16mm;
+                width: 32mm;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
-            .plate-qr svg { width: 100%; height: 100%; }
-            /* Tool: top-left, offset to avoid hole */
+            .plate-qr svg { width: 100%; height: auto; }
+            .plate-info {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                margin-left: 5mm;
+            }
+            .plate-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
             .plate-tool {
-                position: absolute;
-                top: 0.5mm;
-                left: 4.5mm;
-                font-size: 9.5pt; /* Increased size requested by user */
-                font-weight: 800;
-                color: #000;
-                line-height: 1;
-                white-space: nowrap;
-            }
-            /* Step number: bottom-center */
-            .plate-step {
-                position: absolute;
-                bottom: 0.5mm;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: 9pt;
+                font-size: 20pt;
                 font-weight: 900;
                 color: #000;
                 line-height: 1;
-                white-space: nowrap;
             }
-            /* Date: right side, rotated 90° */
             .plate-date {
-                position: absolute;
-                right: 0mm; /* Pushed as far right as possible */
-                top: 50%;
-                transform: translateY(-50%) rotate(90deg);
-                transform-origin: center center;
-                font-size: 6.5pt;
+                font-size: 12pt;
                 font-weight: 800;
                 color: #000;
-                white-space: nowrap;
+                line-height: 1;
+            }
+            .plate-step {
+                font-size: 26pt;
+                font-weight: 900;
+                color: #000;
+                text-align: center;
+                margin: 0;
+                line-height: 1;
+            }
+            .plate-fs {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13pt;
+                font-weight: 800;
+                color: #333;
             }
         `;
 
@@ -145,9 +174,17 @@
                     <div class="print-page">
                         <div class="plate">
                             <div class="plate-qr">${svgHtml}</div>
-                            <div class="plate-tool">${data.toolNo || '-'}</div>
-                            <div class="plate-step">${data.stepPrint || '-'}</div>
-                            <div class="plate-date">${dateStr}</div>
+                            <div class="plate-info">
+                                <div class="plate-header">
+                                    <span class="plate-tool">${data.toolNo || '-'}</span>
+                                    <span class="plate-date">${dateStr}</span>
+                                </div>
+                                <div class="plate-step">${data.stepPrint || '-'}</div>
+                                <div class="plate-fs">
+                                    <span>F: ${data.feed || '-'}</span>
+                                    <span>S: ${data.scan || '-'}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 300); }<\/script>
@@ -167,9 +204,17 @@
                     <div class="print-page">
                         <div class="plate">
                             <div class="plate-qr">${data.svg}</div>
-                            <div class="plate-tool">${data.toolNo || '-'}</div>
-                            <div class="plate-step">${data.stepPrint || '-'}</div>
-                            <div class="plate-date">${dateStr}</div>
+                            <div class="plate-info">
+                                <div class="plate-header">
+                                    <span class="plate-tool">${data.toolNo || '-'}</span>
+                                    <span class="plate-date">${dateStr}</span>
+                                </div>
+                                <div class="plate-step">${data.stepPrint || '-'}</div>
+                                <div class="plate-fs">
+                                    <span>F: ${data.feed || '-'}</span>
+                                    <span>S: ${data.scan || '-'}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;

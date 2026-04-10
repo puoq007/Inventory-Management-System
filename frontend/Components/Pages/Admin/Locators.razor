@@ -14,19 +14,19 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</h1>
-        <p class="text-slate-500">@Lang.T("จัดการตำแหน่งจัดเก็บสำหรับจิกกายภาพ", "Manage storage locations for physical jigs.")</p>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</h1>
+        <p class="text-slate-400">@Lang.T("จัดการตำแหน่งจัดเก็บสำหรับจิกกายภาพ", "Manage storage locations for physical jigs.")</p>
     </div>
     <div class="flex flex-wrap gap-2">
         @if (_currentRole == "Admin" || _currentRole == "ProdLead")
         {
-            <label class="px-5 py-2.5 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 shadow-sm transition-colors cursor-pointer flex items-center mb-0">
+            <label class="px-5 py-2.5 bg-emerald-700 text-white font-medium text-sm rounded-lg hover:bg-emerald-800 shadow-xl transition-colors cursor-pointer flex items-center mb-0">
                 <InputFile OnChange="ImportExcel" class="hidden" accept=".xlsx,.xls" />
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 @if(_isImporting) { <span>@Lang.T("กำลังนำเข้า...", "Importing...")</span> } else { <span>@Lang.T("นำเข้า Excel", "Import Excel")</span> }
             </label>
             
-            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors flex items-center">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 @Lang.T("เพิ่มตำแหน่งใหม่", "New Locator")
             </button>
@@ -36,21 +36,21 @@
 
 @if (!string.IsNullOrEmpty(_errorMessage) && !_showModal)
 {
-    <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">@_errorMessage</div>
+    <div class="mb-4 p-3 bg-red-900/30 text-red-400 rounded-lg text-sm border border-red-900/40">@_errorMessage</div>
 }
 
 @if (_isLoading)
 {
     <div class="flex justify-center items-center py-12">
-        <div class="text-slate-500 font-medium">@Lang.T("กำลังโหลดข้อมูลตำแหน่ง...", "Loading locators...")</div>
+        <div class="text-slate-400 font-medium">@Lang.T("กำลังโหลดข้อมูลตำแหน่ง...", "Loading locators...")</div>
     </div>
 }
 else
 {
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+    <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="search" class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ค้นหาคำสำคัญ", "Search Keyword")</label>
+                <label for="search" class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ค้นหาคำสำคัญ", "Search Keyword")</label>
                 <form class="relative" @onsubmit="FilterData" @onsubmit:preventDefault="true">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,13 +58,13 @@ else
                         </svg>
                     </div>
                     <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: ZONE-A, ห้องเก็บ, ล้าง...", "e.g. ZONE-A, Store Room, Cleaning...")" />
+                           class="block w-full pl-10 pr-3 py-2 bg-slate-900 text-slate-200 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" placeholder="@Lang.T("ตัวอย่าง: ZONE-A, ห้องเก็บ, ล้าง...", "e.g. ZONE-A, Store Room, Cleaning...")" />
                 </form>
             </div>
             @if (_selectedLocatorIds.Any())
             {
                 <div class="flex items-end mb-[2px]">
-                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
+                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-xl transition-colors flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         @Lang.T($"พิมพ์คิวอาร์ที่เลือก ({_selectedLocatorIds.Count})", $"Print Selected QR ({_selectedLocatorIds.Count})")
                     </button>
@@ -73,20 +73,20 @@ else
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-8 block w-full relative">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 block w-full relative">
         <div class="w-full pb-48">
             <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                <thead class="bg-slate-900 sticky top-0 z-10 shadow-xl">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12 shrink-0 rounded-tl-2xl">
-                            <input type="checkbox" checked="@(_displayLocators.Any() && _displayLocators.All(l => _selectedLocatorIds.Contains(l.Id)))" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-12 shrink-0 rounded-tl-2xl">
+                            <input type="checkbox" checked="@(_displayLocators.Any() && _displayLocators.All(l => _selectedLocatorIds.Contains(l.Id)))" @onchange="ToggleSelectAll" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[200px]">@Lang.T("รหัส / ชื่อตำแหน่ง", "Locator ID / Name")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[200px]">@Lang.T("รหัส / ชื่อตำแหน่ง", "Locator ID / Name")</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none shrink-0 whitespace-nowrap min-w-[150px]" @onclick="ToggleZoneFilter">
-                            <div class="flex items-center gap-2 transition-colors @(_zoneFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                            <div class="flex items-center gap-2 transition-colors @(_zoneFilter != "All" ? "text-blue-400" : "text-slate-400 hover:text-blue-400")">
                                 <span class="tracking-widest">@Lang.T("ประเภทโซน", "Zone")@(_zoneFilter != "All" ? $": {(_zoneFilter == "Store" ? "Storage" : _zoneFilter)}" : "")</span>
-                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showZoneFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
-                                    <svg class='w-3.5 h-3.5 @(_zoneFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showZoneFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-700")'>
+                                    <svg class='w-3.5 h-3.5 @(_zoneFilter != "All" ? "text-blue-500" : "text-slate-400")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </div>
@@ -97,19 +97,19 @@ else
                             </div>
                             @if (_showZoneFilter)
                             {
-                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
-                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900/50 border-b border-slate-700">
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@Lang.T("กรองประเภทโซน", "Filter Zone")</span>
                                         @if (_zoneFilter != "All")
                                         {
-                                            <button @onclick='() => SetZoneFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">@Lang.T("ล้าง", "RESET")</button>
+                                            <button @onclick='() => SetZoneFilter("All")' class="text-[10px] font-bold text-blue-400 hover:text-blue-400 transition-colors">@Lang.T("ล้าง", "RESET")</button>
                                         }
                                     </div>
                                     <div class="py-1.5">
                                         @foreach (var opt in new[] { ("All", Lang.T("แสดงทั้งหมด", "Show All Zones")), ("Production", Lang.T("โซนผลิต", "Production")), ("Cleaning", Lang.T("โซนล้าง", "Cleaning")), ("Store", Lang.T("คลังจัดเก็บ", "Storage")) })
                                         {
                                             <button @onclick="() => SetZoneFilter(opt.Item1)" 
-                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_zoneFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_zoneFilter == opt.Item1 ? "bg-blue-50/80 text-blue-400 font-bold" : "text-slate-400 hover:bg-slate-900")'>
                                                 <span>@opt.Item2</span>
                                                 @if (_zoneFilter == opt.Item1)
                                                 {
@@ -123,60 +123,60 @@ else
                                 </div>
                             }
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[150px]">@Lang.T("รายละเอียดตำแหน่ง", "Location Details")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[150px]">@Lang.T("รายละเอียดตำแหน่ง", "Location Details")</th>
                         @if (_hasActions)
                         {
-                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap min-w-[200px] rounded-tr-2xl">@Lang.T("การดำเนินการ", "Actions")</th>
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[200px] rounded-tr-2xl">@Lang.T("การดำเนินการ", "Actions")</th>
                         }
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-slate-200">
+                <tbody class="bg-slate-800 divide-y divide-slate-200">
                     @if (_displayLocators != null && _displayLocators.Any())
                     {
                         @foreach (var loc in _displayLocators)
                         {
-                            <tr class="hover:bg-slate-50 transition-colors">
+                            <tr class="hover:bg-slate-900 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="checkbox" checked="@_selectedLocatorIds.Contains(loc.Id)" @onchange="@(e => ToggleSelection(loc.Id, e.Value))" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                    <input type="checkbox" checked="@_selectedLocatorIds.Contains(loc.Id)" @onchange="@(e => ToggleSelection(loc.Id, e.Value))" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-bold text-slate-900 font-mono">@loc.Id</div>
-                                    <div class="text-xs text-slate-500 mt-1">@loc.Name</div>
+                                    <div class="text-sm font-bold text-slate-100 font-mono">@loc.Id</div>
+                                    <div class="text-xs text-slate-400 mt-1">@loc.Name</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if (loc.Type == "Production")
                                     {
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">@Lang.T("ผลิต", "Production")</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-900/40 text-blue-400 border border-blue-900/40">@Lang.T("ผลิต", "Production")</span>
                                     }
                                     else if (loc.Type == "Cleaning")
                                     {
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">@Lang.T("ล้าง", "Cleaning")</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-900/40 text-amber-400 border border-amber-900/40">@Lang.T("ล้าง", "Cleaning")</span>
                                     }
                                     else if (loc.Type == "Store")
                                     {
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">@Lang.T("คลัง", "Storage")</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 border border-emerald-900/40">@Lang.T("คลัง", "Storage")</span>
                                     }
                                     else
                                     {
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">@loc.Type</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-200 border border-slate-700">@loc.Type</span>
                                     }
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-700">@Lang.T("กลุ่ม:", "Site:") @loc.Site</div> }
-                                    @if(!string.IsNullOrEmpty(loc.Cabinet)){ <div class="text-xs text-slate-500 mt-1">@Lang.T("ตู้:", "Cabinet:") @loc.Cabinet</div> }
-                                    @if(!string.IsNullOrEmpty(loc.Shelf)){ <div class="text-xs text-slate-500 mt-0.5">@Lang.T("ชั้น:", "Shelf:") @loc.Shelf</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-300">@Lang.T("กลุ่ม:", "Site:") @loc.Site</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Cabinet)){ <div class="text-xs text-slate-400 mt-1">@Lang.T("ตู้:", "Cabinet:") @loc.Cabinet</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Shelf)){ <div class="text-xs text-slate-400 mt-0.5">@Lang.T("ชั้น:", "Shelf:") @loc.Shelf</div> }
                                 </td>
                                 @if (_hasActions)
                                 {
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <button @onclick="() => PrintQR(loc)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                        <button @onclick="() => PrintQR(loc)" class="text-slate-400 hover:text-slate-100 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-700 transition-colors" title="Print QR Code">
                                             <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                             QR
                                         </button>
                                         @if (_currentRole == "Admin" || _currentRole == "ProdLead")
                                         {
-                                            <button @onclick="() => OpenEditModal(loc)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
-                                            <button @onclick="() => DeleteLocator(loc)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">@Lang.T("ลบ", "Delete")</button>
+                                            <button @onclick="() => OpenEditModal(loc)" class="text-indigo-400 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-900/30 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
+                                            <button @onclick="() => DeleteLocator(loc)" class="text-red-400 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-900/30 transition-colors">@Lang.T("ลบ", "Delete")</button>
                                         }
                                     </td>
                                 }
@@ -188,17 +188,17 @@ else
                         <tr>
                             <td colspan="5" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center justify-center space-y-3">
-                                    <div class="p-4 bg-slate-50 rounded-full">
+                                    <div class="p-4 bg-slate-900 rounded-full">
                                         <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
                                     </div>
                                     <div class="space-y-1">
-                                        <h3 class="text-lg font-bold text-slate-900">@Lang.T("ไม่พบข้อมูลตำแหน่ง", "No locators found")</h3>
-                                        <p class="text-sm text-slate-500">@Lang.T("ไม่พบตำแหน่งจัดเก็บที่ตรงตามเงื่อนไขการค้นหา", "We couldn't find any positions matching your filters.")</p>
+                                        <h3 class="text-lg font-bold text-slate-100">@Lang.T("ไม่พบข้อมูลตำแหน่ง", "No locators found")</h3>
+                                        <p class="text-sm text-slate-400">@Lang.T("ไม่พบตำแหน่งจัดเก็บที่ตรงตามเงื่อนไขการค้นหา", "We couldn't find any positions matching your filters.")</p>
                                     </div>
                                     <button @onclick='() => { _searchQuery = ""; _zoneFilter = "All"; FilterData(); }' 
-                                            class="mt-4 px-4 py-2 bg-white border border-slate-200 text-blue-600 font-bold text-sm rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm">
+                                            class="mt-4 px-4 py-2 bg-slate-800 border border-slate-700 text-blue-400 font-bold text-sm rounded-xl hover:bg-slate-700 hover:border-blue-900/40 transition-all shadow-xl">
                                         @Lang.T("ล้างตัวกรองทั้งหมด", "Clear all filters")
                                     </button>
                                 </div>
@@ -214,54 +214,54 @@ else
 @if (_showModal)
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left max-h-[90vh] flex flex-col">
-            <h3 class="text-2xl font-bold text-slate-900 mb-6 shrink-0">@Lang.T(_isEditMode ? "แก้ไขตำแหน่ง" : "เพิ่มตำแหน่งใหม่", _isEditMode ? "Edit Locator" : "New Locator")</h3>
+        <div class="relative w-full max-w-lg bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700 text-left max-h-[90vh] flex flex-col">
+            <h3 class="text-2xl font-bold text-slate-100 mb-6 shrink-0">@Lang.T(_isEditMode ? "แก้ไขตำแหน่ง" : "เพิ่มตำแหน่งใหม่", _isEditMode ? "Edit Locator" : "New Locator")</h3>
             <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">
+                    <div class="mb-4 p-3 bg-red-900/30 text-red-400 rounded-lg text-sm border border-red-900/40">
                         @_errorMessage
                     </div>
                 }
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสตำแหน่ง", "Locator ID") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติ)", "(auto-generated)")</span></label>
-                        <div class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-sm font-mono text-slate-700 select-all" title="Auto-generated ID">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสตำแหน่ง", "Locator ID") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติ)", "(auto-generated)")</span></label>
+                        <div class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-sm font-mono text-slate-300 select-all" title="Auto-generated ID">
                             @_editingLocator.GetGeneratedId()
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ชื่อตำแหน่ง", "Name") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติจาก Site/ตู้/ชั้น)", "(auto-generated from Site/Cabinet/Shelf)")</span></label>
-                        <div class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-500 font-mono">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชื่อตำแหน่ง", "Name") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติจาก Site/ตู้/ชั้น)", "(auto-generated from Site/Cabinet/Shelf)")</span></label>
+                        <div class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-sm text-slate-400 font-mono">
                             @(_editingLocator.GetName(Lang.Current).Length > 0 ? _editingLocator.GetName(Lang.Current) : "–")
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ประเภทโซน *", "Zone Type *")</label>
-                        <select @bind="_editingLocator.Type" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ประเภทโซน *", "Zone Type *")</label>
+                        <select @bind="_editingLocator.Type" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
                             <option value="Production">@Lang.T("โซนผลิต (Production)", "Production Zone")</option>
                             <option value="Cleaning">@Lang.T("จุดทำความสะอาด (Cleaning)", "Cleaning Zone")</option>
                             <option value="Store">@Lang.T("ชั้นจัดเก็บ (Storage)", "Storage Zone")</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("กลุ่ม (Site)", "Site")</label>
-                        <input type="text" @bind="_editingLocator.Site" @bind:event="oninput" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("กลุ่ม (Site)", "Site")</label>
+                        <input type="text" @bind="_editingLocator.Site" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ตู้ (Cabinet)", "Cabinet")</label>
-                        <input type="text" @bind="_editingLocator.Cabinet" @bind:event="oninput" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ตู้ (Cabinet)", "Cabinet")</label>
+                        <input type="text" @bind="_editingLocator.Cabinet" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ชั้น (Shelf)", "Shelf")</label>
-                        <input type="text" @bind="_editingLocator.Shelf" @bind:event="oninput" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                        <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชั้น (Shelf)", "Shelf")</label>
+                        <input type="text" @bind="_editingLocator.Shelf" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
-                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
-                <button @onclick="SaveLocator" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">@Lang.T("บันทึก", "Save")</button>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-700 shrink-0">
+                <button @onclick="CloseModal" class="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 font-medium rounded-lg hover:bg-slate-900 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
+                <button @onclick="SaveLocator" class="px-4 py-2 bg-mattel-red text-white font-medium rounded-lg hover:bg-mattel-hover transition-colors text-sm">@Lang.T("บันทึก", "Save")</button>
             </div>
         </div>
     </div>

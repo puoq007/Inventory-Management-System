@@ -4,7 +4,16 @@ module.exports = {
     "./**/*.{razor,html,cshtml}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        mattel: {
+          red: '#EE0024',
+          hover: '#D10020',
+          steel: '#62656A',
+          light: '#ADAEB2'
+        }
+      }
+    },
   },
   plugins: [],
 }

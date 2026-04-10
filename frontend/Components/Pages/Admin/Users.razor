@@ -13,11 +13,11 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("จัดการผู้ใช้งาน (User Management)", "User Management")</h1>
-        <p class="text-slate-500">@Lang.T("เพิ่ม แก้ไข และจัดการบัญชีผู้ใช้งานรวมถึงสิทธิ์การเข้าถึง", "Add, edit, and manage user accounts and access roles.")</p>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("จัดการผู้ใช้งาน (User Management)", "User Management")</h1>
+        <p class="text-slate-400">@Lang.T("เพิ่ม แก้ไข และจัดการบัญชีผู้ใช้งานรวมถึงสิทธิ์การเข้าถึง", "Add, edit, and manage user accounts and access roles.")</p>
     </div>
     
-    <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center">
+    <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors flex items-center">
         <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         @Lang.T("เพิ่มผู้ใช้งานใหม่", "New User")
     </button>
@@ -26,25 +26,25 @@
 @if (_isLoading)
 {
     <div class="flex justify-center items-center py-12">
-        <div class="text-slate-500 font-medium">@Lang.T("กำลังโหลดข้อมูลผู้ใช้งาน...", "Loading users...")</div>
+        <div class="text-slate-400 font-medium">@Lang.T("กำลังโหลดข้อมูลผู้ใช้งาน...", "Loading users...")</div>
     </div>
 }
 else
 {
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+    <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="search" class="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <label for="search" class="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     @Lang.T("ค้นหาผู้ใช้งาน", "Search Users")
                 </label>
                 <div class="relative group">
                     <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                           class="block w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all sm:text-sm outline-none" 
+                           class="block w-full pl-4 pr-10 py-2.5 bg-slate-900 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/20 focus:border-mattel-red focus:bg-slate-800 transition-all sm:text-sm outline-none" 
                            placeholder="@Lang.T("ค้นหารหัสพนักงาน, ชื่อ, หรือสิทธิ์...", "Search Employee ID, Name, or Role...")" />
                     @if (!string.IsNullOrEmpty(_searchQuery))
                     {
-                        <button @onclick='() => { _searchQuery = ""; FilterData(); }' class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                        <button @onclick='() => { _searchQuery = ""; FilterData(); }' class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-400">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     }
@@ -54,7 +54,7 @@ else
         @if (_selectedUserIds.Any())
         {
             <div class="flex items-end mb-[2px]">
-                <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center">
+                <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-xl transition-colors flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     @Lang.T($"พิมพ์คิวอาร์ที่เลือก ({_selectedUserIds.Count})", $"Print Selected ({_selectedUserIds.Count})")
                 </button>
@@ -62,21 +62,21 @@ else
         }
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-8 max-w-full">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full">
         <div class="block w-full overflow-x-auto pb-44 -mb-44">
             <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
+                <thead class="bg-slate-900">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-12 shrink-0">
-                            <input type="checkbox" checked="@(_displayUsers != null && _displayUsers.Any() && _displayUsers.All(u => _selectedUserIds.Contains(u.EmployeeId)))" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-12 shrink-0">
+                            <input type="checkbox" checked="@(_displayUsers != null && _displayUsers.Any() && _displayUsers.All(u => _selectedUserIds.Contains(u.EmployeeId)))" @onchange="ToggleSelectAll" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสพนักงาน", "Employee ID")</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ชื่อ-นามสกุล", "Name")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("รหัสพนักงาน", "Employee ID")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("ชื่อ-นามสกุล", "Name")</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleRoleFilter">
-                            <div class="flex items-center gap-2 transition-colors @(_roleFilter != "All" ? "text-blue-600" : "text-slate-600 hover:text-blue-700")">
+                            <div class="flex items-center gap-2 transition-colors @(_roleFilter != "All" ? "text-blue-400" : "text-slate-400 hover:text-blue-400")">
                                 <span class="tracking-widest">@Lang.T("สิทธิ์", "Role")@(_roleFilter != "All" ? $": {_roleFilter}" : "")</span>
-                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-100")'>
-                                    <svg class='w-3.5 h-3.5 @(_roleFilter != "All" ? "text-blue-500" : "text-slate-500")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-700")'>
+                                    <svg class='w-3.5 h-3.5 @(_roleFilter != "All" ? "text-blue-500" : "text-slate-400")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </div>
@@ -87,12 +87,12 @@ else
                             </div>
                             @if (_showRoleFilter)
                             {
-                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
-                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/50 border-b border-slate-100">
+                                <div class="absolute left-6 top-full z-20 mt-2 w-48 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden transform origin-top-left ring-1 ring-black/5 animate-in fade-in zoom-in duration-200" @onclick:stopPropagation>
+                                    <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900/50 border-b border-slate-700">
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@Lang.T("กรองสิทธิ์", "Filter Role")</span>
                                         @if (_roleFilter != "All")
                                         {
-                                            <button @onclick='() => SetRoleFilter("All")' class="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">@Lang.T("ล้างค่า", "RESET")</button>
+                                            <button @onclick='() => SetRoleFilter("All")' class="text-[10px] font-bold text-blue-400 hover:text-blue-400 transition-colors">@Lang.T("ล้างค่า", "RESET")</button>
                                         }
                                     </div>
                                     <div class="py-1.5">
@@ -106,7 +106,7 @@ else
                                         })
                                         {
                                             <button @onclick="() => SetRoleFilter(opt.Item1)" 
-                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_roleFilter == opt.Item1 ? "bg-blue-50/80 text-blue-700 font-bold" : "text-slate-600 hover:bg-slate-50")'>
+                                                    class='flex items-center justify-between w-full px-4 py-2 text-xs text-left transition-all @(_roleFilter == opt.Item1 ? "bg-blue-50/80 text-blue-400 font-bold" : "text-slate-400 hover:bg-slate-900")'>
                                                 <span>@opt.Item2</span>
                                                 @if (_roleFilter == opt.Item1)
                                                 {
@@ -120,32 +120,32 @@ else
                                 </div>
                             }
                         </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("รหัสผ่าน", "Password")</th>
-                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">@Lang.T("ดำเนินการ", "Actions")</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("รหัสผ่าน", "Password")</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("ดำเนินการ", "Actions")</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-slate-200">
+                <tbody class="bg-slate-800 divide-y divide-slate-200">
                     @if (_displayUsers != null && _displayUsers.Any())
                     {
                         @foreach (var user in _displayUsers)
                         {
-                            <tr class="hover:bg-slate-50 transition-colors">
+                            <tr class="hover:bg-slate-900 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="checkbox" checked="@_selectedUserIds.Contains(user.EmployeeId)" @onchange="@(e => ToggleSelection(user.EmployeeId, e.Value))" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                    <input type="checkbox" checked="@_selectedUserIds.Contains(user.EmployeeId)" @onchange="@(e => ToggleSelection(user.EmployeeId, e.Value))" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-300">
                                     @user.EmployeeId
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                                     @user.Name
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border shadow-sm
-                                        @(user.Role == "Admin" ? "bg-purple-100 text-purple-800 border-purple-200" :
-                                          user.Role == "Engineer" ? "bg-blue-100 text-blue-800 border-blue-200" :
-                                          user.Role == "ProdLead" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
-                                          user.Role == "Operator" ? "bg-amber-100 text-amber-800 border-amber-200" :
-                                          "bg-slate-100 text-slate-800 border-slate-200")">
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border shadow-xl
+                                        @(user.Role == "Admin" ? "bg-purple-900/40 text-purple-400 border-purple-900/40" :
+                                          user.Role == "Engineer" ? "bg-blue-900/40 text-blue-400 border-blue-900/40" :
+                                          user.Role == "ProdLead" ? "bg-emerald-900/40 text-emerald-400 border-emerald-900/40" :
+                                          user.Role == "Operator" ? "bg-amber-900/40 text-amber-400 border-amber-900/40" :
+                                          "bg-slate-100 text-slate-200 border-slate-700")">
                                         @Lang.T(user.Role == "Admin" ? "ผู้ดูแลระบบ" : user.Role == "Engineer" ? "วิศวกร" : user.Role == "ProdLead" ? "หัวหน้าฝ่ายผลิต" : user.Role == "Operator" ? "พนักงานปฏิบัติการ" : user.Role, user.Role)
                                     </span>
                                 </td>
@@ -153,12 +153,12 @@ else
                                     ••••
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <button @onclick="() => PrintQR(user)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Code">
+                                    <button @onclick="() => PrintQR(user)" class="text-slate-400 hover:text-slate-100 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-700 transition-colors" title="Print QR Code">
                                         <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                         QR
                                     </button>
-                                    <button @onclick="() => OpenEditModal(user)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
-                                    <button @onclick="() => DeleteUser(user)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">@Lang.T("ลบ", "Delete")</button>
+                                    <button @onclick="() => OpenEditModal(user)" class="text-indigo-400 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-900/30 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
+                                    <button @onclick="() => DeleteUser(user)" class="text-red-400 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-900/30 transition-colors">@Lang.T("ลบ", "Delete")</button>
                                 </td>
                             </tr>
                         }
@@ -168,17 +168,17 @@ else
                         <tr>
                             <td colspan="5" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center justify-center space-y-3">
-                                    <div class="p-4 bg-slate-50 rounded-full">
+                                    <div class="p-4 bg-slate-900 rounded-full">
                                         <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
                                     </div>
                                     <div class="space-y-1">
-                                        <h3 class="text-lg font-bold text-slate-900">@Lang.T("ไม่พบผู้ใช้งาน", "No users found")</h3>
-                                        <p class="text-sm text-slate-500">@Lang.T("ขออภัย ไม่พบรายชื่อผู้ใช้งานที่ตรงกับคำค้นหาของคุณ", "We couldn't find any accounts matching your search.")</p>
+                                        <h3 class="text-lg font-bold text-slate-100">@Lang.T("ไม่พบผู้ใช้งาน", "No users found")</h3>
+                                        <p class="text-sm text-slate-400">@Lang.T("ขออภัย ไม่พบรายชื่อผู้ใช้งานที่ตรงกับคำค้นหาของคุณ", "We couldn't find any accounts matching your search.")</p>
                                     </div>
                                     <button @onclick='() => { _searchQuery = ""; _roleFilter = "All"; FilterData(); }' 
-                                            class="mt-4 px-4 py-2 bg-white border border-slate-200 text-blue-600 font-bold text-sm rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all shadow-sm">
+                                            class="mt-4 px-4 py-2 bg-slate-800 border border-slate-700 text-blue-400 font-bold text-sm rounded-xl hover:bg-slate-700 hover:border-blue-900/40 transition-all shadow-xl">
                                         @Lang.T("ล้างการกรองทั้งหมด", "Clear all filters")
                                     </button>
                                 </div>
@@ -194,21 +194,21 @@ else
 @if (_showModal)
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6 border border-slate-100 text-left">
-            <h3 class="text-2xl font-bold text-slate-900 mb-6">@Lang.T(_isEditMode ? "แก้ไขข้อมูลผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่", _isEditMode ? "Edit User" : "Add New User")</h3>
+        <div class="relative w-full max-w-md bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700 text-left">
+            <h3 class="text-2xl font-bold text-slate-100 mb-6">@Lang.T(_isEditMode ? "แก้ไขข้อมูลผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่", _isEditMode ? "Edit User" : "Add New User")</h3>
 
             <div class="space-y-4 mb-6">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
-                    <input type="text" @bind="_editingUser.EmployeeId" disabled="@_isEditMode" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500" placeholder="@Lang.T("เช่น 9005", "e.g. 9005")" />
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
+                    <input type="text" @bind="_editingUser.EmployeeId" disabled="@_isEditMode" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm disabled:bg-slate-100 disabled:text-slate-400" placeholder="@Lang.T("เช่น 9005", "e.g. 9005")" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ชื่อ-นามสกุล", "Full Name")</label>
-                    <input type="text" @bind="_editingUser.Name" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("เช่น สมชาย รักเรียน", "e.g. John Doe")" />
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชื่อ-นามสกุล", "Full Name")</label>
+                    <input type="text" @bind="_editingUser.Name" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm" placeholder="@Lang.T("เช่น สมชาย รักเรียน", "e.g. John Doe")" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("ตำแหน่ง / สิทธิ์", "Role")</label>
-                    <select @bind="_editingUser.Role" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ตำแหน่ง / สิทธิ์", "Role")</label>
+                    <select @bind="_editingUser.Role" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
                         <option value="Admin">@Lang.T("ผู้ดูแลระบบ (Admin)", "Admin")</option>
                         <option value="Engineer">@Lang.T("วิศวกร (Engineer)", "Engineer")</option>
                         <option value="ProdLead">@Lang.T("หัวหน้าฝ่ายผลิต (ProdLead)", "Production Lead")</option>
@@ -217,8 +217,8 @@ else
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">@Lang.T("รหัสผ่าน", "Password")</label>
-                    <input type="text" @bind="_editingUser.Password" class="block w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="@Lang.T("พิมพ์รหัสผ่านที่นี่", "Any default password")" />
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสผ่าน", "Password")</label>
+                    <input type="text" @bind="_editingUser.Password" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm" placeholder="@Lang.T("พิมพ์รหัสผ่านที่นี่", "Any default password")" />
                 </div>
                 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -227,9 +227,9 @@ else
                 }
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                <button @onclick="CloseModal" class="px-4 py-2 bg-white text-slate-700 border border-slate-300 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
-                <button @onclick="SaveUser" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">@Lang.T("บันทึกการเปลี่ยนแปลง", "Save Changes")</button>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-700">
+                <button @onclick="CloseModal" class="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 font-medium rounded-lg hover:bg-slate-900 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
+                <button @onclick="SaveUser" class="px-4 py-2 bg-mattel-red text-white font-medium rounded-lg hover:bg-mattel-hover transition-colors text-sm">@Lang.T("บันทึกการเปลี่ยนแปลง", "Save Changes")</button>
             </div>
         </div>
     </div>

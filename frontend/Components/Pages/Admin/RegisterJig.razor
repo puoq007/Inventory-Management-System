@@ -13,19 +13,19 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 mb-2">@Lang.T("การจัดการ Jig", "Jigs Management")</h1>
-        <p class="text-slate-500">@Lang.T("ลงทะเบียนจิ๊กใหม่และดูรายละเอียดทั้งหมดแบบตาราง", "Register and view all jigs in a data table.")</p>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("การจัดการ Jig", "Jigs Management")</h1>
+        <p class="text-slate-400">@Lang.T("ลงทะเบียนจิ๊กใหม่และดูรายละเอียดทั้งหมดแบบตาราง", "Register and view all jigs in a data table.")</p>
     </div>
     
     <div class="flex gap-2">
         @if (_userRole == "Admin" || _userRole == "Engineer")
         {
-            <label class="cursor-pointer px-5 py-2.5 bg-emerald-600 text-white font-medium text-sm rounded-lg hover:bg-emerald-700 shadow-sm transition-colors flex items-center shrink-0">
+            <label class="cursor-pointer px-5 py-2.5 bg-emerald-700 text-white font-medium text-sm rounded-lg hover:bg-emerald-800 shadow-xl transition-colors flex items-center shrink-0">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 @Lang.T("นำเข้าข้อมูล (Excel)", "Import Excel")
                 <InputFile class="hidden" OnChange="UploadFiles" accept=".xlsx, .xls" />
             </label>
-            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center shrink-0">
+            <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors flex items-center shrink-0">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 @Lang.T("ลงทะเบียนจิ๊กใหม่", "New Jig")
             </button>
@@ -35,30 +35,30 @@
 
 @if (!string.IsNullOrEmpty(_globalError))
 {
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">@_globalError</div>
+    <div class="mb-4 p-4 bg-red-900/30 border border-red-900/40 text-red-400 rounded-lg">@_globalError</div>
 }
 
-<div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+<div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
-            <label for="search" class="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+            <label for="search" class="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 @Lang.T("ค้นหาจิ๊ก", "Search Jigs")
             </label>
             <div class="relative group">
                 <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
-                       class="block w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all sm:text-sm outline-none" 
+                       class="block w-full pl-4 pr-10 py-2.5 bg-slate-900 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/20 focus:border-mattel-red focus:bg-slate-800 transition-all sm:text-sm outline-none" 
                        placeholder="Search ID, Smart Code, Tool No..." />
             </div>
         </div>
         @if (_selectedJigIds.Any())
         {
             <div class="flex items-end gap-2 mb-[2px]">
-                <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-sm transition-colors flex items-center shrink-0">
+                <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-xl transition-colors flex items-center shrink-0">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     @Lang.T($"พิมพ์คิวอาร์ที่เลือก ({_selectedJigIds.Count})", $"Print Selected ({_selectedJigIds.Count})")
                 </button>
-                <button @onclick="ClearSelection" class="px-5 py-2.5 bg-white text-slate-700 font-medium text-sm rounded-lg border border-slate-300 hover:bg-slate-50 shadow-sm transition-colors shrink-0">
+                <button @onclick="ClearSelection" class="px-5 py-2.5 bg-slate-800 text-slate-300 font-medium text-sm rounded-lg border border-slate-700 hover:bg-slate-900 shadow-xl transition-colors shrink-0">
                     @Lang.T("ล้างค่า", "Clear")
                 </button>
             </div>
@@ -66,75 +66,75 @@
     </div>
 </div>
 
-<div class="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-full overflow-hidden">
+<div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 max-w-full overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
+            <thead class="bg-slate-900">
                 <tr>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase w-12 shrink-0">
-                        <input type="checkbox" checked="@(_displayJigs.Any() && _displayJigs.All(j => _selectedJigIds.Contains(j.Uid)))" @onchange="ToggleSelectAll" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase w-12 shrink-0">
+                        <input type="checkbox" checked="@(_displayJigs.Any() && _displayJigs.All(j => _selectedJigIds.Contains(j.Uid)))" @onchange="ToggleSelectAll" class="rounded border-slate-700 text-blue-600 focus:ring-mattel-red cursor-pointer" />
                     </th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("รหัส JIG", "Jig ID")</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ชื่อ Smart Code", "Smart Code Name")</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ประเภท / ส่วนประกอบ", "Type / Part")</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("สถานะ", "Status")</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">@Lang.T("ตำแหน่ง", "Locator")</th>
-                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase">@Lang.T("เครื่องมือ", "Actions")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("รหัส JIG", "Jig ID")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ชื่อ Smart Code", "Smart Code Name")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ประเภท / ส่วนประกอบ", "Type / Part")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("สถานะ", "Status")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ตำแหน่ง", "Locator")</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase">@Lang.T("เครื่องมือ", "Actions")</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
                 @if (_isLoading)
                 {
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">Loading...</td></tr>
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">Loading...</td></tr>
                 }
                 else if (_displayJigs.Any())
                 {
                     @foreach (var jig in _displayJigs)
                     {
-                        <tr class="hover:bg-slate-50 transition-colors">
+                        <tr class="hover:bg-slate-900 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" checked="@_selectedJigIds.Contains(jig.Uid)" @onchange="@(e => ToggleSelection(jig.Uid, e.Value))" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                <input type="checkbox" checked="@_selectedJigIds.Contains(jig.Uid)" @onchange="@(e => ToggleSelection(jig.Uid, e.Value))" class="rounded border-slate-700 text-blue-600 focus:ring-mattel-red cursor-pointer" />
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap"><div class="font-mono text-sm font-bold bg-slate-100 px-2 py-1 rounded inline-block">@jig.Id</div></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><div class="font-mono text-sm font-bold bg-slate-900 px-2 py-1 rounded inline-block">@jig.Id</div></td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-3">
                                     @if (!string.IsNullOrEmpty(jig.ImageUrl))
                                     {
-                                        <img src="@GetImageSrc(jig.ImageUrl)" alt="@jig.Id" class="w-10 h-10 rounded-lg object-cover border border-slate-200 shadow-sm flex-shrink-0" />
+                                        <img src="@GetImageSrc(jig.ImageUrl)" alt="@jig.Id" class="w-10 h-10 rounded-lg object-cover border border-slate-700 shadow-xl flex-shrink-0" />
                                     }
                                     else
                                     {
-                                        <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center flex-shrink-0">
                                             <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                         </div>
                                     }
                                     <div class="min-w-0">
-                                        <div class="text-sm font-medium text-slate-700 truncate max-w-xs" title="@jig.SmartCodeName">@(jig.SmartCodeName ?? "-")</div>
-                                        <div class="text-xs text-slate-500 mt-0.5">Tool # @(jig.ToolNo ?? "-")</div>
+                                        <div class="text-sm font-medium text-slate-300 truncate max-w-xs" title="@jig.SmartCodeName">@(jig.SmartCodeName ?? "-")</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Tool # @(jig.ToolNo ?? "-")</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm">@jig.JigType</div>
-                                <div class="text-xs text-slate-500 mt-1">@jig.PartType</div>
+                                <div class="text-xs text-slate-400 mt-1">@jig.PartType</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full border @(GetStatusBadgeClass(jig.Status))">
                                     @Lang.T(GetStatusThai(jig.Status), jig.Status)
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                                 @GetLocatorName(jig.LocatorId)
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                <button @onclick="() => PrintQR(jig)" class="text-slate-600 hover:text-slate-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-100 transition-colors" title="Print QR Sticker (2.5cm)">
+                                <button @onclick="() => PrintQR(jig)" class="text-slate-400 hover:text-slate-100 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-900 transition-colors" title="Print QR Sticker (2.5cm)">
                                     <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                     QR
                                 </button>
                                 @if (_userRole == "Admin" || _userRole == "Engineer")
                                 {
-                                    <button @onclick="() => OpenEditModal(jig)" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-50 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
-                                    <button @onclick="() => DeleteJig(jig)" class="text-red-600 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors">@Lang.T("ลบ", "Delete")</button>
+                                    <button @onclick="() => OpenEditModal(jig)" class="text-indigo-400 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-900/30 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
+                                    <button @onclick="() => DeleteJig(jig)" class="text-red-400 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-900/30 transition-colors">@Lang.T("ลบ", "Delete")</button>
                                 }
                             </td>
                         </tr>
@@ -142,7 +142,7 @@
                 }
                 else
                 {
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500">No jigs found</td></tr>
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">No jigs found</td></tr>
                 }
             </tbody>
         </table>
@@ -152,21 +152,21 @@
 @if (_showModal)
 {
     <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm h-full w-full z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-100 shrink-0 bg-white z-10">
-                <h3 class="text-2xl font-bold text-slate-900">@Lang.T(_isEditMode ? "แก้ไขข้อมูลจิ๊ก" : "ลงทะเบียนจิ๊กใหม่", _isEditMode ? "Edit Jig" : "Register New Jig")</h3>
+        <div class="relative w-full max-w-xl bg-slate-800 rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-700 shrink-0 bg-slate-800 z-10">
+                <h3 class="text-2xl font-bold text-slate-100">@Lang.T(_isEditMode ? "แก้ไขข้อมูลจิ๊ก" : "ลงทะเบียนจิ๊กใหม่", _isEditMode ? "Edit Jig" : "Register New Jig")</h3>
             </div>
             
             <div class="p-6 overflow-y-auto overflow-x-hidden flex-1 min-h-0 w-full custom-scrollbar" style="max-height: calc(90vh - 140px);">
                 @if (!string.IsNullOrEmpty(_modalError))
-                { <div class="mb-4 p-4 bg-red-50 text-red-700 rounded-xl">@_modalError</div> }
+                { <div class="mb-4 p-4 bg-red-900/30 text-red-400 rounded-xl">@_modalError</div> }
 
                 <EditForm Model="_editingJig" OnValidSubmit="SaveJig">
                     <div class="flex flex-col gap-4">
                         
                         <!-- Primary Info -->
-                        <div class="pb-3 border-b border-slate-100">
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลหลัก", "Primary Info")</h3>
+                        <div class="pb-3 border-b border-slate-700">
+                            <h3 class="text-sm font-bold text-slate-200 mb-2">@Lang.T("ข้อมูลหลัก", "Primary Info")</h3>
                             <div class="grid grid-cols-1 gap-3">
                                 <div>
                                     <label class="block text-xs font-semibold mb-1">@Lang.T("รหัส JIG", "Jig ID") <span class="text-red-500">*</span></label>
@@ -182,21 +182,21 @@
                         </div>
 
                         <!-- Specifications -->
-                        <div class="pb-3 border-b border-slate-100">
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลจำเพาะ (Specifications)", "Specifications")</h3>
+                        <div class="pb-3 border-b border-slate-700">
+                            <h3 class="text-sm font-bold text-slate-200 mb-2">@Lang.T("ข้อมูลจำเพาะ (Specifications)", "Specifications")</h3>
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="_editingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="_editingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label>
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label>
                                     <div class="flex flex-col gap-2">
-                                        <select class="w-full px-2 py-1 border rounded text-sm bg-white" @onchange="AddStep">
+                                        <select class="w-full px-2 py-1 border rounded text-sm bg-slate-800" @onchange="AddStep">
                                             <option value="">-- Add Step --</option>
                                             @foreach (var opt in _stepPrintOptions) { <option value="@opt">@opt</option> }
                                         </select>
                                         <div class="flex flex-wrap gap-2 mt-2">
                                             @foreach (var step in _selectedSteps)
                                             {
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-xl">
                                                     @step
                                                     <button type="button" @onclick="() => _selectedSteps.Remove(step)" class="ml-2 text-blue-400 hover:text-blue-600 transition-colors">✕</button>
                                                 </span>
@@ -205,36 +205,36 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label>
-                                    <select @bind="_editingJig.PartType" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label>
+                                    <select @bind="_editingJig.PartType" class="w-full px-2 py-1 border rounded text-sm bg-slate-800">
                                         <option value="">-- Select --</option>
                                         @foreach (var opt in _partTypeOptions) { <option value="@opt">@opt</option> }
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label>
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label>
                                     <input type="date" @bind="SelectedDate" class="w-full px-2 py-1 border rounded text-sm h-[30px]" />
                                 </div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="_editingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="_editingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
-                                <div><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="_editingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="_editingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="_editingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
+                                <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="_editingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border rounded text-sm" /></div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label>
-                                    <select @bind="_editingJig.HeightJig" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label>
+                                    <select @bind="_editingJig.HeightJig" class="w-full px-2 py-1 border rounded text-sm bg-slate-800">
                                         <option value="">-- Select --</option>
                                         @foreach (var opt in _heightJigOptions) { <option value="@opt">@{ if(opt == "HMR Plywood" || opt == "MDF Plywood") { @opt } else { @(opt + " mm") } }</option> }
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label>
-                                    <select @bind="_editingJig.JigType" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label>
+                                    <select @bind="_editingJig.JigType" class="w-full px-2 py-1 border rounded text-sm bg-slate-800">
                                         <option value="">-- Select --</option>
                                         @foreach (var opt in _jigTypeOptions) { <option value="@opt">@opt</option> }
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label>
-                                    <select @bind="_editingJig.Process" class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label>
+                                    <select @bind="_editingJig.Process" class="w-full px-2 py-1 border rounded text-sm bg-slate-800">
                                         <option value="">-- Select --</option>
                                         @foreach (var opt in _processOptions) { <option value="@opt">@opt</option> }
                                     </select>
@@ -244,18 +244,18 @@
 
                         <!-- Other References -->
                         <div>
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">@Lang.T("ข้อมูลอ้างอิงอื่นๆ", "Other References")</h3>
+                            <h3 class="text-sm font-bold text-slate-200 mb-2">@Lang.T("ข้อมูลอ้างอิงอื่นๆ", "Other References")</h3>
                             
                             <!-- Part Numbers -->
                             <div class="mb-3">
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("รหัสชิ้นส่วนที่รองรับ (กด Enter เพื่อเพิ่ม)", "Compatible Part Numbers (Press Enter)")</label>
-                                <input type="text" @bind="_newPartInput" @onkeydown="HandlePartKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. P-1234" class="w-full px-2 py-1.5 border border-slate-300 rounded focus:border-blue-500 text-sm" autocomplete="off" />
+                                <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("รหัสชิ้นส่วนที่รองรับ (กด Enter เพื่อเพิ่ม)", "Compatible Part Numbers (Press Enter)")</label>
+                                <input type="text" @bind="_newPartInput" @onkeydown="HandlePartKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. P-1234" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm" autocomplete="off" />
                                 @if (_compatiblePartsModel.Any())
                                 {
                                     <div class="flex flex-wrap gap-2 mt-2">
                                         @foreach (var part in _compatiblePartsModel)
                                         {
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-700 shadow-xl">
                                                 @part.PartNumber
                                                 <button type="button" @onclick="() => RemovePartNumber(part.PartNumber)" class="ml-2 text-slate-400 hover:text-red-500 transition-colors">✕</button>
                                             </span>
@@ -268,8 +268,8 @@
 
                             <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("ตำแหน่งปัจจุบัน", "Locator")</label>
-                                    <select @bind="_editingJig.LocatorId" class="w-full px-2 py-1.5 border rounded text-sm bg-white">
+                                    <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ตำแหน่งปัจจุบัน", "Locator")</label>
+                                    <select @bind="_editingJig.LocatorId" class="w-full px-2 py-1.5 border rounded text-sm bg-slate-800">
                                         <option value="">-- @Lang.T("ไม่มีตำแหน่ง", "No Location") --</option>
                                         @foreach (var loc in _allLocators)
                                         {
@@ -277,31 +277,31 @@
                                         }
                                     </select>
                                 </div>
-                                <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-500 mb-0.5 uppercase">@Lang.T("เวอร์ชัน (Rev.)", "Rev.")</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
+                                <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("เวอร์ชัน (Rev.)", "Rev.")</label><input type="text" @bind="_editingJig.Rev" class="w-full px-2 py-1.5 border rounded text-sm" /></div>
                             </div>
 
                             @* Image Upload *@
-                            <div class="mt-3 pt-3 border-t border-slate-100">
-                                <label class="block text-[10px] font-semibold text-slate-500 mb-1.5 uppercase">@Lang.T("รูปภาพจิ๊ก", "Jig Photo")</label>
+                            <div class="mt-3 pt-3 border-t border-slate-700">
+                                <label class="block text-[10px] font-semibold text-slate-400 mb-1.5 uppercase">@Lang.T("รูปภาพจิ๊ก", "Jig Photo")</label>
                                 <div class="flex items-start gap-4">
                                     @if (!string.IsNullOrEmpty(_imagePreview))
                                     {
                                         <div class="relative group">
-                                            <img src="@_imagePreview" alt="Preview" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-200 shadow-sm" />
-                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                            <img src="@_imagePreview" alt="Preview" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-700 shadow-xl" />
+                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-900/300 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                                         </div>
                                     }
                                     else if (!string.IsNullOrEmpty(_editingJig.ImageUrl))
                                     {
                                         <div class="relative group">
-                                            <img src="@GetImageSrc(_editingJig.ImageUrl)" alt="Current" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-200 shadow-sm" />
-                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                            <img src="@GetImageSrc(_editingJig.ImageUrl)" alt="Current" class="w-24 h-24 rounded-xl object-cover border-2 border-slate-700 shadow-xl" />
+                                            <button type="button" @onclick="RemoveImage" class="absolute -top-2 -right-2 w-6 h-6 bg-red-900/300 text-white rounded-full text-xs font-bold hover:bg-red-600 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                                         </div>
                                     }
                                     <label class="flex-1 cursor-pointer">
-                                        <div class="flex flex-col items-center justify-center py-4 px-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all">
+                                        <div class="flex flex-col items-center justify-center py-4 px-3 border-2 border-dashed border-slate-700 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all">
                                             <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                            <span class="text-xs font-medium text-slate-500">@Lang.T("คลิกเพื่อเลือกรูป", "Click to select image")</span>
+                                            <span class="text-xs font-medium text-slate-400">@Lang.T("คลิกเพื่อเลือกรูป", "Click to select image")</span>
                                             <span class="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP (max 5MB)</span>
                                         </div>
                                         <InputFile class="hidden" OnChange="OnImageSelected" accept=".jpg,.jpeg,.png,.webp" />
@@ -321,9 +321,9 @@
                 </EditForm>
             </div>
             
-            <div class="p-6 flex justify-end gap-3 bg-slate-50 border-t border-slate-100 rounded-b-2xl shrink-0 w-full z-10">
-                <button @onclick="CloseModal" class="px-5 py-2.5 bg-white border rounded-xl hover:bg-slate-100">@Lang.T("ยกเลิก", "Cancel")</button>
-                <button disabled="@_isSubmitting" onclick="document.getElementById('hiddenSubmitBtn').click()" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
+            <div class="p-6 flex justify-end gap-3 bg-slate-900 border-t border-slate-700 rounded-b-2xl shrink-0 w-full z-10">
+                <button @onclick="CloseModal" class="px-5 py-2.5 bg-slate-800 border rounded-xl hover:bg-slate-900">@Lang.T("ยกเลิก", "Cancel")</button>
+                <button disabled="@_isSubmitting" onclick="document.getElementById('hiddenSubmitBtn').click()" class="px-6 py-2.5 bg-mattel-red text-white rounded-xl hover:bg-mattel-hover">
                     @(_isSubmitting ? Lang.T("กำลังบันทึก...", "Saving...") : Lang.T("บันทึกข้อมูล", "Save Jig"))
                 </button>
             </div>
@@ -435,8 +435,16 @@
     private void FilterData()
     {
         var lower = _searchQuery.ToLowerInvariant();
-        _displayJigs = string.IsNullOrWhiteSpace(lower) ? _allJigs : _allJigs.Where(j => 
-            (j.Id?.ToLower().Contains(lower) == true) || (j.SmartCodeName?.ToLower().Contains(lower) == true));
+        var query = string.IsNullOrWhiteSpace(lower) 
+            ? _allJigs 
+            : _allJigs.Where(j => 
+                (j.Id?.ToLowerInvariant().Contains(lower) == true) || 
+                (j.SmartCodeName?.ToLowerInvariant().Contains(lower) == true) ||
+                (j.PartNumber?.ToLowerInvariant().Contains(lower) == true) ||
+                (j.ToolNo?.ToLowerInvariant().Contains(lower) == true)
+            );
+            
+        _displayJigs = query.OrderBy(j => j.Id);
     }
 
     private void OpenAddModal()
@@ -613,8 +621,8 @@
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(_editingJig.ToolNo)) parts.Add(_editingJig.ToolNo);
         
-        var steps = string.Join("-", _selectedSteps);
-        if (!string.IsNullOrWhiteSpace(steps)) parts.Add(steps);
+        var steps = ExtractStepNumber(string.Join("-", _selectedSteps));
+        if (steps != "-") parts.Add(steps);
 
         if (!string.IsNullOrWhiteSpace(_editingJig.PartType)) parts.Add(_editingJig.PartType);
         if (!string.IsNullOrWhiteSpace(_editingJig.Date)) parts.Add(_editingJig.Date);
@@ -649,12 +657,10 @@
         _editingJig.Status = CleanAllSpaces(_editingJig.Status) ?? "Available";
         _editingJig.Condition = CleanAllSpaces(_editingJig.Condition) ?? "Good";
 
-        // Extract only the number from each step label (e.g. "1 : L" → "1") and join with hyphen
-        _editingJig.StepPrint = string.Join("-", _selectedSteps.Select(s => {
-            if (s.Contains(':')) return s.Split(':')[0].Trim();
-            if (_stepNameToNumber.TryGetValue(s, out var num)) return num;
-            return s;
-        }));
+        // Strictly extract numbers from selected steps
+        var joinedSteps = string.Join("-", _selectedSteps);
+        var extractedStr = ExtractStepNumber(joinedSteps);
+        _editingJig.StepPrint = extractedStr == "-" ? "" : extractedStr;
 
         if (string.IsNullOrWhiteSpace(_editingJig.Id)) { _modalError = "ID Required"; return; }
         if (string.IsNullOrWhiteSpace(_editingJig.ToolNo)) { _modalError = "Tool No Required for Product Mapping"; return; }
@@ -796,34 +802,39 @@
         if (string.IsNullOrEmpty(stepStr)) return "-";
         
         var items = stepStr.Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        var resultNums = new List<string>();
         
-        var nums = items.Select(item => {
+        foreach (var item in items)
+        {
             var trimmed = item.Trim();
             
-            // If it contains ':', take the number before it
             if (trimmed.Contains(':')) 
             {
                 var prefix = trimmed.Split(':')[0].Trim();
-                if (int.TryParse(prefix, out _)) return prefix;
+                if (int.TryParse(prefix, out _)) { resultNums.Add(prefix); continue; }
             }
             
-            // If it's already a number, use it
-            if (int.TryParse(trimmed, out _)) return trimmed;
+            if (int.TryParse(trimmed, out _)) { resultNums.Add(trimmed); continue; }
             
-            // Old text format: map name to number
-            if (_stepNameToNumber.TryGetValue(trimmed, out var num)) return num;
+            // Clean specific compounded ones first
+            var lower = trimmed.ToLowerInvariant();
+            if (lower.Contains("re.hood") || lower.Contains("read hood")) { resultNums.Add("5"); continue; }
+            if (lower.Contains("re.l")) { resultNums.Add("9"); continue; }
+            if (lower.Contains("re.r")) { resultNums.Add("10"); continue; }
             
-            // Fallback matching (e.g. "Roof.L" -> matches "Roof" -> returns "4")
-            foreach (var kvp in _stepNameToNumber)
+            // Tokenize by punctuation/spaces to safely catch exact matches like "L" without triggering on "WHEEL"
+            var tokens = trimmed.Split(new[] { ' ', '.', '_', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var token in tokens)
             {
-                if (trimmed.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase)) return kvp.Value;
+                if (_stepNameToNumber.TryGetValue(token, out var num))
+                {
+                    resultNums.Add(num);
+                }
             }
-            
-            // Drop anything that isn't a number
-            return null;
-        }).Where(n => !string.IsNullOrEmpty(n)).Distinct();
+        }
         
-        return string.Join("-", nums);
+        var finalNums = resultNums.Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+        return finalNums.Any() ? string.Join("-", finalNums) : "-";
     }
 
     private async Task PrintQR(Jig jig)
@@ -884,7 +895,7 @@
         "InUse" => "bg-blue-50 text-blue-700 border-blue-200",
         "Cleaning" => "bg-amber-50 text-amber-700 border-amber-200",
         "Evaluation" => "bg-purple-50 text-purple-700 border-purple-200",
-        "Lost" => "bg-slate-100 text-slate-500 border-slate-300",
-        _ => "bg-slate-50 text-slate-700 border-slate-200"
+        "Lost" => "bg-slate-900 text-slate-400 border-slate-700",
+        _ => "bg-slate-900 text-slate-300 border-slate-700"
     };
 }
