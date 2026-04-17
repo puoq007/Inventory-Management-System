@@ -15,10 +15,8 @@
                 <!-- Left: Logo & Links -->
                 <div class="flex items-center h-full">
                     <!-- Logo -->
-                    <div class="flex-shrink-0 flex items-center cursor-pointer mr-8" @onclick='() => NavManager.NavigateTo("/")'>
-                        <div class="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-1.5 pt-1">
-                            <span class="text-mattel-red bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-[0_0_10px_rgba(238,0,36,0.4)] select-none">MATTEL</span>
-                        </div>
+                    <div class="flex-shrink-0 flex items-center cursor-pointer mr-10 transition-transform hover:scale-105 active:scale-95 h-16" @onclick='() => NavManager.NavigateTo("/")'>
+                        <img src="images/mattel.png" alt="Mattel" style="height: 44px; width: auto;" class="object-contain drop-shadow-[0_0_8px_rgba(238,0,36,0.3)]" />
                     </div>
 
                     <!-- Desktop Navigation Links -->
@@ -73,16 +71,12 @@
                         </button>
                     </div>
 
-                    <!-- Fake Search Icon -->
-                    <button class="text-slate-500 hover:text-white transition-colors">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </button>
 
                     <!-- Profile Dropdown -->
                     <div class="relative flex items-center h-full" @onmouseenter="() => _isProfileOpen = true" @onmouseleave="() => _isProfileOpen = false">
                         <button class="flex items-center focus:outline-none hover:text-white transition-colors gap-2 cursor-pointer outline-none group">
-                            <div class="bg-mattel-red text-white w-7 h-7 rounded-full flex items-center justify-center text-[8px] font-black shadow-[0_0_8px_rgba(238,0,36,0.3)] select-none">MATTEL</div>
-                            <span class="text-[13px] font-semibold text-slate-200 group-hover:text-white">Mattel</span>
+                            <div class="bg-mattel-red text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shadow-[0_0_8px_rgba(238,0,36,0.3)] select-none">@(_name?.Length > 0 ? _name[0].ToString().ToUpper() : "?")</div>
+                            <span class="text-[13px] font-semibold text-slate-200 group-hover:text-white">@(string.IsNullOrEmpty(_name) ? "Guest" : _name)</span>
                             <svg class="h-4 w-4 text-slate-500 group-hover:text-slate-300 -ml-1 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                         </button>
 
@@ -93,6 +87,11 @@
                                     <p class="text-sm font-bold text-slate-100 truncate" title="@_name">@_name</p>
                                     <p class="text-xs text-slate-400 font-medium">@_role</p>
                                 </div>
+                                <button @onclick='() => NavManager.NavigateTo("/profile")' class="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors flex items-center gap-2">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    @Lang.T("โปรไฟล์", "My Profile")
+                                </button>
+                                <div class="border-t border-slate-700/50 my-1"></div>
                                 <button @onclick="Logout" class="w-full text-left px-4 py-2 text-sm text-mattel-red font-bold hover:bg-slate-700 transition-colors flex items-center gap-2">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                                     @Lang.T("ออกจากระบบ", "Logout")

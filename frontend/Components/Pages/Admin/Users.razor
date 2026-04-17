@@ -32,7 +32,7 @@
 else
 {
     <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
-        <div class="flex flex-col md:flex-row gap-4">
+    <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
                 <label for="search" class="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -50,16 +50,19 @@ else
                     }
                 </div>
             </div>
-        </div>
-        @if (_selectedUserIds.Any())
-        {
-            <div class="flex items-end mb-[2px]">
-                <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-800 text-white font-medium text-sm rounded-lg hover:bg-slate-900 shadow-xl transition-colors flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    @Lang.T($"พิมพ์คิวอาร์ที่เลือก ({_selectedUserIds.Count})", $"Print Selected ({_selectedUserIds.Count})")
-                </button>
+            @if (_selectedUserIds.Any())
+            {
+                <div class="flex items-end">
+                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-xl hover:bg-slate-600 transition-colors flex items-center gap-2 border border-slate-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        @Lang.T($"พิมพ์ QR ที่เลือก ({_selectedUserIds.Count})", $"Print QR ({_selectedUserIds.Count})")
+                    </button>
+                </div>
+            }
+            <div class="flex items-end">
+                <button @onclick="FilterData" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-xl hover:bg-mattel-hover transition-colors">@Lang.T("ค้นหา", "Search")</button>
             </div>
-        }
+        </div>
     </div>
 
     <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full">
@@ -75,7 +78,7 @@ else
                         <th scope="col" class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider relative cursor-pointer group select-none" @onclick="ToggleRoleFilter">
                             <div class="flex items-center gap-2 transition-colors @(_roleFilter != "All" ? "text-blue-400" : "text-slate-400 hover:text-blue-400")">
                                 <span class="tracking-widest">@Lang.T("สิทธิ์", "Role")@(_roleFilter != "All" ? $": {_roleFilter}" : "")</span>
-                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-blue-50 rotate-180" : "group-hover:bg-slate-700")'>
+                                <div class='flex items-center justify-center w-5 h-5 rounded-full transition-all @(_showRoleFilter ? "bg-blue-900/40 rotate-180" : "group-hover:bg-slate-700")'>
                                     <svg class='w-3.5 h-3.5 @(_roleFilter != "All" ? "text-blue-500" : "text-slate-400")' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
                                     </svg>
@@ -124,7 +127,7 @@ else
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("ดำเนินการ", "Actions")</th>
                     </tr>
                 </thead>
-                <tbody class="bg-slate-800 divide-y divide-slate-200">
+                <tbody class="bg-slate-800 divide-y divide-slate-700">
                     @if (_displayUsers != null && _displayUsers.Any())
                     {
                         @foreach (var user in _displayUsers)
@@ -145,7 +148,7 @@ else
                                           user.Role == "Engineer" ? "bg-blue-900/40 text-blue-400 border-blue-900/40" :
                                           user.Role == "ProdLead" ? "bg-emerald-900/40 text-emerald-400 border-emerald-900/40" :
                                           user.Role == "Operator" ? "bg-amber-900/40 text-amber-400 border-amber-900/40" :
-                                          "bg-slate-100 text-slate-200 border-slate-700")">
+                                          "bg-slate-700 text-slate-300 border-slate-600")">
                                         @Lang.T(user.Role == "Admin" ? "ผู้ดูแลระบบ" : user.Role == "Engineer" ? "วิศวกร" : user.Role == "ProdLead" ? "หัวหน้าฝ่ายผลิต" : user.Role == "Operator" ? "พนักงานปฏิบัติการ" : user.Role, user.Role)
                                     </span>
                                 </td>
@@ -153,12 +156,14 @@ else
                                     ••••
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <button @onclick="() => PrintQR(user)" class="text-slate-400 hover:text-slate-100 mr-4 font-semibold px-2 py-1 rounded hover:bg-slate-700 transition-colors" title="Print QR Code">
-                                        <svg class="w-4 h-4 inline-block -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                                        QR
-                                    </button>
-                                    <button @onclick="() => OpenEditModal(user)" class="text-indigo-400 hover:text-indigo-900 mr-4 font-semibold px-2 py-1 rounded hover:bg-indigo-900/30 transition-colors">@Lang.T("แก้ไข", "Edit")</button>
-                                    <button @onclick="() => DeleteUser(user)" class="text-red-400 hover:text-red-900 font-semibold px-2 py-1 rounded hover:bg-red-900/30 transition-colors">@Lang.T("ลบ", "Delete")</button>
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @onclick="() => PrintQR(user)" class="text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1" title="Print QR Code">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                            QR
+                                        </button>
+                                        <button @onclick="() => OpenEditModal(user)" class="text-blue-400 hover:text-white bg-blue-900/30 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium">@Lang.T("แก้ไข", "Edit")</button>
+                                        <button @onclick="() => DeleteUser(user)" class="text-red-400 hover:text-white bg-red-900/30 hover:bg-red-800 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium">@Lang.T("ลบ", "Delete")</button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -200,7 +205,7 @@ else
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
-                    <input type="text" @bind="_editingUser.EmployeeId" disabled="@_isEditMode" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm disabled:bg-slate-100 disabled:text-slate-400" placeholder="@Lang.T("เช่น 9005", "e.g. 9005")" />
+                    <input type="text" @bind="_editingUser.EmployeeId" disabled="@_isEditMode" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm bg-slate-900 text-slate-200 disabled:bg-slate-800 disabled:text-slate-500" placeholder="@Lang.T("เช่น 9005", "e.g. 9005")" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชื่อ-นามสกุล", "Full Name")</label>
