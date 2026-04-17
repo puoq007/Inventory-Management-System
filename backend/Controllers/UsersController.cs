@@ -136,10 +136,44 @@ public class UsersController : ControllerBase
         });
     }
 
+    [HttpPut("{employeeId}/change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(string employeeId, [FromBody] ChangePasswordRequest request)
+    {
+        var user = await _context.Users.FindAsync(employeeId);
+        if (user == null) return NotFound();
+        if (user.Password != request.OldPassword) return BadRequest("รหัสผ่านเดิมไม่ถูกต้อง");
+        user.Password = request.NewPassword;
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPut("{employeeId}/change-name")]
+    [Authorize]
+    public async Task<IActionResult> ChangeName(string employeeId, [FromBody] ChangeNameRequest request)
+    {
+        var user = await _context.Users.FindAsync(employeeId);
+        if (user == null) return NotFound();
+        user.Name = request.Name;
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
     private bool UserExists(string employeeId)
     {
         return _context.Users.Any(e => e.EmployeeId == employeeId);
     }
+}
+
+public class ChangePasswordRequest
+{
+    public string OldPassword { get; set; } = "";
+    public string NewPassword { get; set; } = "";
+}
+
+public class ChangeNameRequest
+{
+    public string Name { get; set; } = "";
 }
 
 public class LoginRequest
