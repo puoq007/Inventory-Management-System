@@ -1,0 +1,330 @@
+@page "/profile"
+@inject frontend.Services.AuthService Auth
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject LanguageService Lang
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@using shared.Models
+@using System.Net.Http.Json
+@using frontend.Services
+
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("โปรไฟล์ของฉัน", "My Profile")</h1>
+    <p class="text-slate-400 mt-1">@Lang.T("ดูข้อมูลบัญชีและเปลี่ยนรหัสผ่าน", "View your account info and change password")</p>
+</div>
+
+@if (_loading)
+{
+    <div class="flex items-center justify-center py-20">
+        <div class="text-slate-400 font-medium">@Lang.T("กำลังโหลด...", "Loading...")</div>
+    </div>
+}
+else if (_user != null)
+{
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Profile Card -->
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-xl p-6">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-full bg-mattel-red flex items-center justify-center text-white text-xl font-black shadow-[0_0_15px_rgba(238,0,36,0.3)] select-none">
+                    @(_user.Name?.Length > 0 ? _user.Name[0].ToString().ToUpper() : "?")
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100">@_user.Name</h2>
+                    <p class="text-slate-400 text-sm">@GetRoleDisplay(_user.Role)</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between py-3 border-b border-slate-700">
+                    <span class="text-sm text-slate-400">@Lang.T("รหัสพนักงาน", "Employee ID")</span>
+                    <span class="text-sm font-mono font-bold text-slate-200">@_user.EmployeeId</span>
+                </div>
+                <div class="flex items-center justify-between py-3 border-b border-slate-700">
+                    <span class="text-sm text-slate-400">@Lang.T("ชื่อ", "Name")</span>
+                    @if (_editingName)
+                    {
+                        <div class="flex items-center gap-2">
+                            <input type="text" @bind="_editName" class="px-3 py-1 bg-slate-900 text-slate-200 border border-slate-600 rounded-lg text-sm w-40 outline-none focus:border-mattel-red" />
+                            <button @onclick="SaveName" class="text-emerald-400 hover:text-emerald-300 transition-colors" title="Save">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button @onclick="() => _editingName = false" class="text-slate-500 hover:text-slate-300 transition-colors" title="Cancel">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-slate-200">@_user.Name</span>
+                            <button @onclick="StartEditName" class="text-slate-500 hover:text-mattel-red transition-colors" title="Edit">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(_nameMessage))
+                {
+                    <div class="text-xs font-medium py-1.5 px-2.5 rounded-lg mt-1 @(_nameSuccess ? "bg-emerald-900/40 text-emerald-400" : "bg-red-900/40 text-red-400")">
+                        @_nameMessage
+                    </div>
+                }
+                <div class="flex items-center justify-between py-3 border-b border-slate-700">
+                    <span class="text-sm text-slate-400">@Lang.T("ตำแหน่ง", "Role")</span>
+                    <span class="px-3 py-1 text-xs font-bold rounded-full border @GetRoleBadgeClass(_user.Role)">
+                        @GetRoleDisplay(_user.Role)
+                    </span>
+                </div>
+                <div class="flex items-center justify-between py-3">
+                    <span class="text-sm text-slate-400">@Lang.T("สถานะ", "Status")</span>
+                    <span class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        @Lang.T("ออนไลน์", "Online")
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-xl p-6">
+            <h3 class="text-lg font-bold text-slate-100 mb-1">
+                <svg class="w-5 h-5 inline-block mr-1 -mt-0.5 text-mattel-red" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                @Lang.T("เปลี่ยนรหัสผ่าน", "Change Password")
+            </h3>
+            <p class="text-slate-400 text-sm mb-6">@Lang.T("กรอกรหัสผ่านเดิมและรหัสผ่านใหม่", "Enter your current and new password")</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">@Lang.T("รหัสผ่านเดิม", "Current Password")</label>
+                    <div style="position: relative;">
+                        <input type="@(_showOld ? "text" : "password")" @bind="_oldPassword" 
+                               class="w-full py-3 bg-slate-900/50 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/30 focus:border-mattel-red transition-all outline-none placeholder:text-slate-600" 
+                               style="padding-left: 16px; padding-right: 48px;"
+                               placeholder="••••••••" />
+                        <button type="button" @onclick="() => _showOld = !_showOld" 
+                                class="text-slate-500 hover:text-mattel-red hover:bg-mattel-red/10 rounded-lg transition-all focus:outline-none"
+                                style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 6px 8px;">
+                            @if (_showOld) { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> }
+                            else { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.132-5.403m1.418-4.035A10.217 10.217 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.403m-1.418 4.035L4 4m6 8a3 3 0 116 0c0 .166-.02.33-.059.488m-5.132-5.132A3.007 3.007 0 009.348 9" /></svg> }
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">@Lang.T("รหัสผ่านใหม่", "New Password")</label>
+                    <div style="position: relative;">
+                        <input type="@(_showNew ? "text" : "password")" @bind="_newPassword" 
+                               class="w-full py-3 bg-slate-900/50 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/30 focus:border-mattel-red transition-all outline-none placeholder:text-slate-600" 
+                               style="padding-left: 16px; padding-right: 48px;"
+                               placeholder="••••••••" />
+                        <button type="button" @onclick="() => _showNew = !_showNew" 
+                                class="text-slate-500 hover:text-mattel-red hover:bg-mattel-red/10 rounded-lg transition-all focus:outline-none"
+                                style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 6px 8px;">
+                            @if (_showNew) { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> }
+                            else { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.132-5.403m1.418-4.035A10.217 10.217 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.403m-1.418 4.035L4 4m6 8a3 3 0 116 0c0 .166-.02.33-.059.488m-5.132-5.132A3.007 3.007 0 009.348 9" /></svg> }
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">@Lang.T("ยืนยันรหัสผ่านใหม่", "Confirm New Password")</label>
+                    <div style="position: relative;">
+                        <input type="@(_showConfirm ? "text" : "password")" @bind="_confirmPassword" 
+                               class="w-full py-3 bg-slate-900/50 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/30 focus:border-mattel-red transition-all outline-none placeholder:text-slate-600" 
+                               style="padding-left: 16px; padding-right: 48px;"
+                               placeholder="••••••••" />
+                        <button type="button" @onclick="() => _showConfirm = !_showConfirm" 
+                                class="text-slate-500 hover:text-mattel-red hover:bg-mattel-red/10 rounded-lg transition-all focus:outline-none"
+                                style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 6px 8px;">
+                            @if (_showConfirm) { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> }
+                            else { <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.132-5.403m1.418-4.035A10.217 10.217 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.403m-1.418 4.035L4 4m6 8a3 3 0 116 0c0 .166-.02.33-.059.488m-5.132-5.132A3.007 3.007 0 009.348 9" /></svg> }
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_passwordMessage))
+                {
+                    <div class="text-sm font-medium py-2 px-3 rounded-lg @(_passwordSuccess ? "bg-emerald-900/40 text-emerald-400 border border-emerald-800" : "bg-red-900/40 text-red-400 border border-red-800")">
+                        @_passwordMessage
+                    </div>
+                }
+
+                <button @onclick="ChangePassword" 
+                        class="w-full py-2.5 px-4 bg-mattel-red hover:bg-mattel-hover text-white font-bold rounded-xl transition-colors shadow-md mt-2"
+                        disabled="@_changingPassword">
+                    @if (_changingPassword)
+                    {
+                        <span>@Lang.T("กำลังเปลี่ยน...", "Changing...")</span>
+                    }
+                    else
+                    {
+                        <span>@Lang.T("เปลี่ยนรหัสผ่าน", "Change Password")</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private UserAccount? _user;
+    private bool _loading = true;
+    private string _oldPassword = "";
+    private string _newPassword = "";
+    private string _confirmPassword = "";
+    private string _passwordMessage = "";
+    private bool _passwordSuccess = false;
+    private bool _changingPassword = false;
+    private bool _editingName = false;
+    private string _editName = "";
+    private string _nameMessage = "";
+    private bool _nameSuccess = false;
+    private bool _showOld = false;
+    private bool _showNew = false;
+    private bool _showConfirm = false;
+
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var auth = await Auth.GetAuthAsync();
+            if (string.IsNullOrEmpty(auth.EmployeeId))
+            {
+                NavManager.NavigateTo("/login");
+                return;
+            }
+
+            var token = await Auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
+            try
+            {
+                _user = await Http.GetFromJsonAsync<UserAccount>($"api/users/{auth.EmployeeId}");
+            }
+            catch { }
+            
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        _passwordMessage = "";
+        
+        if (string.IsNullOrWhiteSpace(_oldPassword))
+        {
+            _passwordMessage = Lang.T("กรุณากรอกรหัสผ่านเดิม", "Please enter current password");
+            _passwordSuccess = false;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _passwordMessage = Lang.T("กรุณากรอกรหัสผ่านใหม่", "Please enter new password");
+            _passwordSuccess = false;
+            return;
+        }
+        if (_newPassword != _confirmPassword)
+        {
+            _passwordMessage = Lang.T("รหัสผ่านใหม่ไม่ตรงกัน", "New passwords do not match");
+            _passwordSuccess = false;
+            return;
+        }
+
+        _changingPassword = true;
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/users/{_user!.EmployeeId}/change-password", new { OldPassword = _oldPassword, NewPassword = _newPassword });
+            if (response.IsSuccessStatusCode)
+            {
+                _passwordMessage = Lang.T("เปลี่ยนรหัสผ่านสำเร็จ!", "Password changed successfully!");
+                _passwordSuccess = true;
+                _oldPassword = "";
+                _newPassword = "";
+                _confirmPassword = "";
+            }
+            else
+            {
+                _passwordMessage = Lang.T("รหัสผ่านเดิมไม่ถูกต้อง", "Current password is incorrect");
+                _passwordSuccess = false;
+            }
+        }
+        catch
+        {
+            _passwordMessage = Lang.T("เกิดข้อผิดพลาด กรุณาลองใหม่", "An error occurred, please try again");
+            _passwordSuccess = false;
+        }
+        _changingPassword = false;
+    }
+
+    private void StartEditName()
+    {
+        _editName = _user?.Name ?? "";
+        _editingName = true;
+        _nameMessage = "";
+    }
+
+    private async Task SaveName()
+    {
+        if (string.IsNullOrWhiteSpace(_editName))
+        {
+            _nameMessage = Lang.T("กรุณากรอกชื่อ", "Please enter a name");
+            _nameSuccess = false;
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/users/{_user!.EmployeeId}/change-name", new { Name = _editName });
+            if (response.IsSuccessStatusCode)
+            {
+                _user.Name = _editName;
+                _editingName = false;
+                _nameMessage = Lang.T("เปลี่ยนชื่อสำเร็จ!", "Name changed!");
+                _nameSuccess = true;
+                await Auth.SetAuthAsync(_user.EmployeeId, _user.Role, _user.Name);
+            }
+            else
+            {
+                _nameMessage = Lang.T("เปลี่ยนชื่อไม่สำเร็จ", "Failed to change name");
+                _nameSuccess = false;
+            }
+        }
+        catch
+        {
+            _nameMessage = Lang.T("เกิดข้อผิดพลาด", "An error occurred");
+            _nameSuccess = false;
+        }
+    }
+
+    private string GetRoleDisplay(string role) => role switch
+    {
+        "Admin" => "Administrator",
+        "Engineer" => "Engineer",
+        "ProdLead" => "Production Lead",
+        "Operator" => "Operator",
+        _ => role
+    };
+
+    private string GetRoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "bg-purple-900/40 text-purple-400 border-purple-800",
+        "Engineer" => "bg-blue-900/40 text-blue-400 border-blue-800",
+        "ProdLead" => "bg-amber-900/40 text-amber-400 border-amber-800",
+        "Operator" => "bg-emerald-900/40 text-emerald-400 border-emerald-800",
+        _ => "bg-slate-700 text-slate-400 border-slate-600"
+    };
+}
