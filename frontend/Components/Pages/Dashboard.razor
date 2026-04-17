@@ -14,7 +14,7 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div class="mb-8">
-        <h1 class="text-4xl font-extrabold text-slate-100 tracking-tight">@Lang.T("แผงควบคุม", "Dashboard")</h1>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("แผงควบคุม", "Dashboard")</h1>
         <p class="text-slate-400 font-medium mt-1">@Lang.T("สรุปภาพรวมสถานะจิกและการดำเนินงาน", "Overview of inventory status and operations")</p>
     </div>
     @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
@@ -137,7 +137,7 @@ else
                 <h2 class="text-xl font-bold text-slate-100 mb-2">@Lang.T("ยินดีต้อนรับ!", "Welcome!")</h2>
                 <p class="text-slate-400 text-sm">@Lang.T("คุณกำลังอยู่ในโหมดอ่านอย่างเดียวในฐานะผู้เยี่ยมชม คุณสามารถดูสถานะปัจจุบันของจิกที่มีอยู่ได้", "You are currently in <strong>Read-Only Mode</strong> as a Guest. You can view the current status of existing physical jigs.")</p>
                 <div class="mt-6 pt-6 border-t border-slate-700">
-                    <a href="/login" class="px-4 py-2 bg-slate-100 text-slate-300 font-medium rounded-lg hover:bg-slate-200 transition-colors inline-block text-sm">@Lang.T("ลงชื่อเข้าใช้เพื่อดำเนินการต่อ", "Sign In to Continue")</a>
+                    <a href="/login" class="px-4 py-2 bg-mattel-red text-white font-medium rounded-lg hover:bg-mattel-hover transition-colors inline-block text-sm">@Lang.T("ลงชื่อเข้าใช้เพื่อดำเนินการต่อ", "Sign In to Continue")</a>
                 </div>
             </div>
         }
