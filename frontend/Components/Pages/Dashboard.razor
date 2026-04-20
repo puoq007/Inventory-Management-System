@@ -10,11 +10,11 @@
 @using System.Net.Http.Json
 @implements IDisposable
 
-<PageTitle>@Lang.T("แผงควบคุมผู้ดูแลระบบ | คลัง", "Admin Dashboard | Inventory")</PageTitle>
+<PageTitle>@Lang.T("แดชบอร์ด | คลัง", "Dashboard | Inventory")</PageTitle>
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div class="mb-8">
-        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("แผงควบคุม", "Dashboard")</h1>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("แดชบอร์ด", "Dashboard")</h1>
         <p class="text-slate-400 font-medium mt-1">@Lang.T("สรุปภาพรวมสถานะจิกและการดำเนินงาน", "Overview of inventory status and operations")</p>
     </div>
     @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")

@@ -9,7 +9,7 @@
 @using System.Net.Http.Json
 @using Net.Codecrete.QrCodeGenerator
 
-<PageTitle>Admin - Users | Inventory</PageTitle>
+<PageTitle>Users | Inventory</PageTitle>
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
@@ -59,8 +59,9 @@ else
                     </button>
                 </div>
             }
-            <div class="flex items-end">
-                <button @onclick="FilterData" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-xl hover:bg-mattel-hover transition-colors">@Lang.T("ค้นหา", "Search")</button>
+            <div class="flex items-end gap-2">
+                <button @onclick="ClearAll" class="px-5 py-2.5 bg-slate-700 text-slate-300 font-medium text-sm rounded-xl border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors shrink-0">@Lang.T("ล้างค่า", "Clear")</button>
+                <button @onclick="FilterData" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-xl hover:bg-mattel-hover transition-colors shrink-0">@Lang.T("ค้นหา", "Search")</button>
             </div>
         </div>
     </div>
@@ -364,6 +365,15 @@ else
         _roleFilter = val;
         FilterData();
         _showRoleFilter = false;
+    }
+
+    private void ClearAll()
+    {
+        _searchQuery = "";
+        _roleFilter = "All";
+        _selectedUserIds.Clear();
+        _showRoleFilter = false;
+        FilterData();
     }
 
     private void FilterData()
