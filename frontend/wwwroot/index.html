@@ -22,13 +22,10 @@
         <div class="loading-progress-text"></div>
     </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">🗙</span>
-    </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         console.log("Jig Inventory JS Initializing...");
 
@@ -438,6 +435,171 @@
                     if (reader) reader.innerHTML = '';
                 } catch (err) { console.warn("Stop QR Error (ignorable):", err); }
             }
+        };
+
+        let activityChartInstance = null;
+        window.initActivityChart = function (canvasId, labels, dataOut, dataIn, dataClean, labelOut, labelIn, labelClean) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            if (activityChartInstance) {
+                if (activityChartInstance.canvas !== ctx) {
+                    // Blazor recreated the DOM element (e.g. user navigated away and came back)
+                    activityChartInstance.destroy();
+                    activityChartInstance = null;
+                } else {
+                    // Same DOM element, just update the data smoothly
+                    activityChartInstance.data.labels = labels;
+                    activityChartInstance.data.datasets[0].label = labelOut || 'Check Outs';
+                    activityChartInstance.data.datasets[1].label = labelIn || 'Store';
+                    activityChartInstance.data.datasets[2].label = labelClean || 'Cleaning';
+                    activityChartInstance.data.datasets[0].data = dataOut;
+                    activityChartInstance.data.datasets[1].data = dataIn;
+                    activityChartInstance.data.datasets[2].data = dataClean;
+                    activityChartInstance.update();
+                    return;
+                }
+            }
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+            activityChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: labelOut || 'Check Outs',
+                            data: dataOut,
+                            backgroundColor: '#818cf8',
+                            hoverBackgroundColor: '#a5b4fc',
+                            borderRadius: 4,
+                            borderSkipped: false
+                        },
+                        {
+                            label: labelIn || 'Store',
+                            data: dataIn,
+                            backgroundColor: '#34d399',
+                            hoverBackgroundColor: '#6ee7b7',
+                            borderRadius: 4,
+                            borderSkipped: false
+                        },
+                        {
+                            label: labelClean || 'Cleaning',
+                            data: dataClean,
+                            backgroundColor: '#fbbf24',
+                            hoverBackgroundColor: '#fcd34d',
+                            borderRadius: 4,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 12,
+                                boxHeight: 12,
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                generateLabels: function(chart) {
+                                    const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                    const labelsOriginal = original.call(this, chart);
+                                    labelsOriginal.forEach(label => {
+                                        // Remove the default strikethrough
+                                        label.textDecoration = 'none';
+                                        
+                                        // Make the text darker when hidden
+                                        label.fontColor = label.hidden ? '#475569' : '#cbd5e1';
+                                        
+                                        // Make it look like an empty radio button when not selected
+                                        if (label.hidden) {
+                                            label.strokeStyle = label.fillStyle; 
+                                            label.fillStyle = 'transparent';
+                                            label.lineWidth = 2;
+                                        }
+                                    });
+                                    return labelsOriginal;
+                                }
+                            },
+                            onClick: function(e, legendItem, legend) {
+                                const index = legendItem.datasetIndex;
+                                const ci = legend.chart;
+                                
+                                if (!ci.customSelection) {
+                                    ci.customSelection = new Set();
+                                }
+                                
+                                if (ci.customSelection.has(index)) {
+                                    ci.customSelection.delete(index);
+                                } else {
+                                    ci.customSelection.add(index);
+                                }
+                                
+                                if (ci.customSelection.size === 0) {
+                                    for (let i = 0; i < ci.data.datasets.length; i++) {
+                                        ci.getDatasetMeta(i).hidden = false;
+                                    }
+                                } else {
+                                    for (let i = 0; i < ci.data.datasets.length; i++) {
+                                        ci.getDatasetMeta(i).hidden = !ci.customSelection.has(i);
+                                    }
+                                }
+                                
+                                ci.update();
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            boxPadding: 4
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#334155',
+                                drawBorder: false,
+                                borderDash: [5, 5]
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
         };
 
         console.log("Jig Inventory JS Loaded.");

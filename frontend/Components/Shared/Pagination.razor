@@ -1,0 +1,110 @@
+@using shared.Models
+@inject frontend.Services.LanguageService Lang
+@implements IDisposable
+
+<div class="px-6 py-4 flex flex-col md:flex-row items-center justify-between border-t border-slate-700 bg-slate-900 rounded-b-2xl">
+    <div class="flex items-center gap-4 text-sm text-slate-400 font-medium mb-4 md:mb-0 w-full md:w-auto overflow-x-auto whitespace-nowrap">
+        <span>
+            @Lang.T($"แสดง {StartIndex} - {EndIndex} จากทั้งหมด {TotalItems} รายการ", $"Showing {StartIndex} - {EndIndex} of {TotalItems} items")
+        </span>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-center space-x-1 sm:space-x-2 w-full md:w-auto">
+        <button @onclick="PreviousPage" disabled="@(!CanGoPrevious)" 
+                class="px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border @(CanGoPrevious ? "bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:border-slate-500" : "bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50")">
+            @Lang.T("ก่อนหน้า", "Previous")
+        </button>
+
+        <div class="flex items-center space-x-1">
+            @foreach (var pageNumber in GetVisiblePages())
+            {
+                if (pageNumber == -1)
+                {
+                    <span class="px-1 sm:px-2 py-1.5 text-slate-600 font-bold tracking-widest hidden sm:inline-block">...</span>
+                }
+                else
+                {
+                    <button @onclick="() => GoToPage(pageNumber)" 
+                            class="min-w-[32px] sm:min-w-[36px] px-2 py-1.5 rounded-lg text-sm font-bold transition-all border @(pageNumber == CurrentPage ? "bg-mattel-red text-white border-mattel-red shadow-[0_0_8px_rgba(238,0,36,0.4)]" : "bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:text-white")">
+                        @pageNumber
+                    </button>
+                }
+            }
+        </div>
+
+        <button @onclick="NextPage" disabled="@(!CanGoNext)" 
+                class="px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border @(CanGoNext ? "bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700 hover:border-slate-500" : "bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50")">
+            @Lang.T("ถัดไป", "Next")
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int TotalItems { get; set; }
+    [Parameter] public int CurrentPage { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public EventCallback<int> CurrentPageChanged { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private int TotalPages => TotalItems == 0 ? 1 : (int)Math.Ceiling(TotalItems / (double)PageSize);
+    private bool CanGoPrevious => CurrentPage > 1;
+    private bool CanGoNext => CurrentPage < TotalPages;
+
+    private int StartIndex => TotalItems == 0 ? 0 : ((CurrentPage - 1) * PageSize) + 1;
+    private int EndIndex => TotalItems == 0 ? 0 : Math.Min(CurrentPage * PageSize, TotalItems);
+
+    private async Task GoToPage(int page)
+    {
+        if (CurrentPage != page && page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+            await CurrentPageChanged.InvokeAsync(CurrentPage);
+            if (OnChanged.HasDelegate)
+                await OnChanged.InvokeAsync();
+        }
+    }
+
+    private async Task PreviousPage() => await GoToPage(CurrentPage - 1);
+    private async Task NextPage() => await GoToPage(CurrentPage + 1);
+
+    private List<int> GetVisiblePages()
+    {
+        var pages = new List<int>();
+        var total = TotalPages;
+        
+        if (total <= 7)
+        {
+            for (int i = 1; i <= total; i++) pages.Add(i);
+        }
+        else
+        {
+            pages.Add(1);
+            if (CurrentPage > 4) pages.Add(-1); // Ellipsis
+
+            int start = Math.Max(2, CurrentPage - 2);
+            int end = Math.Min(total - 1, CurrentPage + 2);
+
+            // Adjust start/end edges
+            if (CurrentPage <= 4) end = 6;
+            if (CurrentPage >= total - 3) start = total - 5;
+
+            for (int i = start; i <= end; i++) pages.Add(i);
+
+            if (CurrentPage < total - 3) pages.Add(-1); // Ellipsis
+
+            pages.Add(total);
+        }
+        
+        return pages;
+    }
+
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= StateHasChanged;
+    }
+}

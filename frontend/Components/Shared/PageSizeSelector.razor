@@ -1,0 +1,37 @@
+@inject frontend.Services.LanguageService Lang
+@implements IDisposable
+
+<div class="flex items-center gap-2">
+    <label class="text-xs font-semibold text-slate-400">@Lang.T("แถว/หน้า:", "Rows/Page:")</label>
+    <select @bind="PageSize" @bind:after="OnPageSizeChanged" 
+            class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-200 outline-none focus:ring-mattel-red/30 focus:border-mattel-red transition-all cursor-pointer hover:bg-slate-800">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+    </select>
+</div>
+
+@code {
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public EventCallback<int> PageSizeChanged { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task OnPageSizeChanged()
+    {
+        await PageSizeChanged.InvokeAsync(PageSize);
+        if (OnChanged.HasDelegate)
+            await OnChanged.InvokeAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= StateHasChanged;
+    }
+}

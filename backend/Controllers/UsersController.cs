@@ -54,6 +54,16 @@ public class UsersController : ControllerBase
             return BadRequest();
         }
 
+        var existingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.EmployeeId == employeeId);
+        if (existingUser != null && !string.IsNullOrEmpty(existingUser.Name) && existingUser.Name != userAccount.Name)
+        {
+            var transactions = await _context.Transactions.Where(t => t.User == existingUser.Name).ToListAsync();
+            foreach (var t in transactions)
+            {
+                t.User = userAccount.Name;
+            }
+        }
+
         _context.Entry(userAccount).State = EntityState.Modified;
 
         try
@@ -154,7 +164,19 @@ public class UsersController : ControllerBase
     {
         var user = await _context.Users.FindAsync(employeeId);
         if (user == null) return NotFound();
+        
+        string oldName = user.Name;
         user.Name = request.Name;
+
+        if (!string.IsNullOrEmpty(oldName) && oldName != request.Name)
+        {
+            var transactions = await _context.Transactions.Where(t => t.User == oldName).ToListAsync();
+            foreach (var t in transactions)
+            {
+                t.User = request.Name;
+            }
+        }
+
         await _context.SaveChangesAsync();
         return Ok();
     }

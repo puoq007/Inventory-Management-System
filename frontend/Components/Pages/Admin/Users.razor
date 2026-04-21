@@ -4,6 +4,7 @@
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
 @inject LanguageService Lang
+@using frontend.Components.Shared
 @implements IDisposable
 @using shared.Models
 @using System.Net.Http.Json
@@ -13,7 +14,7 @@
 
 <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("จัดการผู้ใช้งาน (User Management)", "User Management")</h1>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("จัดการผู้ใช้งาน", "User Management")</h1>
         <p class="text-slate-400">@Lang.T("เพิ่ม แก้ไข และจัดการบัญชีผู้ใช้งานรวมถึงสิทธิ์การเข้าถึง", "Add, edit, and manage user accounts and access roles.")</p>
     </div>
     
@@ -59,20 +60,19 @@ else
                     </button>
                 </div>
             }
-            <div class="flex items-end gap-2">
-                <button @onclick="ClearAll" class="px-5 py-2.5 bg-slate-700 text-slate-300 font-medium text-sm rounded-xl border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors shrink-0">@Lang.T("ล้างค่า", "Clear")</button>
-                <button @onclick="FilterData" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-xl hover:bg-mattel-hover transition-colors shrink-0">@Lang.T("ค้นหา", "Search")</button>
+            <div class="flex items-end gap-3 shrink-0">
+                <PageSizeSelector @bind-PageSize="_pageSize" OnChanged="FilterData" />
             </div>
         </div>
     </div>
 
-    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full">
-        <div class="block w-full overflow-x-auto pb-44 -mb-44">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full relative">
+        <div class="block w-full overflow-x-auto min-h-[300px]">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-900">
                     <tr>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-12 shrink-0">
-                            <input type="checkbox" checked="@(_displayUsers != null && _displayUsers.Any() && _displayUsers.All(u => _selectedUserIds.Contains(u.EmployeeId)))" @onchange="ToggleSelectAll" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
+                            <input type="checkbox" checked="@(_displayUsers != null && _displayUsers.Any() && _displayUsers.All(u => _selectedUserIds.Contains(u.EmployeeId)))" @onchange="ToggleSelectAll" class="w-5 h-5 rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                         </th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("รหัสพนักงาน", "Employee ID")</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">@Lang.T("ชื่อ-นามสกุล", "Name")</th>
@@ -102,11 +102,10 @@ else
                                     <div class="py-1.5">
                                         @foreach (var opt in new[] { 
                                             ("All", Lang.T("แสดงทุกสิทธิ์", "Show All Roles")), 
-                                            ("Admin", Lang.T("ผู้ดูแลระบบ (Admin)", "Admin")), 
-                                            ("Engineer", Lang.T("วิศวกร (Engineer)", "Engineer")), 
-                                            ("ProdLead", Lang.T("หน้าหน้าฝ่ายผลิต (ProdLead)", "Prod Lead")), 
-                                            ("Operator", Lang.T("พนักงานปฏิบัติการ (Operator)", "Operator")), 
-                                            ("Guest", Lang.T("ผู้เข้าชม (Guest)", "Guest")) 
+                                            ("Admin", Lang.T("ผู้ดูแลระบบ", "Admin")), 
+                                            ("Engineer", Lang.T("วิศวกร", "Engineer")), 
+                                            ("ProdLead", Lang.T("หัวหน้าฝ่ายผลิต", "Prod Lead")), 
+                                            ("Operator", Lang.T("พนักงานปฏิบัติการ", "Operator")) 
                                         })
                                         {
                                             <button @onclick="() => SetRoleFilter(opt.Item1)" 
@@ -133,9 +132,9 @@ else
                     {
                         @foreach (var user in _displayUsers)
                         {
-                            <tr class="hover:bg-slate-900 transition-colors">
+                            <tr class="hover:bg-slate-900 transition-colors cursor-pointer" @onclick="() => ToggleRowSelection(user.EmployeeId)">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="checkbox" checked="@_selectedUserIds.Contains(user.EmployeeId)" @onchange="@(e => ToggleSelection(user.EmployeeId, e.Value))" class="rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
+                                    <input type="checkbox" checked="@_selectedUserIds.Contains(user.EmployeeId)" class="w-5 h-5 rounded border-slate-700 text-blue-400 focus:ring-mattel-red cursor-pointer" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-300">
                                     @user.EmployeeId
@@ -156,7 +155,7 @@ else
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono tracking-[0.3em] text-lg">
                                     ••••
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm" @onclick:stopPropagation="true">
                                     <div class="flex items-center justify-end gap-2">
                                         <button @onclick="() => PrintQR(user)" class="text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1" title="Print QR Code">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
@@ -194,6 +193,7 @@ else
                 </tbody>
             </table>
         </div>
+        <Pagination TotalItems="@_totalItems" @bind-CurrentPage="_currentPage" PageSize="@_pageSize" OnChanged="FilterData" />
     </div>
 }
 
@@ -210,21 +210,20 @@ else
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชื่อ-นามสกุล", "Full Name")</label>
-                    <input type="text" @bind="_editingUser.Name" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm" placeholder="@Lang.T("เช่น สมชาย รักเรียน", "e.g. John Doe")" />
+                    <input type="text" @bind="_editingUser.Name" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm bg-slate-900 text-slate-200" placeholder="@Lang.T("เช่น สมชาย รักเรียน", "e.g. John Doe")" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ตำแหน่ง / สิทธิ์", "Role")</label>
-                    <select @bind="_editingUser.Role" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
+                    <select @bind="_editingUser.Role" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm bg-slate-900 text-slate-200">
                         <option value="Admin">@Lang.T("ผู้ดูแลระบบ (Admin)", "Admin")</option>
                         <option value="Engineer">@Lang.T("วิศวกร (Engineer)", "Engineer")</option>
                         <option value="ProdLead">@Lang.T("หัวหน้าฝ่ายผลิต (ProdLead)", "Production Lead")</option>
                         <option value="Operator">@Lang.T("พนักงานปฏิบัติการ (Operator)", "Operator")</option>
-                        <option value="Guest">@Lang.T("ผู้เข้าชม (Guest)", "Guest")</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสผ่าน", "Password")</label>
-                    <input type="text" @bind="_editingUser.Password" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm" placeholder="@Lang.T("พิมพ์รหัสผ่านที่นี่", "Any default password")" />
+                    <input type="text" @bind="_editingUser.Password" class="block w-full border border-slate-700 rounded-lg px-4 py-2 focus:ring-mattel-red focus:border-mattel-red sm:text-sm bg-slate-900 text-slate-200" placeholder="@Lang.T("พิมพ์รหัสผ่านที่นี่", "Any default password")" />
                 </div>
                 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -251,6 +250,9 @@ else
     private string _searchQuery = "";
     private string _roleFilter = "All";
     private bool _showRoleFilter = false;
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalItems = 0;
     private List<UserAccount> _allUsers = new();
     private IEnumerable<UserAccount>? _displayUsers;
     private HashSet<string> _selectedUserIds = new();
@@ -275,6 +277,11 @@ else
             _selectedUserIds.Remove(empId);
             
         StateHasChanged();
+    }
+
+    private void ToggleRowSelection(string empId)
+    {
+        ToggleSelection(empId, !_selectedUserIds.Contains(empId));
     }
 
     private void ToggleSelectAll(ChangeEventArgs e)
@@ -379,13 +386,22 @@ else
     private void FilterData()
     {
         var lowerQuery = (_searchQuery ?? "").ToLowerInvariant();
-        _displayUsers = _allUsers.Where(u => 
+        var query = _allUsers.Where(u => 
             (string.IsNullOrWhiteSpace(lowerQuery) || 
              u.EmployeeId.ToLowerInvariant().Contains(lowerQuery) ||
              u.Name.ToLowerInvariant().Contains(lowerQuery) ||
              u.Role.ToLowerInvariant().Contains(lowerQuery)) &&
             (_roleFilter == "All" || u.Role == _roleFilter)
-        ).ToList();
+        );
+
+        _totalItems = query.Count();
+
+        // Adjust current page if out of bounds
+        int maxPage = (int)Math.Ceiling(_totalItems / (double)_pageSize);
+        if (maxPage == 0) maxPage = 1;
+        if (_currentPage > maxPage) _currentPage = maxPage;
+
+        _displayUsers = query.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
     }
 
     private void OpenAddModal()

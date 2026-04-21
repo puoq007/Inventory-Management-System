@@ -9,7 +9,7 @@
 @inject LanguageService Lang
 @implements IDisposable
 
-<PageTitle>Scan In/Out | Inventory</PageTitle>
+<PageTitle>@Lang.T("เบิก/คืน จิก | คลัง", "Scan In / Out | Inventory")</PageTitle>
 
 <div class="h-full flex flex-col space-y-6">
     <div>
@@ -75,7 +75,7 @@
                                @bind="_selectedLocatorId"
                                @bind:event="oninput"
                                @onkeyup="HandleLocationKeyUp"
-                               placeholder="@Lang.T("🔍 พิมพ์หรือสแกนสถานที่...", "🔍 Search or Scan Location...")"
+                               placeholder="@Lang.T("พิมพ์หรือสแกนสถานที่...", "Search or Scan Location...")"
                                class="w-full rounded-lg bg-slate-800 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red focus:ring-2 outline-none font-mono text-lg px-4 py-3 border transition-all disabled:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-500" />
                     </div>
                 }
@@ -222,31 +222,8 @@
         _currentUser = authObj.Name ?? "Unknown";
         _locators = await Http.GetFromJsonAsync<List<Locator>>("api/locators");
         
-        // Load recent transactions as initial history
-        try 
-        {
-            var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
-            var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
-            await Task.WhenAll(txnsTask, jigsTask);
-            
-            var txns = await txnsTask;
-            var jigs = await jigsTask;
-            
-            if (txns != null)
-            {
-                _sessionHistory = txns.Take(10).Select(t => {
-                    var jig = jigs?.FirstOrDefault(j => j.Uid == t.JigUid);
-                    return new ScanSessionItem {
-                        JigId = jig?.Id ?? t.JigUid,
-                        Action = t.Action,
-                        Location = t.Destination,
-                        Timestamp = t.Timestamp,
-                        IsError = false
-                    };
-                }).ToList();
-            }
-        }
-        catch { /* Fallback if history fail */ }
+        // Recent transactions are no longer loaded on start per user request.
+        // It will only show session history done within this active page view.
     }
 
     protected override void OnInitialized()
