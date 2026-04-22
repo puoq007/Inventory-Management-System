@@ -18,8 +18,8 @@
         <p class="text-slate-400">@Lang.T("เพิ่ม แก้ไข และจัดการบัญชีผู้ใช้งานรวมถึงสิทธิ์การเข้าถึง", "Add, edit, and manage user accounts and access roles.")</p>
     </div>
     
-    <button @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors flex items-center">
-        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    <button type="button" @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors ims-btn-action">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         @Lang.T("เพิ่มผู้ใช้งานใหม่", "New User")
     </button>
 </div>
@@ -54,7 +54,7 @@ else
             @if (_selectedUserIds.Any())
             {
                 <div class="flex items-end">
-                    <button @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-xl hover:bg-slate-600 transition-colors flex items-center gap-2 border border-slate-600">
+                    <button type="button" @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-xl hover:bg-slate-600 transition-colors inline-flex items-center justify-center gap-2 border border-slate-600 w-full md:w-auto">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         @Lang.T($"พิมพ์ QR ที่เลือก ({_selectedUserIds.Count})", $"Print QR ({_selectedUserIds.Count})")
                     </button>
@@ -66,8 +66,8 @@ else
         </div>
     </div>
 
-    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full relative">
-        <div class="block w-full overflow-x-auto min-h-[300px]">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 mb-8 max-w-full min-w-0 relative">
+        <div class="ims-table-scroll min-h-[300px]">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-900">
                     <tr>

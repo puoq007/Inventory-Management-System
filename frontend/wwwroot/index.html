@@ -3,23 +3,56 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Jig Inventory</title>
     <base href="/" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css?v=1772814275" />
+    <link rel="stylesheet" href="css/layout-responsive.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link href="frontend.styles.css" rel="stylesheet" />
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        /* Visible boot shell until Blazor replaces #app (no dependency on bundled .loading-progress CSS) */
+        #app {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .blazor-boot-msg {
+            font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+            font-size: 0.95rem;
+            color: #94a3b8;
+            text-align: center;
+            padding: 1rem;
+        }
+        #blazor-error-ui {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-family: system-ui, sans-serif;
+            font-size: 0.875rem;
+        }
+        #blazor-error-ui.visible { display: block; }
+    </style>
 </head>
 
 <body style="background-color: #0f172a; color: #cbd5e1; margin: 0;">
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="blazor-boot-msg">Loading Jig Inventory…</div>
+    </div>
+    <div id="blazor-error-ui">
+        An error occurred loading the app. Check the browser console (F12) or refresh the page.
+        <a href="#" onclick="location.reload();return false" style="color:#fecaca;margin-left:0.5rem;">Reload</a>
     </div>
 
 

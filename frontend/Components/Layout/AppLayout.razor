@@ -6,7 +6,7 @@
 @inject AuthService Auth
 @inject HttpClient Http
 
-<div class="min-h-[100dvh] bg-slate-900 text-slate-300 font-sans flex flex-col text-sm w-full">
+<div class="min-h-[100dvh] bg-slate-900 text-slate-300 font-sans flex flex-col text-sm w-full max-w-full min-w-0 overflow-x-hidden">
     <!-- Top Navigation Bar -->
     <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md relative w-full">
         <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-20">
@@ -119,41 +119,64 @@
         {
             <div class="md:hidden border-t border-slate-700 bg-slate-800 shadow-xl absolute w-full left-0 z-50">
                 <div class="px-2 pt-2 pb-3 space-y-1">
-                    <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
-                    <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/current-status">Inventory</NavLink>
+                    <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/" Match="NavLinkMatch.All">@Lang.T("แดชบอร์ด", "Dashboard")</NavLink>
+                    <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/current-status">@Lang.T("สถานะปัจจุบัน", "Current Status")</NavLink>
                     @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
-                        <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/scan-out">Scan In/Out</NavLink>
+                        <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/scan-out">@Lang.T("เบิก/คืนจิก", "Scan In/Out")</NavLink>
                     }
                     @if (_role != "Guest") {
-                        <NavLink class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/history">Reports</NavLink>
+                        <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/history">@Lang.T("ประวัติการใช้งาน", "History")</NavLink>
                     }
                     <div class="border-t border-slate-700 my-2"></div>
+
+                    <div class="px-3 py-2">
+                        <div class="flex items-center justify-between rounded-md border border-slate-700 bg-slate-900/40 px-3 py-2">
+                            <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">@Lang.T("ภาษา", "Language")</span>
+                            <div class="flex items-center space-x-2 text-[13px] uppercase tracking-wider font-bold">
+                                <button type="button"
+                                        @onclick='() => Lang.SetLanguage("EN")'
+                                        class='transition-colors px-2 py-1 rounded @(Lang.Current == "EN" ? "bg-slate-700 text-mattel-red" : "text-slate-400 hover:text-slate-200")'>
+                                    EN
+                                </button>
+                                <span class="text-slate-700 select-none">|</span>
+                                <button type="button"
+                                        @onclick='() => Lang.SetLanguage("TH")'
+                                        class='transition-colors px-2 py-1 rounded @(Lang.Current == "TH" ? "bg-slate-700 text-mattel-red" : "text-slate-400 hover:text-slate-200")'>
+                                    TH
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     
                     @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead") {
                         <div class="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest">@Lang.T("การจัดการ", "Management")</div>
                         
                         @if (_role == "Admin") {
-                            <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/users">@Lang.T("จัดการผู้ใช้งาน", "User Management")</NavLink>
+                            <NavLink @onclick="CloseMenu" class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/users">@Lang.T("จัดการผู้ใช้งาน", "User Management")</NavLink>
                         }
-                        <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/register-jig">@Lang.T("จัดการจิก", "Jigs Management")</NavLink>
-                        <NavLink class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/locators">@Lang.T("โลเคเตอร์", "Locators")</NavLink>
+                        <NavLink @onclick="CloseMenu" class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/register-jig">@Lang.T("จัดการจิก", "Jig Management")</NavLink>
+                        <NavLink @onclick="CloseMenu" class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/locators">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</NavLink>
                         <div class="border-t border-slate-700 my-2"></div>
                     }
-                    <div class="flex items-center px-4 space-x-3 mb-2 pt-2">
+                    <button type="button" @onclick="GoToProfile" class="flex w-full cursor-pointer select-none items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/40 px-4 py-3 text-left transition-colors hover:border-slate-500 hover:bg-slate-700">
                         <div class="bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm select-none">MAT</div>
-                        <div>
-                            <div class="text-sm font-bold text-slate-200">@_name</div>
-                            <div class="text-xs text-slate-400">@GetRoleDisplay(_role)</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-bold text-slate-200 truncate">@_name</div>
+                            <div class="text-xs text-slate-400 truncate">@GetRoleDisplay(_role)</div>
                         </div>
-                    </div>
-                    <button @onclick="Logout" class="block w-full text-left px-3 py-2 rounded-md text-base font-bold text-mattel-red hover:bg-slate-700">Logout</button>
+                        <svg class="h-4 w-4 flex-shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <button type="button" @onclick="GoToProfile" class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-base font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white">@Lang.T("โปรไฟล์", "My Profile")</button>
+                    <button type="button" @onclick="Logout" class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-base font-bold text-mattel-red hover:bg-slate-700">@Lang.T("ออกจากระบบ", "Logout")</button>
                 </div>
             </div>
         }
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow p-4 md:p-8 w-full max-w-[1500px] mx-auto">
+    <main class="flex-grow p-4 md:p-8 w-full max-w-[1500px] mx-auto min-w-0">
         <RoleGate AllowedRoles="@(_allRoles)">
             @Body
         </RoleGate>
@@ -182,7 +205,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender)
+            return;
+
+        try
         {
             var auth = await Auth.GetAuthAsync();
             _role = auth.Role ?? "";
@@ -195,14 +221,33 @@
             }
 
             await Lang.InitializeAsync();
+        }
+        catch
+        {
+            /* JS/localStorage may be unavailable in rare cases; keep shell visible */
+        }
+        finally
+        {
             StateHasChanged();
         }
     }
 
     private async Task Logout()
     {
+        _isMenuOpen = false;
         await Auth.ClearAuthAsync();
         NavManager.NavigateTo("/login");
+    }
+
+    private void GoToProfile()
+    {
+        _isMenuOpen = false;
+        NavManager.NavigateTo("/profile");
+    }
+
+    private void CloseMenu()
+    {
+        _isMenuOpen = false;
     }
 
     private string GetRoleDisplay(string role) => role switch

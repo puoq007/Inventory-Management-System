@@ -2,9 +2,31 @@
 @inject AuthService Auth
 @inject NavigationManager NavManager
 
-@if (_isReady && _isAuthorized)
+@if (!_isReady)
+{
+    <div class="flex py-16 items-center justify-center px-4">
+        <div class="text-center text-slate-400">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-slate-600 mb-3" style="border-top-color:#ee0024"></div>
+            <p class="text-sm font-medium">@_loadingText</p>
+        </div>
+    </div>
+}
+else if (_isAuthorized)
 {
     @ChildContent
+}
+else
+{
+    <div class="flex py-12 items-center justify-center px-4 text-sm text-slate-500">
+        @if (string.IsNullOrEmpty(_redirectHint))
+        {
+            <span>Please wait...</span>
+        }
+        else
+        {
+            <span>@_redirectHint</span>
+        }
+    </div>
 }
 
 @code {
@@ -13,28 +35,51 @@
 
     private bool _isReady;
     private bool _isAuthorized;
+    private string _loadingText = "Loading...";
+    private string _redirectHint = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender)
+            return;
+
+        try
         {
             var auth = await Auth.GetAuthAsync();
+
             if (string.IsNullOrEmpty(auth.EmployeeId))
             {
+                _loadingText = "Redirecting to sign in...";
+                _redirectHint = "Redirecting to sign in...";
                 NavManager.NavigateTo("/login");
                 return;
             }
 
-            if (AllowedRoles.Length == 0 || AllowedRoles.Contains(auth.Role))
+            if (AllowedRoles.Length > 0 && !AllowedRoles.Contains(auth.Role ?? ""))
             {
-                _isAuthorized = true;
-            }
-            else
-            {
-                // Optional: Handle unauthorized
-                NavManager.NavigateTo("/"); 
+                _loadingText = "Redirecting...";
+                _redirectHint = "You do not have access to this page. Redirecting...";
+                NavManager.NavigateTo("/");
+                return;
             }
 
+            _isAuthorized = true;
+        }
+        catch
+        {
+            _loadingText = "Session error. Redirecting...";
+            _redirectHint = "Session error. Redirecting to sign in...";
+            try
+            {
+                NavManager.NavigateTo("/login");
+            }
+            catch
+            {
+                /* ignore */
+            }
+        }
+        finally
+        {
             _isReady = true;
             StateHasChanged();
         }
