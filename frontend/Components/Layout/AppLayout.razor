@@ -99,8 +99,19 @@
                         }
                     </div>
                 </div>
-                <!-- Mobile menu button -->
-                <div class="md:hidden flex items-center">
+                <!-- Mobile: Language Toggle + Hamburger -->
+                <div class="md:hidden flex items-center gap-3">
+                    <div class="flex items-center space-x-1 text-[13px] uppercase tracking-wider font-bold">
+                        <button type="button" @onclick='() => Lang.SetLanguage("EN")'
+                                class='transition-colors px-1.5 py-1 @(Lang.Current == "EN" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
+                            EN
+                        </button>
+                        <span class="text-slate-700 select-none">|</span>
+                        <button type="button" @onclick='() => Lang.SetLanguage("TH")'
+                                class='transition-colors px-1.5 py-1 @(Lang.Current == "TH" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
+                            TH
+                        </button>
+                    </div>
                     <button @onclick="ToggleMenu" class="p-2 text-slate-300 focus:outline-none hover:bg-slate-700 rounded transition duration-200">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             @if (_isMenuOpen) {
@@ -114,9 +125,10 @@
             </div>
         </div>
 
-        <!-- Mobile Menu -->
+        <!-- Mobile Menu Overlay (กดนอก sidebar เพื่อปิด) -->
         @if (_isMenuOpen)
         {
+            <div class="md:hidden fixed inset-0 z-40 bg-black/50" @onclick="CloseMenu"></div>
             <div class="md:hidden border-t border-slate-700 bg-slate-800 shadow-xl absolute w-full left-0 z-50">
                 <div class="px-2 pt-2 pb-3 space-y-1">
                     <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/" Match="NavLinkMatch.All">@Lang.T("แดชบอร์ด", "Dashboard")</NavLink>
@@ -128,25 +140,6 @@
                         <NavLink @onclick="CloseMenu" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red bg-slate-900 font-bold" href="/history">@Lang.T("ประวัติการใช้งาน", "History")</NavLink>
                     }
                     <div class="border-t border-slate-700 my-2"></div>
-
-                    <div class="px-3 py-2">
-                        <div class="flex items-center justify-between rounded-md border border-slate-700 bg-slate-900/40 px-3 py-2">
-                            <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">@Lang.T("ภาษา", "Language")</span>
-                            <div class="flex items-center space-x-2 text-[13px] uppercase tracking-wider font-bold">
-                                <button type="button"
-                                        @onclick='() => Lang.SetLanguage("EN")'
-                                        class='transition-colors px-2 py-1 rounded @(Lang.Current == "EN" ? "bg-slate-700 text-mattel-red" : "text-slate-400 hover:text-slate-200")'>
-                                    EN
-                                </button>
-                                <span class="text-slate-700 select-none">|</span>
-                                <button type="button"
-                                        @onclick='() => Lang.SetLanguage("TH")'
-                                        class='transition-colors px-2 py-1 rounded @(Lang.Current == "TH" ? "bg-slate-700 text-mattel-red" : "text-slate-400 hover:text-slate-200")'>
-                                    TH
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                     
                     @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead") {
                         <div class="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest">@Lang.T("การจัดการ", "Management")</div>
@@ -158,8 +151,10 @@
                         <NavLink @onclick="CloseMenu" class="block px-6 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white" ActiveClass="!text-mattel-red font-bold" href="/admin/locators">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</NavLink>
                         <div class="border-t border-slate-700 my-2"></div>
                     }
+
+                    <!-- Profile Card -->
                     <button type="button" @onclick="GoToProfile" class="flex w-full cursor-pointer select-none items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/40 px-4 py-3 text-left transition-colors hover:border-slate-500 hover:bg-slate-700">
-                        <div class="bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shadow-sm select-none">MAT</div>
+                        <div class="bg-mattel-red text-white w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-black shadow-sm select-none">@(_name?.Length > 0 ? _name[0].ToString().ToUpper() : "?")</div>
                         <div class="min-w-0 flex-1">
                             <div class="text-sm font-bold text-slate-200 truncate">@_name</div>
                             <div class="text-xs text-slate-400 truncate">@GetRoleDisplay(_role)</div>
@@ -168,7 +163,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-                    <button type="button" @onclick="GoToProfile" class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-base font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white">@Lang.T("โปรไฟล์", "My Profile")</button>
+
                     <button type="button" @onclick="Logout" class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-base font-bold text-mattel-red hover:bg-slate-700">@Lang.T("ออกจากระบบ", "Logout")</button>
                 </div>
             </div>
