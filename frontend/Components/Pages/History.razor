@@ -20,11 +20,11 @@
     @if (!string.IsNullOrEmpty(_role))
     {
         <div class="flex items-center space-x-4">
-            <button @onclick="ExportCsv" class="px-4 py-2 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center">
+            <button @onclick="ExportPdf" class="px-4 py-2 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center">
                 <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                @Lang.T("ส่งออก CSV", "Export CSV")
+                @Lang.T("ส่งออก PDF", "Export PDF")
             </button>
         </div>
     }
@@ -309,25 +309,51 @@ else
         _ => action
     };
 
-    private async Task ExportCsv()
+    private async Task ExportPdf()
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("Timestamp,JigUid,SpecName,Action,User");
+        var date = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
 
-        foreach (var txn in _allTransactions)
-        {
+        var rows = string.Join("", _allTransactions.Select(txn => {
             var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
-            var jigIdDisplay = jig?.Id ?? txn.JigUid;
+            var jigId = jig?.Id ?? txn.JigUid;
             var specName = jig?.SmartCodeName ?? "Unknown";
+            var timeStr = txn.Timestamp.ToString("dd/MM/yyyy HH:mm");
+            var badgeClass = txn.Action switch {
+                "CheckOut" => "badge-blue",
+                "Return"   => "badge-green",
+                "Issue"    => "badge-red",
+                _          => "badge-gray"
+            };
+            return $"<tr><td>{timeStr}</td><td><strong>{jigId}</strong></td><td>{specName}</td><td><span class='badge {badgeClass}'>{txn.Action}</span></td><td>{txn.User}</td></tr>";
+        }));
 
-            var timeStr = txn.Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
-            sb.AppendLine($"{timeStr},{jigIdDisplay},{specName},{txn.Action},{txn.User}");
-        }
+        var html = $@"
+<div class='pdf-header'>
+  <div class='logo-text'>MATTEL</div>
+  <div class='meta'>
+    <div><strong>Transaction History Report</strong></div>
+    <div>Generated: {date}</div>
+    <div>Total Records: {_allTransactions.Count}</div>
+  </div>
+</div>
 
-        var csvContent = sb.ToString();
-        var fileName = $"history_export_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.csv";
-        
-        await JSRuntime.InvokeVoidAsync("downloadTextFile", fileName, csvContent);
+<h2>Transaction History</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Jig ID</th>
+      <th>Smart Code Name</th>
+      <th>Action</th>
+      <th>User</th>
+    </tr>
+  </thead>
+  <tbody>{rows}</tbody>
+</table>
+
+<div class='pdf-footer'>Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}</div>";
+
+        await JSRuntime.InvokeVoidAsync("exportPdf", "History Report", html, $"history_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
     }
 
     private string GetFormattedDate(DateTime dt)
