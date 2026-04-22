@@ -43,6 +43,15 @@
             font-size: 0.875rem;
         }
         #blazor-error-ui.visible { display: block; }
+
+        /* Hide browser's native password reveal button (Edge/Chrome black eye icon) */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+        input[type="password"]::-webkit-credentials-auto-fill-button {
+            display: none;
+        }
     </style>
 </head>
 
