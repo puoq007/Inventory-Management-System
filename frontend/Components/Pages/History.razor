@@ -52,6 +52,12 @@
                 </svg>
                 @Lang.T("ส่งออก PDF", "Export PDF")
             </button>
+            <button @onclick="ExportCsv" class="px-4 py-2.5 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                @Lang.T("ส่งออก CSV", "Export CSV")
+            </button>
         </div>
     }
 </div>
@@ -285,13 +291,14 @@ else
     {
         try
         {
-            var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
+            var txnsTask = Http.GetFromJsonAsync<TransactionPagedResponse>($"api/transactions?page=1&pageSize=500");
             var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
             var usersTask = Http.GetFromJsonAsync<List<UserAccount>>("api/users");
 
             await Task.WhenAll(txnsTask, jigsTask, usersTask);
 
-            _allTransactions = await txnsTask ?? new List<TransactionRow>();
+            var txnResult = await txnsTask;
+            _allTransactions = txnResult?.Items ?? new List<TransactionRow>();
             _allJigs = await jigsTask ?? new List<Jig>();
             _allUsers = await usersTask ?? new List<UserAccount>();
 
@@ -437,6 +444,31 @@ else
         await JSRuntime.InvokeVoidAsync("exportPdf", title, html, $"history_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
     }
 
+    private async Task ExportCsv()
+    {
+        var isThai = Lang.Current == "TH";
+        var headers = isThai
+            ? "วันเวลา,รหัสจิก,Smart Code,การดำเนินการ,ผู้ใช้งาน"
+            : "Timestamp,Jig ID,Smart Code,Action,User";
+
+        var exportData = _allTransactions.AsEnumerable();
+        if (_exportDateFrom.HasValue) exportData = exportData.Where(t => t.Timestamp.Date >= _exportDateFrom.Value.Date);
+        if (_exportDateTo.HasValue)   exportData = exportData.Where(t => t.Timestamp.Date <= _exportDateTo.Value.Date);
+
+        static string T(string? v) => string.IsNullOrEmpty(v) ? "" : $"\t{v}";
+
+        var rows = exportData.Select(txn => {
+            var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
+            var jigId = jig?.Id ?? txn.JigUid;
+            var specName = jig?.SmartCodeName ?? "";
+            var actionLabel = isThai ? GetActionThai(txn.Action) : txn.Action;
+            return $"\"{txn.Timestamp:dd/MM/yyyy HH:mm:ss}\",\"{T(jigId)}\",\"{specName}\",\"{actionLabel}\",\"{txn.User}\"";
+        });
+
+        var csv = headers + "\n" + string.Join("\n", rows);
+        await JSRuntime.InvokeVoidAsync("downloadTextFile", $"history_{DateTime.Now:yyyyMMdd_HHmmss}.csv", csv);
+    }
+
     private string GetFormattedDate(DateTime dt)
     {
         if (Lang.Current == "TH")
@@ -449,5 +481,13 @@ else
             string[] engMonths = { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
             return $"{dt.Day:D2} {engMonths[dt.Month]} {dt.Year}";
         }
+    }
+
+    private class TransactionPagedResponse
+    {
+        public int Total { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<TransactionRow> Items { get; set; } = new();
     }
 }

@@ -17,9 +17,12 @@ namespace backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TransactionRow>>> GetTransactions()
+        public async Task<ActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
-            return await _context.Transactions.OrderByDescending(t => t.Timestamp).ToListAsync();
+            var query = _context.Transactions.OrderByDescending(t => t.Timestamp);
+            var total = await query.CountAsync();
+            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return Ok(new { total, page, pageSize, items });
         }
 
         [HttpPost]

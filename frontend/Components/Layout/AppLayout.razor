@@ -170,6 +170,20 @@
         }
     </nav>
 
+    <!-- Session expiry warning -->
+    @if (_showSessionWarning)
+    {
+        <div class="fixed top-16 left-0 right-0 z-50 flex justify-center px-4 pt-2">
+            <div class="bg-amber-900/90 border border-amber-700 text-amber-200 rounded-xl px-5 py-3 flex items-center gap-3 shadow-xl backdrop-blur-sm max-w-lg w-full">
+                <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <span class="text-sm font-medium flex-1">@Lang.T("เซสชันของคุณจะหมดอายุในอีก 5 นาที กรุณาบันทึกงานและเข้าสู่ระบบใหม่", "Your session expires in 5 minutes. Please save your work and log in again.")</span>
+                <button @onclick="() => _showSessionWarning = false" class="text-amber-400 hover:text-white transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+    }
+
     <!-- Main Content -->
     <main class="flex-grow p-4 md:p-8 w-full max-w-[1500px] mx-auto min-w-0">
         <RoleGate AllowedRoles="@(_allRoles)">
@@ -185,17 +199,61 @@
     private bool _isMenuOpen = false;
     private bool _isProfileOpen = false;
     private bool _isManagementMenuOpen = false;
+    private bool _showSessionWarning = false;
+    private System.Threading.Timer? _sessionTimer;
 
     private void ToggleMenu() => _isMenuOpen = !_isMenuOpen;
 
     protected override void OnInitialized()
     {
         Lang.OnChange += StateHasChanged;
+        // Check token expiry every 60 seconds
+        _sessionTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                var token = await Auth.GetTokenAsync();
+                if (string.IsNullOrEmpty(token)) return;
+
+                // Parse expiry from JWT
+                var parts = token.Split('.');
+                if (parts.Length != 3) return;
+                var payload = parts[1];
+                payload += new string('=', (4 - payload.Length % 4) % 4);
+                var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(payload));
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("exp", out var expProp))
+                {
+                    var exp = expProp.GetInt64();
+                    var expiry = DateTimeOffset.FromUnixTimeSeconds(exp);
+                    var remaining = expiry - DateTimeOffset.UtcNow;
+
+                    if (remaining <= TimeSpan.Zero)
+                    {
+                        await InvokeAsync(async () =>
+                        {
+                            await Auth.ClearAuthAsync();
+                            NavManager.NavigateTo("/login");
+                        });
+                    }
+                    else if (remaining <= TimeSpan.FromMinutes(5) && !_showSessionWarning)
+                    {
+                        await InvokeAsync(() =>
+                        {
+                            _showSessionWarning = true;
+                            StateHasChanged();
+                        });
+                    }
+                }
+            }
+            catch { }
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(60));
     }
 
     public void Dispose()
     {
         Lang.OnChange -= StateHasChanged;
+        _sessionTimer?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -212,6 +270,13 @@
             var token = await Auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
             {
+                // Check if token is expired → redirect to login
+                if (await Auth.IsTokenExpiredAsync())
+                {
+                    await Auth.ClearAuthAsync();
+                    NavManager.NavigateTo("/login");
+                    return;
+                }
                 Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
 

@@ -728,17 +728,30 @@ else
     {
         _isImporting = true;
         StateHasChanged();
-        
-        // Assuming there isn't an ImportLocatorsAsync in the controller yet,
-        // Wait, we didn't add Locators upload in UploadController? Actually we only added jig specs and physical jigs.
-        // We need to either add it or comment it out for now.
-        // Let's call the endpoint, if we implement it.
+
         try
         {
+            var file = e.File;
+            var ext = System.IO.Path.GetExtension(file.Name).ToLowerInvariant();
+            if (ext != ".xlsx" && ext != ".xls")
+            {
+                await JSRuntime.InvokeVoidAsync("alert", Lang.T("ไฟล์ไม่ถูกต้อง กรุณาเลือกไฟล์ .xlsx หรือ .xls เท่านั้น", "Invalid file. Please select a .xlsx or .xls file."));
+                _isImporting = false;
+                StateHasChanged();
+                return;
+            }
+            if (file.Size > 10_000_000)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", Lang.T("ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 10MB)", "File is too large (max 10MB)."));
+                _isImporting = false;
+                StateHasChanged();
+                return;
+            }
+
             using var content = new MultipartFormDataContent();
-            var fileContent = new StreamContent(e.File.OpenReadStream(10_000_000));
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(e.File.ContentType);
-            content.Add(fileContent, "file", e.File.Name);
+            var fileContent = new StreamContent(file.OpenReadStream(10_000_000));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            content.Add(fileContent, "file", file.Name);
 
             var response = await Http.PostAsync("api/locators/upload", content);
 

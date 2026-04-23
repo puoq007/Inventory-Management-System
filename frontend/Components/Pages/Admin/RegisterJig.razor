@@ -970,7 +970,10 @@
 
     private async Task DeleteJig(Jig jig)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Confirm", "Delete this jig?", "Yes", "error");
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", 
+            Lang.T("ยืนยันการลบ", "Confirm Delete"), 
+            Lang.T($"คุณต้องการลบจิก '{jig.Id}' ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้", $"Delete jig '{jig.Id}'? This action cannot be undone."), 
+            Lang.T("ใช่, ลบเลย", "Yes, delete"), "warning");
         if (!confirmed) return;
         if ((await Http.DeleteAsync($"api/jigs/{jig.Uid}")).IsSuccessStatusCode) await LoadData();
     }
@@ -984,8 +987,27 @@
         try
         {
             var file = e.File;
+
+            // Frontend validation
+            var allowedExtensions = new[] { ".xlsx", ".xls" };
+            var ext = System.IO.Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                _globalError = Lang.T("ไฟล์ไม่ถูกต้อง กรุณาเลือกไฟล์ .xlsx หรือ .xls เท่านั้น", "Invalid file. Please select a .xlsx or .xls file.");
+                _isLoading = false;
+                StateHasChanged();
+                return;
+            }
+            if (file.Size > 15 * 1024 * 1024)
+            {
+                _globalError = Lang.T("ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 15MB)", "File is too large (max 15MB).");
+                _isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
             using var content = new MultipartFormDataContent();
-            var fileContent = new StreamContent(file.OpenReadStream(15 * 1024 * 1024)); // 15MB max
+            var fileContent = new StreamContent(file.OpenReadStream(15 * 1024 * 1024));
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
             content.Add(fileContent, "file", file.Name);
 

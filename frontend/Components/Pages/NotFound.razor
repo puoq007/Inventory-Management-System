@@ -1,0 +1,13 @@
+@inject NavigationManager NavManager
+@inject LanguageService Lang
+@using frontend.Services
+
+<div class="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+    <div class="text-8xl font-black text-slate-700 mb-4 select-none">404</div>
+    <h1 class="text-2xl font-bold text-slate-100 mb-2">@Lang.T("ไม่พบหน้าที่ต้องการ", "Page Not Found")</h1>
+    <p class="text-slate-400 mb-8 max-w-md">@Lang.T("ขออภัย ไม่พบหน้าที่คุณกำลังมองหา อาจถูกย้ายหรือลบออกไปแล้ว", "Sorry, the page you're looking for doesn't exist or has been moved.")</p>
+    <button @onclick='() => NavManager.NavigateTo("/")' 
+            class="px-6 py-3 bg-mattel-red text-white font-bold rounded-xl hover:bg-mattel-hover transition-colors">
+        @Lang.T("กลับหน้าหลัก", "Back to Dashboard")
+    </button>
+</div>

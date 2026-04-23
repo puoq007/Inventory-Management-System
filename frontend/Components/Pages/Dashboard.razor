@@ -332,12 +332,13 @@ else
     {
         try
         {
-            var txnsTask = Http.GetFromJsonAsync<List<TransactionRow>>("api/transactions");
+            var txnsTask = Http.GetFromJsonAsync<TransactionPagedResponse>($"api/transactions?page=1&pageSize=500");
             var jigsTask = Http.GetFromJsonAsync<List<Jig>>("api/jigs");
 
             await Task.WhenAll(txnsTask, jigsTask);
 
-            _allTxns = await txnsTask ?? new List<TransactionRow>();
+            var txnResult = await txnsTask;
+            _allTxns = txnResult?.Items ?? new List<TransactionRow>();
             _allJigs = await jigsTask ?? new List<Jig>();
 
             CalculateStats();
@@ -509,5 +510,13 @@ else
             return $"{date.Day} {thaiMonths[date.Month]} {date:HH:mm}";
         }
         return date.ToString("MMM dd, HH:mm", new System.Globalization.CultureInfo("en-US"));
+    }
+
+    private class TransactionPagedResponse
+    {
+        public int Total { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<TransactionRow> Items { get; set; } = new();
     }
 }

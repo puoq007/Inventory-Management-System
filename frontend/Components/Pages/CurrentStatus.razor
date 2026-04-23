@@ -26,7 +26,7 @@
                 @Lang.T("ค้นหาจิก", "Search Jigs")
             </label>
             <div class="relative group">
-                <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
+                <input type="text" id="search" value="@_searchQuery" @oninput="OnSearchInput"
                        class="block w-full pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 text-slate-200 rounded-xl focus:ring-2 focus:ring-mattel-red/30 focus:border-mattel-red focus:bg-slate-800 transition-all sm:text-sm outline-none" 
                        placeholder="@Lang.T("ตัวอย่าง: PN-1001 หรือ J001", "e.g. PN-1001 or J001")" />
             </div>
@@ -290,6 +290,20 @@ else
     private string _role = "";
     private string _name = "";
     private string _searchQuery = "";
+    private System.Threading.CancellationTokenSource? _searchCts;
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _searchQuery = e.Value?.ToString() ?? "";
+        _searchCts?.Cancel();
+        _searchCts = new System.Threading.CancellationTokenSource();
+        try
+        {
+            await Task.Delay(300, _searchCts.Token);
+            FilterData();
+        }
+        catch (TaskCanceledException) { }
+    }
     private string _statusFilter = "All";
     private string _conditionFilter = "All";
     private bool _showStatusFilter = false;
