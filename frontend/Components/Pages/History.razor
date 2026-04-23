@@ -19,9 +19,35 @@
     </div>
     @if (!string.IsNullOrEmpty(_role))
     {
-        <div class="flex items-center space-x-4">
-            <button @onclick="ExportPdf" class="px-4 py-2 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center">
-                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">@Lang.T("วันเริ่มต้น", "From Date")</label>
+                <div class="relative cursor-pointer" @onclick='() => OpenDatePicker("dateFrom")'>
+                    <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 min-w-[150px] select-none hover:border-mattel-red transition-all">
+                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="@(_exportDateFrom == null ? "text-slate-500" : "text-slate-200")">
+                            @(_exportDateFrom == null ? Lang.T("วว/ดด/ปปปป", "DD/MM/YYYY") : FormatDateDisplay(_exportDateFrom.Value))
+                        </span>
+                    </div>
+                    <input id="dateFrom" type="date" @bind="_exportDateFrom"
+                           class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">@Lang.T("วันสิ้นสุด", "To Date")</label>
+                <div class="relative cursor-pointer" @onclick='() => OpenDatePicker("dateTo")'>
+                    <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 min-w-[150px] select-none hover:border-mattel-red transition-all">
+                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="@(_exportDateTo == null ? "text-slate-500" : "text-slate-200")">
+                            @(_exportDateTo == null ? Lang.T("วว/ดด/ปปปป", "DD/MM/YYYY") : FormatDateDisplay(_exportDateTo.Value))
+                        </span>
+                    </div>
+                    <input id="dateTo" type="date" @bind="_exportDateTo"
+                           class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                </div>
+            </div>
+            <button @onclick="ExportPdf" class="px-4 py-2.5 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 @Lang.T("ส่งออก PDF", "Export PDF")
@@ -201,11 +227,29 @@ else
     private bool _showActionFilter = false;
     private bool _showRoleFilter = false;
 
+    private DateTime? _exportDateFrom = null;
+    private DateTime? _exportDateTo = null;
+
     private void ToggleActionFilter() { _showActionFilter = !_showActionFilter; _showRoleFilter = false; }
     private void ToggleRoleFilter() { _showRoleFilter = !_showRoleFilter; _showActionFilter = false; }
     
     private void SetActionFilter(string val) { _actionFilter = val; _showActionFilter = false; FilterData(); }
     private void SetRoleFilter(string val) { _roleFilter = val; _showRoleFilter = false; FilterData(); }
+
+    private async Task OpenDatePicker(string id)
+    {
+        await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('{id}').showPicker()");
+    }
+
+    private string FormatDateDisplay(DateTime dt)
+    {
+        if (Lang.Current == "TH")
+        {
+            string[] thaiMonths = { "", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค." };
+            return $"{dt.Day:D2} {thaiMonths[dt.Month]} {dt.Year + 543}";
+        }
+        return $"{dt.Day:D2}/{dt.Month:D2}/{dt.Year}";
+    }
 
     protected override void OnInitialized()
     {
@@ -311,49 +355,86 @@ else
 
     private async Task ExportPdf()
     {
+        var isThai = Lang.Current == "TH";
         var date = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
 
-        var rows = string.Join("", _allTransactions.Select(txn => {
-            var jig = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
-            var jigId = jig?.Id ?? txn.JigUid;
-            var specName = jig?.SmartCodeName ?? "Unknown";
-            var timeStr = txn.Timestamp.ToString("dd/MM/yyyy HH:mm");
+        var exportData = _allTransactions.AsEnumerable();
+
+        if (_exportDateFrom.HasValue)
+            exportData = exportData.Where(t => t.Timestamp.Date >= _exportDateFrom.Value.Date);
+        if (_exportDateTo.HasValue)
+            exportData = exportData.Where(t => t.Timestamp.Date <= _exportDateTo.Value.Date);
+
+        var exportList = exportData.ToList();
+
+        var dateRangeLabel = "";
+        if (_exportDateFrom.HasValue || _exportDateTo.HasValue)
+        {
+            var from = _exportDateFrom.HasValue ? FormatDateDisplay(_exportDateFrom.Value) : "...";
+            var to   = _exportDateTo.HasValue   ? FormatDateDisplay(_exportDateTo.Value)   : "...";
+            var rangeTitle = isThai ? "ช่วงวันที่" : "Date Range";
+            dateRangeLabel = $"<div>{rangeTitle}: {from} – {to}</div>";
+        }
+
+        var rows = string.Join("", exportList.Select(txn => {
+            var jig      = _allJigs.FirstOrDefault(j => j.Uid == txn.JigUid);
+            var jigId    = jig?.Id ?? txn.JigUid;
+            var specName = jig?.SmartCodeName ?? (isThai ? "ไม่ทราบ" : "Unknown");
+            var timeStr  = GetFormattedDate(txn.Timestamp) + " " + txn.Timestamp.ToString("HH:mm");
+            var actionLabel = isThai ? GetActionThai(txn.Action) : txn.Action;
             var badgeClass = txn.Action switch {
-                "CheckOut" => "badge-blue",
-                "Return"   => "badge-green",
-                "Issue"    => "badge-red",
-                _          => "badge-gray"
+                "CheckOut"          => "badge-blue",
+                "CheckIn"           => "badge-green",
+                "ReturnToStore"     => "badge-green",
+                "CheckInToCleaning" => "badge-amber",
+                "ReportIssue"       => "badge-red",
+                "Transfer"          => "badge-purple",
+                _                   => "badge-gray"
             };
-            return $"<tr><td>{timeStr}</td><td><strong>{jigId}</strong></td><td>{specName}</td><td><span class='badge {badgeClass}'>{txn.Action}</span></td><td>{txn.User}</td></tr>";
+            return $"<tr><td>{timeStr}</td><td><strong>{jigId}</strong></td><td>{specName}</td><td><span class='badge {badgeClass}'>{actionLabel}</span></td><td>{txn.User}</td></tr>";
         }));
+
+        // Localized labels
+        var title       = isThai ? "รายงานประวัติการใช้งาน" : "Transaction History Report";
+        var generated   = isThai ? "สร้างเมื่อ" : "Generated";
+        var totalRec    = isThai ? "จำนวนรายการ" : "Total Records";
+        var colDate     = isThai ? "วันเวลา"     : "Timestamp";
+        var colJigId    = isThai ? "รหัสจิก"     : "Jig ID";
+        var colSpec     = isThai ? "ชื่อ Smart Code" : "Smart Code Name";
+        var colAction   = isThai ? "การดำเนินการ" : "Action";
+        var colUser     = isThai ? "ผู้ใช้งาน"   : "User";
+        var footer      = isThai
+            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
 
         var html = $@"
 <div class='pdf-header'>
   <div class='logo-text'>MATTEL</div>
   <div class='meta'>
-    <div><strong>Transaction History Report</strong></div>
-    <div>Generated: {date}</div>
-    <div>Total Records: {_allTransactions.Count}</div>
+    <div><strong>{title}</strong></div>
+    <div>{generated}: {date}</div>
+    {dateRangeLabel}
+    <div>{totalRec}: {exportList.Count}</div>
   </div>
 </div>
 
-<h2>Transaction History</h2>
+<h2>{title}</h2>
 <table>
   <thead>
     <tr>
-      <th>Timestamp</th>
-      <th>Jig ID</th>
-      <th>Smart Code Name</th>
-      <th>Action</th>
-      <th>User</th>
+      <th>{colDate}</th>
+      <th>{colJigId}</th>
+      <th>{colSpec}</th>
+      <th>{colAction}</th>
+      <th>{colUser}</th>
     </tr>
   </thead>
   <tbody>{rows}</tbody>
 </table>
 
-<div class='pdf-footer'>Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}</div>";
+<div class='pdf-footer'>{footer}</div>";
 
-        await JSRuntime.InvokeVoidAsync("exportPdf", "History Report", html, $"history_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+        await JSRuntime.InvokeVoidAsync("exportPdf", title, html, $"history_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
     }
 
     private string GetFormattedDate(DateTime dt)

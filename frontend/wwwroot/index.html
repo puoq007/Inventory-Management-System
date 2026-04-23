@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css?v=1772814275" />
     <link rel="stylesheet" href="css/layout-responsive.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="icon" type="image/png" href="images/mattel.png" />
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         /* Visible boot shell until Blazor replaces #app (no dependency on bundled .loading-progress CSS) */
@@ -99,7 +99,20 @@
             }
         };
 
-        window.exportPdf = function (title, htmlContent, fileName) {
+        window.exportPdf = async function (title, htmlContent, fileName) {
+            // Convert logo to base64 for embedding in PDF
+            let logoHtml = '<div class="logo-text">MATTEL</div>';
+            try {
+                const resp = await fetch('/images/mattel.png');
+                const blob = await resp.blob();
+                const b64 = await new Promise(res => {
+                    const r = new FileReader();
+                    r.onloadend = () => res(r.result);
+                    r.readAsDataURL(blob);
+                });
+                logoHtml = `<img src="${b64}" class="logo-img" alt="Mattel" />`;
+            } catch(e) {}
+
             const printWnd = window.open('', '_blank', 'width=900,height=700');
             printWnd.document.write(`<!DOCTYPE html>
 <html>
@@ -112,6 +125,7 @@
     body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111; background: white; margin: 0; padding: 0; }
     .pdf-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #cc0000; padding-bottom: 6px; margin-bottom: 14px; }
     .pdf-header .logo-text { font-size: 18pt; font-weight: 900; color: #cc0000; letter-spacing: 1px; }
+    .pdf-header .logo-img { height: 72px; width: auto; object-fit: contain; }
     .pdf-header .meta { text-align: right; font-size: 8pt; color: #555; }
     h2 { font-size: 13pt; font-weight: 800; color: #111; margin: 14px 0 6px 0; border-left: 4px solid #cc0000; padding-left: 8px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 8.5pt; }
@@ -125,15 +139,17 @@
     .stat-card .label { font-size: 7.5pt; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-card .value { font-size: 18pt; font-weight: 900; color: #111; line-height: 1.2; margin-top: 2px; }
     .badge { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 7.5pt; font-weight: 700; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-blue  { background: #dbeafe; color: #1e40af; }
-    .badge-red   { background: #fee2e2; color: #991b1b; }
-    .badge-gray  { background: #f1f5f9; color: #475569; }
+    .badge-green  { background: #dcfce7; color: #166534; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-purple { background: #f3e8ff; color: #6b21a8; }
+    .badge-gray   { background: #f1f5f9; color: #475569; }
     .pdf-footer { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 6px; font-size: 7.5pt; color: #94a3b8; text-align: center; }
   </style>
 </head>
 <body>
-  ${htmlContent}
+  ${htmlContent.replace('<div class=\'logo-text\'>MATTEL</div>', logoHtml)}
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); }<\/script>
 </body>
 </html>`);
@@ -334,7 +350,17 @@
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print QR - ${data.id}</title>
-                <style>${cssTemplate}</style>
+                <style>
+                    @page { size: A4; margin: 10mm; }
+                    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                    body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
+                    .card { display: inline-flex; align-items: center; gap: 14px; border: 1.5px solid #ccc; border-radius: 10px; padding: 12px 16px; }
+                    .card .qr svg { width: 90px; height: 90px; flex-shrink: 0; }
+                    .card .info { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
+                    .card .id { font-size: 14pt; font-weight: 900; color: #000; margin-bottom: 3px; }
+                    .card .row { font-size: 8.5pt; color: #444; }
+                    .card .label { color: #888; }
+                </style>
                 </head>
                 <body>
                     <div class="card">
@@ -375,10 +401,23 @@
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print Location QR</title>
-                <style>${cssTemplate}</style>
+                <style>
+                    @page { size: A4; margin: 10mm; }
+                    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                    body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
+                    .cards-grid { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+                    .card { display: inline-flex; align-items: center; gap: 14px; border: 1.5px solid #ccc; border-radius: 10px; padding: 12px 16px; break-inside: avoid; }
+                    .card .qr svg { width: 90px; height: 90px; flex-shrink: 0; }
+                    .card .info { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
+                    .card .id { font-size: 14pt; font-weight: 900; color: #000; margin-bottom: 3px; }
+                    .card .row { font-size: 8.5pt; color: #444; }
+                    .card .label { color: #888; }
+                </style>
                 </head>
                 <body>
-                    ${contentList}
+                    <div class="cards-grid">
+                        ${contentList}
+                    </div>
                     <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 600); }<\/script>
                 </body>
                 </html>
@@ -391,7 +430,17 @@
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print QR - ${data.id}</title>
-                <style>${cssTemplate}</style>
+                <style>
+                    @page { size: A4; margin: 10mm; }
+                    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                    body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
+                    .card { display: inline-flex; align-items: center; gap: 10px; border: 1px solid #ccc; border-radius: 8px; padding: 10px 14px; width: 220px; }
+                    .card .qr svg { width: 70px; height: 70px; }
+                    .card .info { display: flex; flex-direction: column; gap: 2px; }
+                    .card .id { font-size: 13pt; font-weight: 900; color: #000; }
+                    .card .row { font-size: 8pt; color: #444; }
+                    .card .label { color: #888; }
+                </style>
                 </head>
                 <body>
                     <div class="card">
@@ -428,10 +477,23 @@
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print User QR Badges</title>
-                <style>${cssTemplate}</style>
+                <style>
+                    @page { size: A4; margin: 10mm; }
+                    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                    body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
+                    .cards-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+                    .card { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; border-radius: 8px; padding: 10px 14px; width: 220px; break-inside: avoid; }
+                    .card .qr svg { width: 70px; height: 70px; }
+                    .card .info { display: flex; flex-direction: column; gap: 2px; }
+                    .card .id { font-size: 13pt; font-weight: 900; color: #000; }
+                    .card .row { font-size: 8pt; color: #444; }
+                    .card .label { color: #888; }
+                </style>
                 </head>
                 <body>
-                    ${contentList}
+                    <div class="cards-grid">
+                        ${contentList}
+                    </div>
                     <script>window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 600); }<\/script>
                 </body>
                 </html>

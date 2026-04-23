@@ -16,7 +16,6 @@ public class Locator
     public string Site { get; set; } = ""; // e.g., "MBK1", "Mintech"
     public string Cabinet { get; set; } = ""; // e.g., "1", "2", ... "10"
     public string Shelf { get; set; } = ""; // e.g., "1", "2", ... "5"
-    public string Position { get; set; } = ""; // e.g., "1", "2", ... "10"
     public string Type { get; set; } = "Store"; // Store, Production, Cleaning
 
     public string GetGeneratedId()
@@ -26,19 +25,25 @@ public class Locator
         string h = (Shelf ?? "").Trim();
 
         if (string.IsNullOrEmpty(s) && string.IsNullOrEmpty(c) && string.IsNullOrEmpty(h))
-            return Id; // Keep current ID if everything is empty (shouldn't happen on new/save)
+            return Id;
 
-        // Pattern: MBK{Site}-{Cabinet}-{Shelf}
-        // If Cabinet or Shelf is "-", we might omit them or keep them?
-        // Let's stick to the user's "MBK1-AO-1" example.
-        string final = $"MBK{s}";
+        // Map site code to display name for ID prefix
+        string sitePrefix = s switch { "1" => "MBK1", "2" => "Mintech", _ => $"MBK{s}" };
+
+        string final = sitePrefix;
         if (!string.IsNullOrEmpty(c)) final += $"-{c}";
         if (!string.IsNullOrEmpty(h)) final += $"-{h}";
         return final;
     }
 
-    public string GetName(string lang) => (Cabinet == "-") ? $"{Site} {Shelf}" : (lang == "TH" ? $"{Site} ตู้ {Cabinet} ชั้น {Shelf}" : $"{Site} Cabinet {Cabinet} Shelf {Shelf}");
+    public string GetName(string lang) => (Cabinet == "-")
+        ? $"{SiteDisplayName} {Shelf}"
+        : (lang == "TH"
+            ? $"{SiteDisplayName} ตู้ {Cabinet} ชั้น {Shelf}"
+            : $"{SiteDisplayName} Cabinet {Cabinet} Shelf {Shelf}");
     public string Name => GetName("EN");
+
+    public string SiteDisplayName => Site switch { "1" => "MBK1", "2" => "Mintech", _ => Site };
 }
 
 public class PartMaster

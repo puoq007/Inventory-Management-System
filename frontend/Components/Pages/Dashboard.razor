@@ -413,8 +413,25 @@ else
 
     private async Task ExportAnalytics()
     {
+        var isThai = Lang.Current == "TH";
         var date = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         var fileName = $"analytics_report_{DateTime.Now:yyyyMMdd}.pdf";
+
+        // Localized labels
+        var title        = isThai ? "รายงานภาพรวมระบบ" : "Analytics Report";
+        var generated    = isThai ? "สร้างเมื่อ"        : "Generated";
+        var secStatus    = isThai ? "สถานะภาพรวม"       : "Overall Status";
+        var secTopJigs   = isThai ? "จิกที่ถูกใช้งานสูงสุด" : "Top Used Jigs";
+        var lblTotal     = isThai ? "จิกทั้งหมด"        : "Total Jigs";
+        var lblAvail     = isThai ? "พร้อมใช้งาน"       : "Available";
+        var lblInUse     = isThai ? "กำลังใช้งาน"       : "In Use";
+        var lblIssues    = isThai ? "พบปัญหา"           : "Issues";
+        var colNo        = isThai ? "ลำดับ"             : "#";
+        var colJigId     = isThai ? "รหัสจิก"           : "Jig ID";
+        var colCheckouts = isThai ? "จำนวนการเบิก"      : "Checkouts";
+        var footer       = isThai
+            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
 
         var topJigsRows = string.Join("", _topUsedJigs.Select((kv, i) =>
             $"<tr><td>{i + 1}</td><td><strong>{kv.Key}</strong></td><td>{kv.Value}</td></tr>"));
@@ -423,28 +440,28 @@ else
 <div class='pdf-header'>
   <div class='logo-text'>MATTEL</div>
   <div class='meta'>
-    <div><strong>Analytics Report</strong></div>
-    <div>Generated: {date}</div>
+    <div><strong>{title}</strong></div>
+    <div>{generated}: {date}</div>
   </div>
 </div>
 
-<h2>Overall Status</h2>
+<h2>{secStatus}</h2>
 <div class='stat-grid'>
-  <div class='stat-card'><div class='label'>Total Jigs</div><div class='value'>{_totalJigs}</div></div>
-  <div class='stat-card'><div class='label'>Available</div><div class='value' style='color:#166534'>{_availableJigs}</div></div>
-  <div class='stat-card'><div class='label'>In Use</div><div class='value' style='color:#1e40af'>{_inUseCount}</div></div>
-  <div class='stat-card'><div class='label'>Issues</div><div class='value' style='color:#cc0000'>{_actionRequiredCount}</div></div>
+  <div class='stat-card'><div class='label'>{lblTotal}</div><div class='value'>{_totalJigs}</div></div>
+  <div class='stat-card'><div class='label'>{lblAvail}</div><div class='value' style='color:#166534'>{_availableJigs}</div></div>
+  <div class='stat-card'><div class='label'>{lblInUse}</div><div class='value' style='color:#1e40af'>{_inUseCount}</div></div>
+  <div class='stat-card'><div class='label'>{lblIssues}</div><div class='value' style='color:#cc0000'>{_actionRequiredCount}</div></div>
 </div>
 
-<h2>Top Used Jigs</h2>
+<h2>{secTopJigs}</h2>
 <table>
-  <thead><tr><th>#</th><th>Jig ID</th><th>Checkouts</th></tr></thead>
+  <thead><tr><th>{colNo}</th><th>{colJigId}</th><th>{colCheckouts}</th></tr></thead>
   <tbody>{topJigsRows}</tbody>
 </table>
 
-<div class='pdf-footer'>Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}</div>";
+<div class='pdf-footer'>{footer}</div>";
 
-        await JSRuntime.InvokeVoidAsync("exportPdf", "Analytics Report", html, fileName);
+        await JSRuntime.InvokeVoidAsync("exportPdf", title, html, fileName);
     }
 
     private string GetConditionThai(string? condition) => condition switch

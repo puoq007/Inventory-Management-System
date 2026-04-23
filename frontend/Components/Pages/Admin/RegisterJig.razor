@@ -31,6 +31,14 @@
                 @Lang.T("ลงทะเบียนจิ๊กใหม่", "New Jig")
             </button>
         }
+        <button type="button" @onclick='() => OpenExportFilter("csv")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            @Lang.T("ส่งออก CSV", "Export CSV")
+        </button>
+        <button type="button" @onclick='() => OpenExportFilter("pdf")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            @Lang.T("ส่งออก PDF", "Export PDF")
+        </button>
     </div>
 </div>
 
@@ -341,6 +349,100 @@
     </div>
 }
 
+@if (_showExportFilter)
+{
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 w-full max-w-md">
+            <div class="p-5 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-mattel-red" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+                    @Lang.T("ตัวกรองก่อนส่งออก", "Export Filter")
+                    <span class="text-xs font-normal text-slate-400 uppercase">(@_exportType.ToUpper())</span>
+                </h3>
+                <button @onclick="() => _showExportFilter = false" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-400">@Lang.T("เลือกตัวกรองที่ต้องการ หากไม่เลือกจะส่งออกข้อมูลทั้งหมด", "Select filters below. Leave blank to export all data.")</p>
+
+                <!-- Tool No -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tool No</label>
+                    <select @bind="_filterToolNo" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        @foreach (var t in _allJigs.Select(j => j.ToolNo).Where(t => !string.IsNullOrEmpty(t)).Distinct().OrderBy(t => t))
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- JigType -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ประเภท JIG", "Jig Type")</label>
+                    <select @bind="_filterJigType" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        @foreach (var t in _allJigs.Select(j => j.JigType).Where(t => !string.IsNullOrEmpty(t)).Distinct().OrderBy(t => t))
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- PartType -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ส่วนประกอบ", "Part Type")</label>
+                    <select @bind="_filterPartType" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        @foreach (var t in _allJigs.Select(j => j.PartType).Where(t => !string.IsNullOrEmpty(t)).Distinct().OrderBy(t => t))
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("สถานะ", "Status")</label>
+                    <select @bind="_filterStatus" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        <option value="Available">@Lang.T("พร้อมใช้", "Available")</option>
+                        <option value="InUse">@Lang.T("กำลังใช้งาน", "In Use")</option>
+                        <option value="Scrapped">@Lang.T("จำหน่ายออก", "Scrapped")</option>
+                    </select>
+                </div>
+
+                <!-- Date Range -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("วันที่สร้าง (เริ่ม)", "Created From")</label>
+                        <input type="date" @bind="_filterDateFrom" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("วันที่สร้าง (สิ้นสุด)", "Created To")</label>
+                        <input type="date" @bind="_filterDateTo" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all" />
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 border-t border-slate-700 flex justify-between items-center gap-3">
+                <button @onclick="ResetExportFilter" class="text-xs text-slate-400 hover:text-mattel-red transition-colors">
+                    @Lang.T("รีเซ็ตตัวกรอง", "Reset Filters")
+                </button>
+                <div class="flex gap-3">
+                    <button @onclick="() => _showExportFilter = false" class="px-4 py-2 bg-slate-700 text-slate-200 rounded-xl text-sm hover:bg-slate-600 transition-colors">
+                        @Lang.T("ยกเลิก", "Cancel")
+                    </button>
+                    <button @onclick="RunExport" class="px-5 py-2 bg-mattel-red text-white rounded-xl text-sm font-bold hover:bg-mattel-hover transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        @Lang.T("ส่งออก", "Export")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool _isLoading = true;
     private string _searchQuery = "";
@@ -368,6 +470,16 @@
     private string? _imagePreview;
     private bool _isUploadingImage = false;
     private bool _removeExistingImage = false;
+
+    // Export filter state
+    private bool _showExportFilter = false;
+    private string _exportType = ""; // "csv" or "pdf"
+    private string _filterToolNo = "";
+    private string _filterJigType = "";
+    private string _filterPartType = "";
+    private string _filterStatus = "";
+    private DateTime? _filterDateFrom = null;
+    private DateTime? _filterDateTo = null;
 
     // Dropdown options from reference image
     private readonly string[] _stepPrintOptions = { "1 : L", "2 : R", "3 : Hood", "4 : Roof", "5 : Re.Hood", "6 : Front", "7 : Rear", "8 : Under", "9 : Re.L", "10 : Re.R" };
@@ -465,6 +577,124 @@
         if (_currentPage > maxPage) _currentPage = maxPage;
 
         _displayJigs = query.OrderBy(j => j.Id).Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    }
+
+    private async Task ExportCsv()
+    {
+        var isThai = Lang.Current == "TH";
+        var headers = isThai
+            ? "รหัสจิก,Smart Code,Tool No,Step Print,Part Number,Rev,JigType,Process,HeightJig,Feed,Scan,QtyPrint,สถานะ,สภาพ,ตำแหน่ง,วันที่สร้าง"
+            : "Jig ID,Smart Code,Tool No,Step Print,Part Number,Rev,JigType,Process,HeightJig,Feed,Scan,QtyPrint,Status,Condition,Locator,Created At";
+
+        // Prefix with \t to force Excel to treat as text (prevents date auto-conversion)
+        static string T(string? v) => string.IsNullOrEmpty(v) ? "" : $"\t{v}";
+
+        var data = GetFilteredExportData();
+        var rows = data.Select(j =>
+            $"\"{j.Id}\",\"{j.SmartCodeName}\",\"{T(j.ToolNo)}\",\"{T(j.StepPrint)}\",\"{T(j.PartNumber)}\",\"{j.Rev}\",\"{j.JigType}\",\"{j.Process}\",\"{j.HeightJig}\",\"{T(j.Feed)}\",\"{T(j.Scan)}\",\"{j.QtyPrint}\",\"{j.Status}\",\"{j.Condition}\",\"{j.LocatorId}\",\"{j.CreatedAt:dd/MM/yyyy}\""
+        );
+
+        var csv = headers + "\n" + string.Join("\n", rows);
+        var fileName = $"jigs_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        await JSRuntime.InvokeVoidAsync("downloadTextFile", fileName, csv);
+    }
+
+    private async Task ExportPdf()
+    {
+        var isThai = Lang.Current == "TH";
+        var date = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+        var title = isThai ? "รายงานข้อมูลจิก" : "Jigs Report";
+        var generated = isThai ? "สร้างเมื่อ" : "Generated";
+        var totalRec = isThai ? "จำนวนทั้งหมด" : "Total";
+        var footer = isThai
+            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
+
+        var colId      = isThai ? "รหัสจิก"       : "Jig ID";
+        var colSmart   = isThai ? "Smart Code"     : "Smart Code";
+        var colTool    = isThai ? "Tool No"        : "Tool No";
+        var colStep    = isThai ? "Step Print"     : "Step Print";
+        var colPart    = isThai ? "Part Number"    : "Part Number";
+        var colStatus  = isThai ? "สถานะ"          : "Status";
+        var colCond    = isThai ? "สภาพ"           : "Condition";
+        var colLocator = isThai ? "ตำแหน่ง"        : "Locator";
+
+        var rows = string.Join("", GetFilteredExportData().Select(j => {
+            var statusBadge = j.Status switch {
+                "Available" => "badge-green",
+                "InUse"     => "badge-blue",
+                "Scrapped"  => "badge-red",
+                _           => "badge-gray"
+            };
+            var condBadge = j.Condition switch {
+                "Good"          => "badge-green",
+                "NeedsCleaning" => "badge-amber",
+                "Broken"        => "badge-red",
+                _               => "badge-gray"
+            };
+            var statusLabel = isThai ? j.Status switch {
+                "Available" => "พร้อมใช้", "InUse" => "กำลังใช้", "Scrapped" => "จำหน่ายออก", _ => j.Status
+            } : j.Status;
+            var condLabel = isThai ? j.Condition switch {
+                "Good" => "ดี", "NeedsCleaning" => "ต้องล้าง", "Broken" => "ชำรุด", _ => j.Condition
+            } : j.Condition;
+            return $"<tr><td><strong>{j.Id}</strong></td><td>{j.SmartCodeName}</td><td>{j.ToolNo}</td><td>{j.StepPrint}</td><td>{j.PartNumber}</td><td><span class='badge {statusBadge}'>{statusLabel}</span></td><td><span class='badge {condBadge}'>{condLabel}</span></td><td>{j.LocatorId}</td></tr>";
+        }));
+
+        var html = $@"
+<div class='pdf-header'>
+  <div class='logo-text'>MATTEL</div>
+  <div class='meta'>
+    <div><strong>{title}</strong></div>
+    <div>{generated}: {date}</div>
+    <div>{totalRec}: {GetFilteredExportData().Count()}</div>
+  </div>
+</div>
+<h2>{title}</h2>
+<table>
+  <thead>
+    <tr><th>{colId}</th><th>{colSmart}</th><th>{colTool}</th><th>{colStep}</th><th>{colPart}</th><th>{colStatus}</th><th>{colCond}</th><th>{colLocator}</th></tr>
+  </thead>
+  <tbody>{rows}</tbody>
+</table>
+<div class='pdf-footer'>{footer}</div>";
+
+        await JSRuntime.InvokeVoidAsync("exportPdf", title, html, $"jigs_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+    }
+
+    private void OpenExportFilter(string type)
+    {
+        _exportType = type;
+        _showExportFilter = true;
+    }
+
+    private void ResetExportFilter()
+    {
+        _filterToolNo = "";
+        _filterJigType = "";
+        _filterPartType = "";
+        _filterStatus = "";
+        _filterDateFrom = null;
+        _filterDateTo = null;
+    }
+
+    private IEnumerable<Jig> GetFilteredExportData()
+    {
+        var q = _allJigs.AsEnumerable();
+        if (!string.IsNullOrEmpty(_filterToolNo))   q = q.Where(j => j.ToolNo == _filterToolNo);
+        if (!string.IsNullOrEmpty(_filterJigType))  q = q.Where(j => j.JigType == _filterJigType);
+        if (!string.IsNullOrEmpty(_filterPartType)) q = q.Where(j => j.PartType == _filterPartType);
+        if (!string.IsNullOrEmpty(_filterStatus))   q = q.Where(j => j.Status == _filterStatus);
+        if (_filterDateFrom.HasValue) q = q.Where(j => j.CreatedAt.Date >= _filterDateFrom.Value.Date);
+        if (_filterDateTo.HasValue)   q = q.Where(j => j.CreatedAt.Date <= _filterDateTo.Value.Date);
+        return q.OrderBy(j => j.Id);
+    }
+
+    private async Task RunExport()
+    {
+        _showExportFilter = false;
+        if (_exportType == "csv") await ExportCsv();
+        else await ExportPdf();
     }
 
     private void OpenAddModal()

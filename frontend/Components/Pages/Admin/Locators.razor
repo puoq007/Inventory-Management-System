@@ -32,6 +32,14 @@
                 @Lang.T("เพิ่มตำแหน่งใหม่", "New Locator")
             </button>
         }
+        <button type="button" @onclick='() => OpenExportFilter("csv")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            @Lang.T("ส่งออก CSV", "Export CSV")
+        </button>
+        <button type="button" @onclick='() => OpenExportFilter("pdf")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            @Lang.T("ส่งออก PDF", "Export PDF")
+        </button>
     </div>
 </div>
 
@@ -171,7 +179,7 @@ else
                                     }
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-300">@Lang.T("กลุ่ม:", "Site:") @loc.Site</div> }
+                                    @if(!string.IsNullOrEmpty(loc.Site)){ <div class="text-sm text-slate-300">@Lang.T("กลุ่ม:", "Site:") @loc.SiteDisplayName</div> }
                                     @if(!string.IsNullOrEmpty(loc.Cabinet)){ <div class="text-xs text-slate-400 mt-1">@Lang.T("ตู้:", "Cabinet:") @loc.Cabinet</div> }
                                     @if(!string.IsNullOrEmpty(loc.Shelf)){ <div class="text-xs text-slate-400 mt-0.5">@Lang.T("ชั้น:", "Shelf:") @loc.Shelf</div> }
                                 </td>
@@ -259,7 +267,11 @@ else
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("กลุ่ม (Site)", "Site")</label>
-                        <input type="text" @bind="_editingLocator.Site" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
+                        <select @bind="_editingLocator.Site" @bind:after="StateHasChanged" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
+                            <option value="">-- @Lang.T("เลือก Site", "Select Site") --</option>
+                            <option value="1">MBK1</option>
+                            <option value="2">Mintech</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ตู้ (Cabinet)", "Cabinet")</label>
@@ -279,12 +291,87 @@ else
     </div>
 }
 
+@if (_showExportFilter)
+{
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 w-full max-w-md">
+            <div class="p-5 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-mattel-red" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+                    @Lang.T("ตัวกรองก่อนส่งออก", "Export Filter")
+                    <span class="text-xs font-normal text-slate-400 uppercase">(@_exportType.ToUpper())</span>
+                </h3>
+                <button @onclick="() => _showExportFilter = false" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-400">@Lang.T("เลือกตัวกรองที่ต้องการ หากไม่เลือกจะส่งออกข้อมูลทั้งหมด", "Select filters below. Leave blank to export all data.")</p>
+
+                <!-- Site -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Site</label>
+                    <select @bind="_filterSite" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        <option value="1">MBK1</option>
+                        <option value="2">Mintech</option>
+                    </select>
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ประเภทโซน", "Zone Type")</label>
+                    <select @bind="_filterType" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        <option value="Store">Storage</option>
+                        <option value="Production">Production</option>
+                        <option value="Cleaning">Cleaning</option>
+                    </select>
+                </div>
+
+                <!-- Cabinet -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ตู้", "Cabinet")</label>
+                    <select @bind="_filterCabinet" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                        <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                        @foreach (var c in _allLocators.Select(l => l.Cabinet).Where(c => !string.IsNullOrEmpty(c) && c != "-").Distinct().OrderBy(c => c))
+                        {
+                            <option value="@c">@c</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="p-5 border-t border-slate-700 flex justify-between items-center gap-3">
+                <button @onclick="ResetExportFilter" class="text-xs text-slate-400 hover:text-mattel-red transition-colors">
+                    @Lang.T("รีเซ็ตตัวกรอง", "Reset Filters")
+                </button>
+                <div class="flex gap-3">
+                    <button @onclick="() => _showExportFilter = false" class="px-4 py-2 bg-slate-700 text-slate-200 rounded-xl text-sm hover:bg-slate-600 transition-colors">
+                        @Lang.T("ยกเลิก", "Cancel")
+                    </button>
+                    <button @onclick="RunExport" class="px-5 py-2 bg-mattel-red text-white rounded-xl text-sm font-bold hover:bg-mattel-hover transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        @Lang.T("ส่งออก", "Export")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private string _currentRole = "";
     private bool _isLoading = true;
     private bool _isImporting = false;
     private bool _showModal = false;
     private bool _isEditMode = false;
+
+    // Export filter state
+    private bool _showExportFilter = false;
+    private string _exportType = "";
+    private string _filterSite = "";
+    private string _filterType = "";
+    private string _filterCabinet = "";
     private Locator _editingLocator = new();
     private string? _originalLocatorId = null;
     private bool _hasActions => true; // Everyone currently has at least QR access
@@ -365,8 +452,7 @@ else
              (l.Id ?? "").ToLowerInvariant().Contains(lowerQuery) ||
              (l.Site ?? "").ToLowerInvariant().Contains(lowerQuery) ||
              (l.Cabinet ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-             (l.Shelf ?? "").ToLowerInvariant().Contains(lowerQuery) ||
-             (l.Position ?? "").ToLowerInvariant().Contains(lowerQuery)) &&
+             (l.Shelf ?? "").ToLowerInvariant().Contains(lowerQuery)) &&
             (_zoneFilter == "All" || l.Type == _zoneFilter)
         );
 
@@ -378,6 +464,100 @@ else
         if (_currentPage > maxPage) _currentPage = maxPage;
 
         _displayLocators = query.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    }
+
+    private void OpenExportFilter(string type)
+    {
+        _exportType = type;
+        _showExportFilter = true;
+    }
+
+    private void ResetExportFilter()
+    {
+        _filterSite = "";
+        _filterType = "";
+        _filterCabinet = "";
+    }
+
+    private IEnumerable<Locator> GetFilteredExportData()
+    {
+        var q = _allLocators.AsEnumerable();
+        if (!string.IsNullOrEmpty(_filterSite))    q = q.Where(l => l.Site == _filterSite);
+        if (!string.IsNullOrEmpty(_filterType))    q = q.Where(l => l.Type == _filterType);
+        if (!string.IsNullOrEmpty(_filterCabinet)) q = q.Where(l => l.Cabinet == _filterCabinet);
+        return q.OrderBy(l => l.Id);
+    }
+
+    private async Task RunExport()
+    {
+        _showExportFilter = false;
+        if (_exportType == "csv") await ExportCsv();
+        else await ExportPdf();
+    }
+
+    private async Task ExportCsv()
+    {
+        var isThai = Lang.Current == "TH";
+        var headers = isThai
+            ? "รหัส,Site,ตู้,ชั้น,ประเภท"
+            : "ID,Site,Cabinet,Shelf,Type";
+
+        var data = GetFilteredExportData();
+        var rows = data.Select(l =>
+            $"\"{l.Id}\",\"{l.Site}\",\"{l.Cabinet}\",\"{l.Shelf}\",\"{l.Type}\""
+        );
+
+        var csv = headers + "\n" + string.Join("\n", rows);
+        await JSRuntime.InvokeVoidAsync("downloadTextFile", $"locators_{DateTime.Now:yyyyMMdd_HHmmss}.csv", csv);
+    }
+
+    private async Task ExportPdf()
+    {
+        var isThai = Lang.Current == "TH";
+        var date = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+        var title    = isThai ? "รายงานตำแหน่งจัดเก็บ" : "Locators Report";
+        var generated = isThai ? "สร้างเมื่อ" : "Generated";
+        var totalRec  = isThai ? "จำนวนทั้งหมด" : "Total";
+        var colId     = isThai ? "รหัส"         : "ID";
+        var colSite   = isThai ? "Site"          : "Site";
+        var colCab    = isThai ? "ตู้"           : "Cabinet";
+        var colShelf  = isThai ? "ชั้น"          : "Shelf";
+        var colType   = isThai ? "ประเภท"        : "Type";
+        var footer    = isThai
+            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
+
+        var data = GetFilteredExportData().ToList();
+        var rows = string.Join("", data.Select(l => {
+            var typeBadge = l.Type switch {
+                "Store"      => "badge-green",
+                "Production" => "badge-blue",
+                "Cleaning"   => "badge-amber",
+                _            => "badge-gray"
+            };
+            var typeLabel = isThai ? l.Type switch {
+                "Store" => "จัดเก็บ", "Production" => "ผลิต", "Cleaning" => "ล้าง", _ => l.Type
+            } : l.Type;
+            return $"<tr><td><strong>{l.Id}</strong></td><td>{l.Site}</td><td>{l.Cabinet}</td><td>{l.Shelf}</td><td><span class='badge {typeBadge}'>{typeLabel}</span></td></tr>";
+        }));
+
+        var html = $@"
+<div class='pdf-header'>
+  <div class='logo-text'>MATTEL</div>
+  <div class='meta'>
+    <div><strong>{title}</strong></div>
+    <div>{generated}: {date}</div>
+    <div>{totalRec}: {data.Count}</div>
+  </div>
+</div>
+<h2>{title}</h2>
+<table>
+  <thead><tr><th>{colId}</th><th>{colSite}</th><th>{colCab}</th><th>{colShelf}</th><th>{colType}</th></tr></thead>
+  <tbody>{rows}</tbody>
+</table>
+<div class='pdf-footer'>{footer}</div>";
+
+        await JSRuntime.InvokeVoidAsync("exportPdf", title, html, $"locators_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
     }
 
     private void OpenAddModal()
@@ -399,7 +579,6 @@ else
             Site     = loc.Site,
             Cabinet  = loc.Cabinet,
             Shelf    = loc.Shelf,
-            Position = loc.Position,
             Type     = loc.Type
         };
         _errorMessage = "";
@@ -561,7 +740,7 @@ else
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(e.File.ContentType);
             content.Add(fileContent, "file", e.File.Name);
 
-            var response = await Http.PostAsync("api/upload/locators", content);
+            var response = await Http.PostAsync("api/locators/upload", content);
 
             if (response.IsSuccessStatusCode)
             {

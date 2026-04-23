@@ -23,12 +23,12 @@ public class SeedDataService
         // Seed minimal location zones required for the system to function
         if (!context.Locators.Any(l => l.Type == "Production"))
         {
-            context.Locators.Add(new Locator { Id = "ZONE-A", Site = "SITE1", Cabinet = "-", Shelf = "Zone A", Position = "-", Type = "Production" });
-            context.Locators.Add(new Locator { Id = "ZONE-B", Site = "SITE1", Cabinet = "-", Shelf = "Zone B", Position = "-", Type = "Production" });
+            context.Locators.Add(new Locator { Id = "ZONE-A", Site = "SITE1", Cabinet = "-", Shelf = "Zone A", Type = "Production" });
+            context.Locators.Add(new Locator { Id = "ZONE-B", Site = "SITE1", Cabinet = "-", Shelf = "Zone B", Type = "Production" });
         }
         if (!context.Locators.Any(l => l.Type == "Cleaning"))
         {
-            context.Locators.Add(new Locator { Id = "CLEANING-ZONE", Site = "SITE1", Cabinet = "-", Shelf = "Cleaning Zone", Position = "-", Type = "Cleaning" });
+            context.Locators.Add(new Locator { Id = "CLEANING-ZONE", Site = "SITE1", Cabinet = "-", Shelf = "Cleaning Zone", Type = "Cleaning" });
         }
 
         context.SaveChanges();
