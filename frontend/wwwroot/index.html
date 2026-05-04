@@ -346,19 +346,19 @@
         };
 
         window.printLocatorQR = function (svgHtml, data) {
-            const printWnd = window.open('', '_blank', 'width=500,height=500');
+            const printWnd = window.open('', '_blank', 'width=800,height=600');
             printWnd.document.write(`<!DOCTYPE html>
                 <html>
                 <head><title>Print QR - ${data.id}</title>
                 <style>
-                    @page { size: A4; margin: 10mm; }
+                    @page { size: A4; margin: 15mm; }
                     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
                     body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
-                    .card { display: inline-flex; align-items: center; gap: 14px; border: 1.5px solid #ccc; border-radius: 10px; padding: 12px 16px; }
-                    .card .qr svg { width: 90px; height: 90px; flex-shrink: 0; }
-                    .card .info { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
-                    .card .id { font-size: 14pt; font-weight: 900; color: #000; margin-bottom: 3px; }
-                    .card .row { font-size: 8.5pt; color: #111; font-weight: 600; }
+                    .card { display: inline-flex; align-items: center; gap: 20px; border: 2px solid #ccc; border-radius: 12px; padding: 20px 24px; max-width: 100%; }
+                    .card .qr svg { width: 150px; height: 150px; flex-shrink: 0; }
+                    .card .info { display: flex; flex-direction: column; gap: 5px; white-space: normal; word-break: break-word; }
+                    .card .id { font-size: 20pt; font-weight: 900; color: #000; margin-bottom: 5px; }
+                    .card .row { font-size: 12pt; color: #111; font-weight: 600; }
                     .card .label { color: #333; font-weight: 700; }
                 </style>
                 </head>
@@ -402,15 +402,15 @@
                 <html>
                 <head><title>Print Location QR</title>
                 <style>
-                    @page { size: A4; margin: 10mm; }
+                    @page { size: A4; margin: 15mm; }
                     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
                     body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: white; }
-                    .cards-grid { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-                    .card { display: inline-flex; align-items: center; gap: 14px; border: 1.5px solid #ccc; border-radius: 10px; padding: 12px 16px; break-inside: avoid; }
-                    .card .qr svg { width: 90px; height: 90px; flex-shrink: 0; }
-                    .card .info { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
-                    .card .id { font-size: 14pt; font-weight: 900; color: #000; margin-bottom: 3px; }
-                    .card .row { font-size: 8.5pt; color: #111; font-weight: 600; }
+                    .cards-grid { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+                    .card { display: inline-flex; align-items: center; gap: 20px; border: 2px solid #ccc; border-radius: 12px; padding: 20px 24px; break-inside: avoid; max-width: 100%; }
+                    .card .qr svg { width: 150px; height: 150px; flex-shrink: 0; }
+                    .card .info { display: flex; flex-direction: column; gap: 5px; white-space: normal; word-break: break-word; }
+                    .card .id { font-size: 20pt; font-weight: 900; color: #000; margin-bottom: 5px; }
+                    .card .row { font-size: 12pt; color: #111; font-weight: 600; }
                     .card .label { color: #333; font-weight: 700; }
                 </style>
                 </head>
