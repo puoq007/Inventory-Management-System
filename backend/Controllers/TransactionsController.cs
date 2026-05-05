@@ -5,6 +5,9 @@ using shared.Models;
 
 namespace backend.Controllers
 {
+    /// <summary>
+    /// Controller จัดการธุรกรรมการใช้งานจิก — เบิก (CheckOut), คืน (ReturnToStore), ส่งล้าง (CheckIn), แจ้งปัญหา (ReportIssue)
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TransactionsController : ControllerBase
@@ -16,6 +19,7 @@ namespace backend.Controllers
             _context = context;
         }
 
+        /// <summary>ดึงรายการธุรกรรมแบบแบ่งหน้า (Pagination)</summary>
         [HttpGet]
         public async Task<ActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
@@ -25,6 +29,7 @@ namespace backend.Controllers
             return Ok(new { total, page, pageSize, items });
         }
 
+        /// <summary>สร้างรายการธุรกรรมโดยตรง</summary>
         [HttpPost]
         public async Task<ActionResult<TransactionRow>> PostTransaction(TransactionRow transaction)
         {
@@ -34,6 +39,7 @@ namespace backend.Controllers
             return CreatedAtAction(nameof(GetTransactions), new { id = transaction.Id }, transaction);
         }
 
+        /// <summary>ลบรายการธุรกรรม</summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTransaction(string id)
         {
@@ -43,6 +49,9 @@ namespace backend.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        /// <summary>
+        /// เบิกจิกออกไปสายการผลิต — ถ้าจิกอยู่ InUse อยู่แล้วจะเป็น Transfer แทน
+        /// </summary>
         [HttpPost("checkout")]
         public async Task<IActionResult> CheckOut([FromBody] ScanRequest request)
         {
@@ -77,6 +86,7 @@ namespace backend.Controllers
             return Ok(new { message = msg, actionType, jig });
         }
 
+        /// <summary>ส่งจิกไปล้าง — เปลี่ยนสถานะเป็น Cleaning, สภาพ NeedsCleaning</summary>
         [HttpPost("checkin")]
         public async Task<IActionResult> CheckIn([FromBody] ScanRequest request)
         {
@@ -88,7 +98,7 @@ namespace backend.Controllers
 
             jig.Status = "Cleaning";
             jig.Condition = "NeedsCleaning";
-            jig.LocatorId = request.LocatorId; // Cleaning station ID
+            jig.LocatorId = request.LocatorId; // รหัสสถานีล้าง
             jig.UpdatedAt = DateTime.UtcNow;
 
             var txn = new TransactionRow
@@ -106,6 +116,7 @@ namespace backend.Controllers
             return Ok(new { message = "Checked in to cleaning successfully", jig });
         }
 
+        /// <summary>คืนจิกเข้าตู้เก็บ — เปลี่ยนสถานะเป็น Available, สภาพ Good</summary>
         [HttpPost("returntostore")]
         public async Task<IActionResult> ReturnToStore([FromBody] ScanRequest request)
         {
@@ -117,7 +128,7 @@ namespace backend.Controllers
 
             jig.Status = "Available";
             jig.Condition = "Good";
-            jig.LocatorId = request.LocatorId; // Storage locator ID
+            jig.LocatorId = request.LocatorId; // รหัสตำแหน่งจัดเก็บ
             jig.UpdatedAt = DateTime.UtcNow;
 
             var txn = new TransactionRow
@@ -135,6 +146,7 @@ namespace backend.Controllers
             return Ok(new { message = "Returned to store successfully", jig });
         }
 
+        /// <summary>โมเดล Request สำหรับการสแกนเบิก/คืน/ล้าง</summary>
         public class ScanRequest
         {
             public string JigId { get; set; } = "";
@@ -143,6 +155,7 @@ namespace backend.Controllers
             public string? LocatorId { get; set; }
         }
 
+        /// <summary>โมเดล Request สำหรับการแจ้งปัญหา</summary>
         public class ReportIssueRequest
         {
             public string JigId { get; set; } = "";
@@ -151,6 +164,9 @@ namespace backend.Controllers
             public string Remark { get; set; } = "";
         }
 
+        /// <summary>
+        /// แจ้งปัญหาจิก — เปลี่ยนสถานะ/สภาพตาม IssueType (Broken, NeedsCleaning, Lost)
+        /// </summary>
         [HttpPost("reportissue")]
         public async Task<IActionResult> ReportIssue([FromBody] ReportIssueRequest request)
         {
@@ -200,6 +216,7 @@ namespace backend.Controllers
             return Ok(new { message = "Issue reported successfully", jig });
         }
 
+        /// <summary>ทำความสะอาดข้อมูลธุรกรรมก่อนบันทึก</summary>
         private void SanitizeTransaction(TransactionRow txn)
         {
             if (txn == null) return;
@@ -209,12 +226,14 @@ namespace backend.Controllers
             txn.JigUid = CleanAllSpaces(txn.JigUid) ?? "";
         }
 
+        /// <summary>ลบ Whitespace ทั้งหมดออกจากค่า</summary>
         private string? CleanAllSpaces(string? val)
         {
             if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
             return new string(val.Where(c => !char.IsWhiteSpace(c)).ToArray());
         }
 
+        /// <summary>แปลงช่องว่างซ้ำซ้อนเป็นช่องว่างเดียว</summary>
         private string? NormalizeSpaces(string? val)
         {
             if (string.IsNullOrWhiteSpace(val)) return val?.Trim();

@@ -1,0 +1,68 @@
+@using shared.Models
+@inject LanguageService Lang
+
+<div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+    <div class="relative w-full max-w-lg bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700 text-left max-h-[90vh] flex flex-col">
+        <h3 class="text-2xl font-bold text-slate-100 mb-6 shrink-0">@Lang.T(IsEditMode ? "แก้ไขตำแหน่ง" : "เพิ่มตำแหน่งใหม่", IsEditMode ? "Edit Locator" : "New Locator")</h3>
+        <div class="space-y-4 mb-6 overflow-y-auto pr-2 flex-grow">
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="mb-4 p-3 bg-red-900/30 text-red-400 rounded-lg text-sm border border-red-900/40">
+                    @ErrorMessage
+                </div>
+            }
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสตำแหน่ง", "Locator ID") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติ)", "(auto-generated)")</span></label>
+                    <div class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-sm font-mono text-slate-300 select-all" title="Auto-generated ID">
+                        @Locator.GetGeneratedId()
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชื่อตำแหน่ง", "Name") <span class="text-slate-400 font-normal text-xs">@Lang.T("(สร้างอัตโนมัติจาก Site/ตู้/ชั้น)", "(auto-generated from Site/Cabinet/Shelf)")</span></label>
+                    <div class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-sm text-slate-400 font-mono">
+                        @(Locator.GetName(Lang.Current).Length > 0 ? Locator.GetName(Lang.Current) : "–")
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ประเภทโซน *", "Zone Type *")</label>
+                    <select @bind="Locator.Type" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
+                        <option value="Production">@Lang.T("โซนผลิต (Production)", "Production Zone")</option>
+                        <option value="Cleaning">@Lang.T("จุดทำความสะอาด (Cleaning)", "Cleaning Zone")</option>
+                        <option value="Store">@Lang.T("ชั้นจัดเก็บ (Storage)", "Storage Zone")</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("กลุ่ม (Site)", "Site")</label>
+                    <select @bind="Locator.Site" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
+                        <option value="">-- @Lang.T("เลือก Site", "Select Site") --</option>
+                        <option value="1">MBK1</option>
+                        <option value="2">Mintech</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ตู้ (Cabinet)", "Cabinet")</label>
+                    <input type="text" @bind="Locator.Cabinet" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ชั้น (Shelf)", "Shelf")</label>
+                    <input type="text" @bind="Locator.Shelf" @bind:event="oninput" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm" />
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-700 shrink-0">
+            <button @onclick="OnCancel" class="px-4 py-2 bg-slate-800 text-slate-300 border border-slate-700 font-medium rounded-lg hover:bg-slate-900 transition-colors text-sm">@Lang.T("ยกเลิก", "Cancel")</button>
+            <button @onclick="OnSave" class="px-4 py-2 bg-mattel-red text-white font-medium rounded-lg hover:bg-mattel-hover transition-colors text-sm">@Lang.T("บันทึก", "Save")</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public Locator Locator { get; set; } = new();
+    
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

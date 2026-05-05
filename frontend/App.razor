@@ -1,12 +1,16 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+@using frontend.Services
+@inject LanguageService Lang
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(frontend.Components.Layout.AppLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <PageTitle>Not found</PageTitle>
+        <PageTitle>@Lang.T("ไม่พบหน้าที่ต้องการ", "Not found")</PageTitle>
         <LayoutView Layout="@typeof(frontend.Components.Layout.AppLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
+            <div class="flex flex-col items-center justify-center p-8 text-center">
+                <p role="alert" class="text-slate-400">@Lang.T("ขออภัย ไม่พบหน้าที่คุณต้องการ", "Sorry, there's nothing at this address.")</p>
+            </div>
         </LayoutView>
     </NotFound>
 </Router>

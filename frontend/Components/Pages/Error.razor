@@ -1,19 +1,21 @@
-﻿@page "/Error"
+@page "/Error"
 @using System.Diagnostics
+@inject LanguageService Lang
+@using frontend.Services
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@Lang.T("ข้อผิดพลาด", "Error")</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<h1 class="text-danger">@Lang.T("พบข้อผิดพลาด", "Error.")</h1>
+<h2 class="text-danger">@Lang.T("เกิดข้อผิดพลาดในการประมวลผลคำขอของคุณ", "An error occurred while processing your request.")</h2>
 
 @if (ShowRequestId)
 {
     <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
+        <strong>@Lang.T("รหัสคำขอ:", "Request ID:")</strong> <code>@RequestId</code>
     </p>
 }
 
-<h3>Development Mode</h3>
+<h3>@Lang.T("โหมดการพัฒนา", "Development Mode")</h3>
 <p>
     Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
 </p>
@@ -25,9 +27,12 @@
 </p>
 
 @code{
+    /// <summary>รหัสคำขอ (Request ID) จาก Activity Current</summary>
     private string? RequestId { get; set; }
+    /// <summary>ตรวจสอบว่าต้องการแสดงรหัสคำขอหรือไม่</summary>
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
+    /// <summary>ดึงรหัสคำขอเมื่อเริ่มต้นหน้า</summary>
     protected override void OnInitialized() =>
         RequestId = Activity.Current?.Id;
 }

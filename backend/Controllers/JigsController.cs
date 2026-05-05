@@ -2,33 +2,44 @@ using backend.Data;
 using shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ExcelDataReader;
+using backend.Services;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller จัดการข้อมูลจิกในระบบ — CRUD, อัปโหลดรูปภาพ, จัดการ Part Mapping, และนำเข้า Excel
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class JigsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly JigService _jigService;
+    private readonly ExcelImportService _excelService;
 
-    public JigsController(AppDbContext context)
+    public JigsController(AppDbContext context, JigService jigService, ExcelImportService excelService)
     {
         _context = context;
+        _jigService = jigService;
+        _excelService = excelService;
     }
 
+    /// <summary>ดึงรายการจิกทั้งหมดจากฐานข้อมูล</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Jig>>> GetJigs()
     {
         return await _context.Jigs.ToListAsync();
     }
 
+    /// <summary>ดึงรายการ Part Number ทั้งหมดในระบบ</summary>
     [HttpGet("parts")]
     public async Task<ActionResult<IEnumerable<PartMaster>>> GetAllParts()
     {
         return await _context.PartMasters.ToListAsync();
     }
 
+    /// <summary>ดึง Part Number ที่เชื่อมกับ ToolNo ที่ระบุ</summary>
+    /// <param name="toolNo">ToolNo ที่ต้องการค้นหา</param>
     [HttpGet("parts/{toolNo}")]
     public async Task<ActionResult<IEnumerable<PartMaster>>> GetPartsForTool(string toolNo)
     {
@@ -42,6 +53,9 @@ public class JigsController : ControllerBase
             .ToListAsync();
     }
 
+    /// <summary>อัปเดต Part Mapping ของ ToolNo ที่ระบุ — ลบของเดิมแล้วสร้างใหม่ทั้งหมดใน Transaction</summary>
+    /// <param name="toolNo">ToolNo ที่ต้องการอัปเดต</param>
+    /// <param name="parts">รายการ Part ใหม่ที่ต้องการเชื่อม</param>
     [HttpPost("parts/{toolNo}")]
     public async Task<IActionResult> UpdatePartsForTool(string toolNo, [FromBody] List<PartMaster> parts)
     {
@@ -84,8 +98,8 @@ public class JigsController : ControllerBase
         }
     }
 
-
-
+    /// <summary>ดึงจิกตามรหัสภายใน (Uid)</summary>
+    /// <param name="uid">รหัส Uid ของจิก</param>
     [HttpGet("{uid}")]
     public async Task<ActionResult<Jig>> GetJig(string uid)
     {
@@ -99,39 +113,25 @@ public class JigsController : ControllerBase
         return jig;
     }
 
+    /// <summary>ลงทะเบียนจิกใหม่ — สร้าง ID อัตโนมัติถ้าไม่ระบุ และสร้าง SmartCodeName</summary>
+    /// <param name="jig">ข้อมูลจิกที่ต้องการลงทะเบียน</param>
     [HttpPost]
     public async Task<ActionResult<Jig>> PostJig(Jig jig)
     {
-        SanitizeJig(jig);
+        _jigService.SanitizeJig(jig);
         jig.CreatedAt = DateTime.UtcNow;
         jig.UpdatedAt = DateTime.UtcNow;
 
-        // Auto-generate ID if empty (ToolNo-01 format)
         if (string.IsNullOrWhiteSpace(jig.Id))
         {
-            jig.Id = await GenerateNextJigId(jig.ToolNo);
+            jig.Id = await _jigService.GenerateNextJigId(jig.ToolNo);
         }
         
-        // Auto-generate SmartCodeName if empty
         if (string.IsNullOrWhiteSpace(jig.SmartCodeName))
         {
-            var parts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(jig.ToolNo)) parts.Add(jig.ToolNo);
-            if (!string.IsNullOrWhiteSpace(jig.StepPrint)) parts.Add(jig.StepPrint);
-            if (!string.IsNullOrWhiteSpace(jig.PartType)) parts.Add(jig.PartType);
-            if (!string.IsNullOrWhiteSpace(jig.Date)) parts.Add(jig.Date);
-            if (!string.IsNullOrWhiteSpace(jig.Feed) && !string.IsNullOrWhiteSpace(jig.Scan)) 
-                parts.Add($"{jig.Feed}/{jig.Scan}");
-            else if (!string.IsNullOrWhiteSpace(jig.Feed)) parts.Add(jig.Feed);
-            else if (!string.IsNullOrWhiteSpace(jig.Scan)) parts.Add(jig.Scan);
-            if (!string.IsNullOrWhiteSpace(jig.QtyPrint)) parts.Add(jig.QtyPrint);
-            if (!string.IsNullOrWhiteSpace(jig.HeightJig)) parts.Add(jig.HeightJig);
-            if (!string.IsNullOrWhiteSpace(jig.JigType)) parts.Add(jig.JigType);
-            if (!string.IsNullOrWhiteSpace(jig.Process)) parts.Add(jig.Process);
-            jig.SmartCodeName = string.Join(" ", parts);
+            jig.SmartCodeName = _jigService.GenerateSmartCodeName(jig);
         }
 
-        // Check if logical Id is already taken
         if (await _context.Jigs.AnyAsync(j => j.Id == jig.Id))
         {
             return BadRequest("Jig ID already exists");
@@ -143,6 +143,9 @@ public class JigsController : ControllerBase
         return CreatedAtAction(nameof(GetJig), new { uid = jig.Uid }, jig);
     }
 
+    /// <summary>อัปเดตข้อมูลจิกที่มีอยู่ — สร้าง SmartCodeName ใหม่อัตโนมัติ</summary>
+    /// <param name="uid">รหัส Uid ของจิก</param>
+    /// <param name="jig">ข้อมูลจิกที่อัปเดตแล้ว</param>
     [HttpPut("{uid}")]
     public async Task<IActionResult> PutJig(string uid, Jig jig)
     {
@@ -151,30 +154,14 @@ public class JigsController : ControllerBase
             return BadRequest();
         }
 
-        // Check if logical Id is taken by another record
         if (await _context.Jigs.AnyAsync(j => j.Id == jig.Id && j.Uid != uid))
         {
             return BadRequest("New Jig ID already exists");
         }
 
-        SanitizeJig(jig);
+        _jigService.SanitizeJig(jig);
         jig.UpdatedAt = DateTime.UtcNow;
-        
-        // Update SmartCodeName
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(jig.ToolNo)) parts.Add(jig.ToolNo);
-        if (!string.IsNullOrWhiteSpace(jig.StepPrint)) parts.Add(jig.StepPrint);
-        if (!string.IsNullOrWhiteSpace(jig.PartType)) parts.Add(jig.PartType);
-        if (!string.IsNullOrWhiteSpace(jig.Date)) parts.Add(jig.Date);
-        if (!string.IsNullOrWhiteSpace(jig.Feed) && !string.IsNullOrWhiteSpace(jig.Scan)) 
-            parts.Add($"{jig.Feed}/{jig.Scan}");
-        else if (!string.IsNullOrWhiteSpace(jig.Feed)) parts.Add(jig.Feed);
-        else if (!string.IsNullOrWhiteSpace(jig.Scan)) parts.Add(jig.Scan);
-        if (!string.IsNullOrWhiteSpace(jig.QtyPrint)) parts.Add(jig.QtyPrint);
-        if (!string.IsNullOrWhiteSpace(jig.HeightJig)) parts.Add(jig.HeightJig);
-        if (!string.IsNullOrWhiteSpace(jig.JigType)) parts.Add(jig.JigType);
-        if (!string.IsNullOrWhiteSpace(jig.Process)) parts.Add(jig.Process);
-        jig.SmartCodeName = string.Join(" ", parts);
+        jig.SmartCodeName = _jigService.GenerateSmartCodeName(jig);
 
         _context.Entry(jig).State = EntityState.Modified;
 
@@ -197,8 +184,11 @@ public class JigsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>อัปโหลดรูปภาพจิก (JPEG/PNG/WebP, สูงสุด 5MB)</summary>
+    /// <param name="uid">รหัส Uid ของจิก</param>
+    /// <param name="file">ไฟล์รูปภาพ</param>
     [HttpPost("{uid}/image")]
-    [RequestSizeLimit(5_000_000)] // 5MB limit
+    [RequestSizeLimit(5_000_000)]
     public async Task<IActionResult> UploadImage(string uid, IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
@@ -213,7 +203,6 @@ public class JigsController : ControllerBase
         var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         Directory.CreateDirectory(uploadsDir);
 
-        // Delete old image if exists
         if (!string.IsNullOrEmpty(jig.ImageUrl))
         {
             var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", jig.ImageUrl.TrimStart('/'));
@@ -237,6 +226,8 @@ public class JigsController : ControllerBase
         return Ok(new { imageUrl = jig.ImageUrl });
     }
 
+    /// <summary>ลบรูปภาพที่แนบกับจิก</summary>
+    /// <param name="uid">รหัส Uid ของจิก</param>
     [HttpDelete("{uid}/image")]
     public async Task<IActionResult> DeleteImage(string uid)
     {
@@ -256,6 +247,8 @@ public class JigsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>ลบจิกออกจากระบบ</summary>
+    /// <param name="uid">รหัส Uid ของจิกที่ต้องการลบ</param>
     [HttpDelete("{uid}")]
     public async Task<IActionResult> DeleteJig(string uid)
     {
@@ -271,214 +264,17 @@ public class JigsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>นำเข้าจิกจำนวนมากจากไฟล์ Excel (.xlsx/.xls)</summary>
+    /// <param name="file">ไฟล์ Excel ที่มีข้อมูลจิก</param>
     [HttpPost("upload")]
     public async Task<IActionResult> UploadExcel(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
 
-        int inserted = 0;
-        int updated = 0;
-        var errors = new List<string>();
-
-        // For sequential ID tracking in same batch
-        var nextSuffixMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var partMappingsToAdd = new HashSet<(string ToolNo, string PartNumber, string ToyNumber)>();
-
-
         try
         {
-            using var stream = file.OpenReadStream();
-            using var reader = ExcelReaderFactory.CreateReader(stream);
-
-            bool isHeaderFound = false;
-            var colMap = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
-
-            while (reader.Read())
-            {
-                if (!isHeaderFound)
-                {
-                    // Scan for headers
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        var raw = reader.GetValue(i)?.ToString()?.Trim();
-                        if (string.IsNullOrEmpty(raw)) continue;
-                        
-                        // Standardize: remove dots, extra spaces
-                        var std = raw.Replace(".", "").Replace(" ", "").ToLower();
-                        if (!colMap.ContainsKey(std)) colMap[std] = new List<int>();
-                        colMap[std].Add(i);
-                    }
-
-                    if (colMap.ContainsKey("toynumber") || colMap.ContainsKey("toolno"))
-                    {
-                        isHeaderFound = true;
-                    }
-                    continue;
-                }
-
-                try
-                {
-                    // Helper to get value by fuzzy matching and handling duplicates
-                    string GetVal(string key, int occurrence = 0) {
-                        var std = key.Replace(".", "").Replace(" ", "").ToLower();
-                        
-                        // Try exact standardized match
-                        if (colMap.TryGetValue(std, out var indices)) {
-                            if (occurrence < indices.Count) return reader.GetValue(indices[occurrence])?.ToString()?.Trim() ?? "";
-                        }
-                        
-                        // Try common abbreviations
-                        var altKeys = new Dictionary<string, string> {
-                            { "toynumber", "toyno" },
-                            { "partnumber", "partno" },
-                            { "toolno", "toolnumber" }
-                        };
-                        
-                        foreach (var alt in altKeys) {
-                            if (std == alt.Key && colMap.TryGetValue(alt.Value, out var altIndices)) {
-                                if (occurrence < altIndices.Count) return reader.GetValue(altIndices[occurrence])?.ToString()?.Trim() ?? "";
-                            }
-                            if (std == alt.Value && colMap.TryGetValue(alt.Key, out var primaryIndices)) {
-                                if (occurrence < primaryIndices.Count) return reader.GetValue(primaryIndices[occurrence])?.ToString()?.Trim() ?? "";
-                            }
-                        }
-                        
-                        return "";
-                    }
-
-                    var toolNo = GetVal("Tool No.");
-                    
-                    var rawStep = GetVal("Total Step Print");
-                    if (string.IsNullOrEmpty(rawStep)) rawStep = GetVal("Step Print");
-                    var stepPrint = ExtractStepNumber(rawStep);
-                    if (stepPrint == "-") stepPrint = ""; // Clean it up if nothing matched
-
-                    var partType = GetVal("Part Type", 0); // 1st Part Type
-                    var jigType = GetVal("JIG Type"); 
-                    if (string.IsNullOrEmpty(jigType)) jigType = GetVal("Part Type", 1); // 2nd Part Type fallback
-                    
-                    var date = FormatExcelDate(GetVal("Date"));
-                    var feed = GetVal("Feed");
-                    var scan = GetVal("Scan");
-                    var qtyPrint = GetVal("Qty / Print");
-                    if (string.IsNullOrEmpty(qtyPrint)) qtyPrint = GetVal("QtyPrint");
-                    
-                    var heightJig = GetVal("Height Jig");
-                    var process = GetVal("Process");
-                    var partNumber = GetVal("Part Number");
-                    var rev = GetVal("Rev.");
-
-                    if (string.IsNullOrEmpty(toolNo) && string.IsNullOrEmpty(partNumber)) continue;
-                    
-                    if (!string.IsNullOrWhiteSpace(toolNo))
-                    {
-                        if (!string.IsNullOrWhiteSpace(partNumber))
-                            partMappingsToAdd.Add((toolNo.Trim(), partNumber.Trim(), ""));
-                    }
-
-                    // Re-generate SmartCodeName based on the same logic as UI
-                    var smartCodeParts = new List<string>();
-                    if (!string.IsNullOrWhiteSpace(toolNo)) smartCodeParts.Add(toolNo);
-                    if (!string.IsNullOrWhiteSpace(stepPrint)) smartCodeParts.Add(stepPrint);
-                    if (!string.IsNullOrWhiteSpace(partType)) smartCodeParts.Add(partType);
-                    if (!string.IsNullOrWhiteSpace(date)) smartCodeParts.Add(date);
-                    if (!string.IsNullOrWhiteSpace(feed) && !string.IsNullOrWhiteSpace(scan)) smartCodeParts.Add($"{feed}/{scan}");
-                    else if (!string.IsNullOrWhiteSpace(feed)) smartCodeParts.Add(feed);
-                    else if (!string.IsNullOrWhiteSpace(scan)) smartCodeParts.Add(scan);
-                    if (!string.IsNullOrWhiteSpace(qtyPrint)) smartCodeParts.Add(qtyPrint);
-                    if (!string.IsNullOrWhiteSpace(heightJig)) smartCodeParts.Add(heightJig);
-                    if (!string.IsNullOrWhiteSpace(jigType)) smartCodeParts.Add(jigType);
-                    if (!string.IsNullOrWhiteSpace(process)) smartCodeParts.Add(process);
-                    
-                    var smartCode = string.Join(" ", smartCodeParts);
-                    
-                    var existing = await _context.Jigs.FirstOrDefaultAsync(j => j.SmartCodeName == smartCode && !string.IsNullOrEmpty(smartCode));
-                    
-                    if (existing != null)
-                    {
-                        existing.ToolNo = toolNo;
-                        existing.StepPrint = stepPrint;
-                        existing.PartType = partType;
-                        existing.Date = date;
-                        existing.Feed = feed;
-                        existing.Scan = scan;
-                        existing.QtyPrint = qtyPrint;
-                        existing.HeightJig = heightJig;
-                        existing.JigType = jigType;
-                        existing.Process = process;
-                        existing.PartNumber = partNumber;
-                        existing.Rev = rev;
-                        SanitizeJig(existing);
-                        existing.UpdatedAt = DateTime.UtcNow;
-                        updated++;
-                    }
-                    else
-                    {
-                        // Sequential ID generation
-                        if (!nextSuffixMap.ContainsKey(toolNo))
-                        {
-                            nextSuffixMap[toolNo] = await GetMaxSuffixFromDb(toolNo);
-                        }
-                        nextSuffixMap[toolNo]++;
-
-                        var newId = string.IsNullOrWhiteSpace(toolNo) 
-                            ? "JIG-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper() 
-                            : $"{toolNo}-{nextSuffixMap[toolNo]:D2}";
-
-                        var newJig = new Jig
-                        {
-                            Id = newId,
-                            SmartCodeName = smartCode,
-                            ToolNo = toolNo,
-                            StepPrint = stepPrint,
-                            PartType = partType,
-                            Date = date,
-                            Feed = feed,
-                            Scan = scan,
-                            QtyPrint = qtyPrint,
-                            HeightJig = heightJig,
-                            JigType = jigType,
-                            Process = process,
-                            PartNumber = partNumber,
-                            Rev = rev,
-                            Status = "Available",
-                            Condition = "Good",
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        };
-                        _context.Jigs.Add(newJig);
-                        SanitizeJig(newJig);
-                        inserted++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    errors.Add($"Row error: {ex.Message}");
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            // Process Part Mappings
-            foreach (var map in partMappingsToAdd)
-            {
-                var partMaster = await _context.PartMasters.FindAsync(map.PartNumber);
-                if (partMaster == null) 
-                {
-                    _context.PartMasters.Add(new PartMaster { PartNumber = map.PartNumber });
-                    await _context.SaveChangesAsync();
-                }
-
-                if (!await _context.JigPartMappings.AnyAsync(m => m.ToolNo == map.ToolNo && m.PartNumber == map.PartNumber))
-                {
-                    _context.JigPartMappings.Add(new JigPartMapping { ToolNo = map.ToolNo, PartNumber = map.PartNumber });
-                    await _context.SaveChangesAsync();
-                }
-            }
-
-
-
-            return Ok(new { inserted, updated, errors });
+            var result = await _excelService.ProcessExcelFileAsync(file);
+            return Ok(new { result.inserted, result.updated, result.errors });
         }
         catch (Exception ex)
         {
@@ -486,146 +282,8 @@ public class JigsController : ControllerBase
         }
     }
 
-    private async Task<string> GenerateNextJigId(string? toolNo)
-    {
-        if (string.IsNullOrWhiteSpace(toolNo)) return "JIG-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
-        int nextNum = (await GetMaxSuffixFromDb(toolNo)) + 1;
-        return $"{toolNo}-{nextNum:D2}";
-    }
-
-    private async Task<int> GetMaxSuffixFromDb(string toolNo)
-    {
-        var prefix = toolNo + "-";
-        var existingIds = await _context.Jigs
-            .Where(j => j.Id.StartsWith(prefix))
-            .Select(j => j.Id)
-            .ToListAsync();
-
-        int max = 0;
-        foreach (var id in existingIds)
-        {
-            var suffix = id.Substring(prefix.Length);
-            if (int.TryParse(suffix, out int num))
-            {
-                if (num > max) max = num;
-            }
-        }
-        return max;
-    }
-
-    private void SanitizeJig(Jig jig)
-    {
-        if (jig == null) return;
-        
-        // Fields where NO spaces should exist (Identifiers)
-        jig.Id = CleanAllSpaces(jig.Id) ?? "";
-        jig.ToolNo = CleanAllSpaces(jig.ToolNo);
-        jig.PartNumber = CleanAllSpaces(jig.PartNumber);
-        jig.LocatorId = CleanAllSpaces(jig.LocatorId);
-        jig.Rev = CleanAllSpaces(jig.Rev);
-        jig.Date = CleanAllSpaces(jig.Date);
-        jig.Feed = CleanAllSpaces(jig.Feed);
-        jig.Scan = CleanAllSpaces(jig.Scan);
-        jig.QtyPrint = CleanAllSpaces(jig.QtyPrint);
-        jig.HeightJig = CleanAllSpaces(jig.HeightJig);
-
-        // Fields where spaces might exist but should be normalized (Descriptions)
-        jig.PartType = CleanAllSpaces(jig.PartType); // Usually one word like BODY
-        jig.StepPrint = NormalizeSpaces(jig.StepPrint); // e.g. "Front - Rear"
-        jig.JigType = NormalizeSpaces(jig.JigType);
-        jig.Process = NormalizeSpaces(jig.Process);
-        jig.Status = CleanAllSpaces(jig.Status) ?? "Available";
-        jig.Condition = CleanAllSpaces(jig.Condition) ?? "Good";
-        
-        jig.SmartCodeName = NormalizeSpaces(jig.SmartCodeName);
-    }
-
-    private string? CleanAllSpaces(string? val)
-    {
-        if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
-        return new string(val.Where(c => !char.IsWhiteSpace(c)).ToArray());
-    }
-
-    private string? NormalizeSpaces(string? val)
-    {
-        if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
-        // Replace multiple spaces with one
-        return System.Text.RegularExpressions.Regex.Replace(val.Trim(), @"\s+", " ");
-    }
-
     private bool JigExists(string uid)
     {
         return _context.Jigs.Any(e => e.Uid == uid);
-    }
-
-    private static readonly Dictionary<string, string> _stepNameToNumber = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["L"] = "1", ["R"] = "2", ["Hood"] = "3", ["Roof"] = "4",
-        ["Re.Hood"] = "5", ["Front"] = "6", ["Rear"] = "7", ["Under"] = "8",
-        ["Re.L"] = "9", ["Re.R"] = "10",
-        ["Read Hood"] = "5", ["Read"] = "7"
-    };
-
-    private string ExtractStepNumber(string? stepStr)
-    {
-        if (string.IsNullOrEmpty(stepStr)) return "-";
-        
-        var items = stepStr.Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries);
-        var resultNums = new List<string>();
-        
-        foreach (var item in items)
-        {
-            var trimmed = item.Trim();
-            
-            if (trimmed.Contains(':')) 
-            {
-                var prefix = trimmed.Split(':')[0].Trim();
-                if (int.TryParse(prefix, out _)) { resultNums.Add(prefix); continue; }
-            }
-            
-            if (int.TryParse(trimmed, out _)) { resultNums.Add(trimmed); continue; }
-            
-            var lower = trimmed.ToLowerInvariant();
-            if (lower.Contains("re.hood") || lower.Contains("read hood")) { resultNums.Add("5"); continue; }
-            if (lower.Contains("re.l")) { resultNums.Add("9"); continue; }
-            if (lower.Contains("re.r")) { resultNums.Add("10"); continue; }
-            
-            var tokens = trimmed.Split(new[] { ' ', '.', '_', '/' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var token in tokens)
-            {
-                if (_stepNameToNumber.TryGetValue(token, out var num))
-                {
-                    resultNums.Add(num);
-                }
-            }
-        }
-        
-        var finalNums = resultNums.Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
-        return finalNums.Any() ? string.Join("-", finalNums) : "-";
-    }
-
-    private string FormatExcelDate(string? dString)
-    {
-        if (string.IsNullOrWhiteSpace(dString) || dString == "-") return "";
-        try {
-            var d = dString.Split(' ')[0].Split('T')[0];
-            d = d.Replace("-", "/");
-            var parts = d.Split('/');
-            if (parts.Length == 3) {
-                if (!int.TryParse(parts[0], out int p1)) return dString;
-                if (!int.TryParse(parts[1], out int p2)) return dString;
-                if (!int.TryParse(parts[2], out int p3)) return dString;
-                
-                int day, month, year;
-                if (p1 > 31) { year = p1; month = p2; day = p3; }
-                else { day = p1; month = p2; year = p3; }
-                
-                if (year >= 2500) year -= 543;
-                if (year < 100) year += 2000;
-                
-                return $"{day:D2}/{month:D2}/{year}";
-            }
-        } catch { }
-        return dString ?? "";
     }
 }

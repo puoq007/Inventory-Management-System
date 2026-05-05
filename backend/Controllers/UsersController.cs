@@ -7,6 +7,10 @@ using BCrypt.Net;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller จัดการบัญชีผู้ใช้ — CRUD, Login (JWT), เปลี่ยนรหัสผ่าน, เปลี่ยนชื่อ
+/// รองรับการย้ายรหัสผ่านแบบ Plaintext เดิมเป็น BCrypt อัตโนมัติ
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -18,6 +22,7 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
+    /// <summary>ดึงรายชื่อผู้ใช้ทั้งหมด (สิทธิ์ Admin)</summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<UserAccount>>> GetUsers()
@@ -25,6 +30,8 @@ public class UsersController : ControllerBase
         return await _context.Users.ToListAsync();
     }
 
+    /// <summary>ดึงผู้ใช้ตาม EmployeeId</summary>
+    /// <param name="employeeId">รหัสพนักงาน</param>
     [HttpGet("{employeeId}")]
     public async Task<ActionResult<UserAccount>> GetUser(string employeeId)
     {
@@ -33,11 +40,13 @@ public class UsersController : ControllerBase
         return user;
     }
 
+    /// <summary>สร้างบัญชีผู้ใช้ใหม่ — Hash รหัสผ่านด้วย BCrypt (สิทธิ์ Admin)</summary>
+    /// <param name="userAccount">ข้อมูลผู้ใช้ใหม่</param>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<UserAccount>> PostUser(UserAccount userAccount)
     {
-        // Hash password if provided
+        // Hash รหัสผ่านถ้ามีการกรอก
         if (!string.IsNullOrEmpty(userAccount.Password))
             userAccount.Password = BCrypt.Net.BCrypt.HashPassword(userAccount.Password);
 
@@ -46,6 +55,9 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUser), new { employeeId = userAccount.EmployeeId }, userAccount);
     }
 
+    /// <summary>อัปเดตข้อมูลผู้ใช้ — ซิงค์ชื่อในธุรกรรมด้วย (สิทธิ์ Admin)</summary>
+    /// <param name="employeeId">รหัสพนักงาน</param>
+    /// <param name="userAccount">ข้อมูลที่อัปเดต</param>
     [HttpPut("{employeeId}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> PutUser(string employeeId, UserAccount userAccount)
@@ -59,7 +71,7 @@ public class UsersController : ControllerBase
             foreach (var t in transactions) t.User = userAccount.Name;
         }
 
-        // Preserve existing hashed password if not being changed
+        // เก็บรหัสผ่านเดิมถ้าไม่ได้เปลี่ยน
         if (string.IsNullOrEmpty(userAccount.Password) && existingUser != null)
             userAccount.Password = existingUser.Password;
 
@@ -73,6 +85,8 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>ลบบัญชีผู้ใช้ (สิทธิ์ Admin)</summary>
+    /// <param name="employeeId">รหัสพนักงานที่ต้องการลบ</param>
     [HttpDelete("{employeeId}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(string employeeId)
@@ -84,22 +98,26 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// ตรวจสอบสิทธิ์และสร้าง JWT Token — รองรับการย้ายรหัสผ่าน Plaintext เป็น BCrypt อัตโนมัติ
+    /// </summary>
+    /// <param name="request">ข้อมูล Login (EmployeeId + Password)</param>
     [HttpPost("login")]
     public async Task<ActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == request.EmployeeId);
         if (user == null) return Unauthorized();
 
-        // Support both hashed and legacy plaintext passwords (auto-migrate on login)
+        // รองรับทั้งรหัสผ่านแบบ Hash และ Plaintext (ย้ายอัตโนมัติตอน Login)
         bool passwordValid;
         if (!string.IsNullOrEmpty(user.Password) && user.Password.StartsWith("$2"))
         {
-            // Already hashed
+            // เป็นแบบ Hash อยู่แล้ว
             passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
         }
         else
         {
-            // Legacy plaintext — verify then migrate to hash
+            // รหัสผ่านเก่าแบบ Plaintext — ตรวจสอบแล้วย้ายเป็น Hash
             passwordValid = user.Password == request.Password;
             if (passwordValid)
             {
@@ -140,6 +158,9 @@ public class UsersController : ControllerBase
         });
     }
 
+    /// <summary>เปลี่ยนรหัสผ่าน — ตรวจสอบรหัสเดิมก่อน (รองรับทั้ง Hash และ Plaintext)</summary>
+    /// <param name="employeeId">รหัสพนักงาน</param>
+    /// <param name="request">รหัสผ่านเดิมและใหม่</param>
     [HttpPut("{employeeId}/change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword(string employeeId, [FromBody] ChangePasswordRequest request)
@@ -147,7 +168,7 @@ public class UsersController : ControllerBase
         var user = await _context.Users.FindAsync(employeeId);
         if (user == null) return NotFound();
 
-        // Verify old password (support both hashed and legacy)
+        // ตรวจสอบรหัสเดิม (รองรับทั้ง Hash และ Plaintext)
         bool oldValid = (!string.IsNullOrEmpty(user.Password) && user.Password.StartsWith("$2"))
             ? BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password)
             : user.Password == request.OldPassword;
@@ -159,6 +180,9 @@ public class UsersController : ControllerBase
         return Ok();
     }
 
+    /// <summary>เปลี่ยนชื่อแสดงผล — อัปเดตชื่อในธุรกรรมด้วย</summary>
+    /// <param name="employeeId">รหัสพนักงาน</param>
+    /// <param name="request">ชื่อใหม่</param>
     [HttpPut("{employeeId}/change-name")]
     [Authorize]
     public async Task<IActionResult> ChangeName(string employeeId, [FromBody] ChangeNameRequest request)
@@ -182,17 +206,20 @@ public class UsersController : ControllerBase
     private bool UserExists(string employeeId) => _context.Users.Any(e => e.EmployeeId == employeeId);
 }
 
+/// <summary>โมเดล Request สำหรับเปลี่ยนรหัสผ่าน</summary>
 public class ChangePasswordRequest
 {
     public string OldPassword { get; set; } = "";
     public string NewPassword { get; set; } = "";
 }
 
+/// <summary>โมเดล Request สำหรับเปลี่ยนชื่อ</summary>
 public class ChangeNameRequest
 {
     public string Name { get; set; } = "";
 }
 
+/// <summary>โมเดล Request สำหรับ Login</summary>
 public class LoginRequest
 {
     public string EmployeeId { get; set; } = "";

@@ -1,0 +1,82 @@
+@using shared.Models
+@inject LanguageService Lang
+
+<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 w-full max-w-md">
+        <div class="p-5 border-b border-slate-700 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <svg class="w-5 h-5 text-mattel-red" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+                @Lang.T("ตัวกรองก่อนส่งออก", "Export Filter")
+                <span class="text-xs font-normal text-slate-400 uppercase">(@ExportType.ToUpper())</span>
+            </h3>
+            <button @onclick="OnCancel" class="text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+            <p class="text-xs text-slate-400">@Lang.T("เลือกตัวกรองที่ต้องการ หากไม่เลือกจะส่งออกข้อมูลทั้งหมด", "Select filters below. Leave blank to export all data.")</p>
+
+            <!-- Site -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Site</label>
+                <select value="@FilterSite" @onchange='(e) => FilterSiteChanged.InvokeAsync(e.Value?.ToString() ?? "")' class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                    <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                    <option value="1">MBK1</option>
+                    <option value="2">Mintech</option>
+                </select>
+            </div>
+
+            <!-- Type -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ประเภทโซน", "Zone Type")</label>
+                <select value="@FilterType" @onchange='(e) => FilterTypeChanged.InvokeAsync(e.Value?.ToString() ?? "")' class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                    <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                    <option value="Store">Storage</option>
+                    <option value="Production">Production</option>
+                    <option value="Cleaning">Cleaning</option>
+                </select>
+            </div>
+
+            <!-- Cabinet -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">@Lang.T("ตู้", "Cabinet")</label>
+                <select value="@FilterCabinet" @onchange='(e) => FilterCabinetChanged.InvokeAsync(e.Value?.ToString() ?? "")' class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 outline-none focus:border-mattel-red transition-all">
+                    <option value="">@Lang.T("ทั้งหมด", "All")</option>
+                    @foreach (var c in AllLocators.Select(l => l.Cabinet).Where(c => !string.IsNullOrEmpty(c) && c != "-").Distinct().OrderBy(c => c))
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="p-5 border-t border-slate-700 flex justify-between items-center gap-3">
+            <button @onclick="OnReset" class="text-xs text-slate-400 hover:text-mattel-red transition-colors">
+                @Lang.T("รีเซ็ตตัวกรอง", "Reset Filters")
+            </button>
+            <div class="flex gap-3">
+                <button @onclick="OnCancel" class="px-4 py-2 bg-slate-700 text-slate-200 rounded-xl text-sm hover:bg-slate-600 transition-colors">
+                    @Lang.T("ยกเลิก", "Cancel")
+                </button>
+                <button @onclick="OnExport" class="px-5 py-2 bg-mattel-red text-white rounded-xl text-sm font-bold hover:bg-mattel-hover transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    @Lang.T("ส่งออก", "Export")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ExportType { get; set; } = "";
+    [Parameter] public string FilterSite { get; set; } = "";
+    [Parameter] public EventCallback<string> FilterSiteChanged { get; set; }
+    [Parameter] public string FilterType { get; set; } = "";
+    [Parameter] public EventCallback<string> FilterTypeChanged { get; set; }
+    [Parameter] public string FilterCabinet { get; set; } = "";
+    [Parameter] public EventCallback<string> FilterCabinetChanged { get; set; }
+    [Parameter] public List<Locator> AllLocators { get; set; } = new();
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public EventCallback OnExport { get; set; }
+}

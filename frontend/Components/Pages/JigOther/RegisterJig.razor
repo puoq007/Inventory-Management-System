@@ -1,0 +1,217 @@
+@page "/jigother/register-jig"
+@using shared.Models
+@using System.Net.Http.Json
+@using frontend.Services
+@using Net.Codecrete.QrCodeGenerator
+@using frontend.Components.Shared
+@inject ApiClientService Api
+@inject IJSRuntime JSRuntime
+@inject LanguageService Lang
+@inject frontend.Services.AuthService Auth
+@inject NavigationManager NavManager
+
+<PageTitle>@Lang.T("การจัดการ Jig", "Jigs Management") | Inventory</PageTitle>
+
+<div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-100 mb-2">@Lang.T("การจัดการ Jig", "Jigs Management")</h1>
+        <p class="text-slate-400">@Lang.T("ลงทะเบียนจิ๊กใหม่และดูรายละเอียดทั้งหมดแบบตาราง", "Register and view all jigs in a data table.")</p>
+    </div>
+    
+    <div class="ims-admin-btn-row">
+        @if (_userRole == "Admin" || _userRole == "Engineer")
+        {
+            <label class="cursor-pointer px-5 py-2.5 bg-emerald-700 text-white font-medium text-sm rounded-lg hover:bg-emerald-800 shadow-xl transition-colors ims-btn-action shrink-0">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                @Lang.T("นำเข้าข้อมูล (Excel)", "Import Excel")
+                <InputFile class="hidden" OnChange="UploadFiles" accept=".xlsx, .xls" />
+            </label>
+            <button type="button" @onclick="OpenAddModal" class="px-5 py-2.5 bg-mattel-red text-white font-medium text-sm rounded-lg hover:bg-mattel-hover shadow-xl transition-colors ims-btn-action shrink-0">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                @Lang.T("ลงทะเบียนจิ๊กใหม่", "New Jig")
+            </button>
+        }
+        <button type="button" @onclick='() => OpenExportFilter("csv")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            @Lang.T("ส่งออก CSV", "Export CSV")
+        </button>
+        <button type="button" @onclick='() => OpenExportFilter("pdf")' class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-lg hover:bg-slate-600 shadow-xl transition-colors ims-btn-action shrink-0 border border-slate-600 inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            @Lang.T("ส่งออก PDF", "Export PDF")
+        </button>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(_globalError))
+{
+    <div class="mb-4 p-4 bg-red-900/30 border border-red-900/40 text-red-400 rounded-lg">@_globalError</div>
+}
+
+<div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 mb-8">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <label for="search" class="block text-sm font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                @Lang.T("ค้นหาจิ๊ก", "Search Jigs")
+            </label>
+            <div class="relative group">
+                <input type="text" id="search" @bind="_searchQuery" @bind:event="oninput" @onkeyup="FilterData"
+                       class="block w-full pl-4 pr-10 py-2.5 bg-slate-900 text-slate-200 border border-slate-700 rounded-xl focus:ring-2 focus:ring-mattel-red/20 focus:border-mattel-red focus:bg-slate-800 transition-all sm:text-sm outline-none" 
+                       placeholder="@Lang.T("ค้นหารหัส, Smart Code, Tool No...", "Search ID, Smart Code, Tool No...")" />
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <button @onclick='() => { _searchQuery = ""; FilterData(); }' class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-400">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                }
+            </div>
+        </div>
+        @if (_selectedJigIds.Any())
+        {
+            <div class="flex items-end">
+                <button type="button" @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-xl hover:bg-slate-600 transition-colors inline-flex items-center justify-center gap-2 border border-slate-600 shrink-0 w-full md:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    @Lang.T($"พิมพ์ QR ที่เลือก ({_selectedJigIds.Count})", $"Print QR ({_selectedJigIds.Count})")
+                </button>
+            </div>
+        }
+        <div class="flex items-end gap-3 shrink-0">
+            <PageSizeSelector @bind-PageSize="_pageSize" OnChanged="FilterData" />
+        </div>
+    </div>
+</div>
+
+<div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 max-w-full overflow-hidden min-w-0">
+    <div class="ims-table-scroll">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-900">
+                <tr>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase w-12 shrink-0">
+                        <input type="checkbox" checked="@(_displayJigs.Any() && _displayJigs.All(j => _selectedJigIds.Contains(j.Uid)))" @onchange="ToggleSelectAll" class="w-5 h-5 rounded border-slate-700 text-blue-600 focus:ring-mattel-red cursor-pointer" />
+                    </th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("รหัส JIG", "Jig ID")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ชื่อ Smart Code", "Smart Code Name")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ประเภท / ส่วนประกอบ", "Type / Part")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("สถานะ", "Status")</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase">@Lang.T("ตำแหน่ง", "Locator")</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase">@Lang.T("เครื่องมือ", "Actions")</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+                @if (_isLoading)
+                {
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">Loading...</td></tr>
+                }
+                else if (_displayJigs.Any())
+                {
+                    @foreach (var jig in _displayJigs)
+                    {
+                        <tr class="hover:bg-slate-900 transition-colors cursor-pointer" @onclick="() => ToggleRowSelection(jig.Uid)">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" checked="@_selectedJigIds.Contains(jig.Uid)" class="w-5 h-5 rounded border-slate-700 text-blue-600 focus:ring-mattel-red cursor-pointer" />
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap"><div class="font-mono text-sm font-bold bg-slate-900 px-2 py-1 rounded inline-block">@jig.Id</div></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center gap-3">
+                                    @if (!string.IsNullOrEmpty(jig.ImageUrl))
+                                    {
+                                        <img src="@GetImageSrc(jig.ImageUrl)" alt="@jig.Id" class="w-10 h-10 rounded-lg object-cover border border-slate-700 shadow-xl flex-shrink-0" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        </div>
+                                    }
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium text-slate-300 truncate max-w-xs" title="@jig.SmartCodeName">@(jig.SmartCodeName ?? "-")</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Tool # @(jig.ToolNo ?? "-")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm">@jig.JigType</div>
+                                <div class="text-xs text-slate-400 mt-1">@jig.PartType</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full border @(GetStatusBadgeClass(jig.Status))">
+                                    @Lang.T(GetStatusThai(jig.Status), jig.Status)
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                                @GetLocatorName(jig.LocatorId)
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm" @onclick:stopPropagation="true">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button @onclick="() => PrintQR(jig)" class="text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1" title="Print QR Sticker (2.5cm)">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                                        QR
+                                    </button>
+                                    @if (_userRole == "Admin" || _userRole == "Engineer")
+                                    {
+                                        <button @onclick="() => OpenEditModal(jig)" class="text-blue-400 hover:text-white bg-blue-900/30 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium">@Lang.T("แก้ไข", "Edit")</button>
+                                        <button @onclick="() => DeleteJig(jig)" class="text-red-400 hover:text-white bg-red-900/30 hover:bg-red-800 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium">@Lang.T("ลบ", "Delete")</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">No jigs found</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <Pagination TotalItems="@_totalItems" @bind-CurrentPage="_currentPage" PageSize="@_pageSize" OnChanged="FilterData" />
+</div>
+
+@if (_showModal)
+{
+    <frontend.Components.Pages.JigOther.JigComponents.JigFormModal 
+        EditingJig="_editingJig"
+        IsEditMode="_isEditMode"
+        ModalError="@_modalError"
+        IsSubmitting="_isSubmitting"
+        SmartCodePreview="@GenerateSmartCodePreview()"
+        StepPrintOptions="_stepPrintOptions.ToList()"
+        PartTypeOptions="_partTypeOptions.ToList()"
+        HeightJigOptions="_heightJigOptions.ToList()"
+        JigTypeOptions="_jigTypeOptions.ToList()"
+        ProcessOptions="_processOptions.ToList()"
+        SelectedSteps="_selectedSteps"
+        SelectedDate="SelectedDate"
+        CompatiblePartsModel="_compatiblePartsModel"
+        NewPartInput="@_newPartInput"
+        AllLocators="_allLocators"
+        ImagePreview="@_imagePreview"
+        IsUploadingImage="_isUploadingImage"
+        SaveJig="SaveJig"
+        CloseModal="CloseModal"
+        OnAddStep="AddStep"
+        OnRemoveStep="RemoveStep"
+        OnPartInputChangedEvent="HandlePartInputChanged"
+        OnPartKeyDown="HandlePartKeyDown"
+        OnRemovePartNumber="RemovePartNumber"
+        OnImageSelected="OnImageSelected"
+        RemoveImage="RemoveImage"
+        SelectedDateChanged="HandleDateChanged"
+    />
+}
+
+@if (_showExportFilter)
+{
+    <frontend.Components.Pages.JigOther.JigComponents.JigExportModal 
+        ExportType="@_exportType"
+        @bind-FilterToolNo="_filterToolNo"
+        @bind-FilterJigType="_filterJigType"
+        @bind-FilterPartType="_filterPartType"
+        @bind-FilterStatus="_filterStatus"
+        @bind-FilterDateFrom="_filterDateFrom"
+        @bind-FilterDateTo="_filterDateTo"
+        AllJigs="_allJigs"
+        OnCancel="() => _showExportFilter = false"
+        OnReset="ResetExportFilter"
+        OnExport="RunExport" />
+}

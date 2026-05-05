@@ -7,6 +7,9 @@ using ExcelDataReader;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller จัดการตำแหน่งจัดเก็บจิก — CRUD, เปลี่ยนชื่อ, และนำเข้า Excel
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class LocatorsController : ControllerBase
@@ -18,12 +21,15 @@ public class LocatorsController : ControllerBase
         _context = context;
     }
 
+    /// <summary>ดึงตำแหน่งทั้งหมด</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Locator>>> GetLocators()
     {
         return await _context.Locators.ToListAsync();
     }
 
+    /// <summary>ดึงตำแหน่งตามรหัส</summary>
+    /// <param name="id">รหัสตำแหน่ง</param>
     [HttpGet("{id}")]
     public async Task<ActionResult<Locator>> GetLocator(string id)
     {
@@ -32,6 +38,8 @@ public class LocatorsController : ControllerBase
         return locator;
     }
 
+    /// <summary>สร้างตำแหน่งใหม่ (สิทธิ์ Admin/ProdLead)</summary>
+    /// <param name="locator">ข้อมูลตำแหน่ง</param>
     [HttpPost]
     [Authorize(Roles = "Admin,ProdLead")]
     public async Task<ActionResult<Locator>> PostLocator(Locator locator)
@@ -44,6 +52,9 @@ public class LocatorsController : ControllerBase
         return CreatedAtAction(nameof(GetLocator), new { id = locator.Id }, locator);
     }
 
+    /// <summary>อัปเดตตำแหน่ง</summary>
+    /// <param name="id">รหัสตำแหน่ง</param>
+    /// <param name="locator">ข้อมูลที่อัปเดต</param>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> PutLocator(string id, Locator locator)
@@ -54,9 +65,7 @@ public class LocatorsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>
-    /// Renames a Locator ID: creates new record, migrates PhysicalJig references, then deletes old record.
-    /// </summary>
+    /// <summary>เปลี่ยนชื่อตำแหน่ง — สร้าง record ใหม่, ย้ายข้อมูลจิกที่อ้างอิง, แล้วลบ record เดิม</summary>
     [HttpPost("{oldId}/rename")]
     [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> RenameLocator(string oldId, [FromBody] Locator updatedLocator)
@@ -80,7 +89,7 @@ public class LocatorsController : ControllerBase
         {
             if (newId != oldId)
             {
-                // 1. Create new locator with new ID + updated fields
+                // 1. สร้างตำแหน่งใหม่ด้วย ID ใหม่ + ข้อมูลที่อัปเดต
                 var newLocator = new Locator
                 {
                     Id       = newId,
@@ -93,7 +102,7 @@ public class LocatorsController : ControllerBase
                 _context.Locators.Add(newLocator);
                 await _context.SaveChangesAsync();
 
-                // 2. Delete old locator
+                // 2. ลบตำแหน่งเดิม
                 _context.Locators.Remove(existing);
                 await _context.SaveChangesAsync();
 
@@ -102,7 +111,7 @@ public class LocatorsController : ControllerBase
             }
             else
             {
-                // ID unchanged — just update other fields
+                // ID ไม่เปลี่ยน — อัปเดตเฉพาะข้อมูลอื่น
                 existing.Site     = updatedLocator.Site;
                 existing.Cabinet  = updatedLocator.Cabinet;
                 existing.Shelf    = updatedLocator.Shelf;
@@ -119,6 +128,8 @@ public class LocatorsController : ControllerBase
         }
     }
 
+    /// <summary>ลบตำแหน่ง</summary>
+    /// <param name="id">รหัสตำแหน่งที่ต้องการลบ</param>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin,ProdLead")]
     public async Task<IActionResult> DeleteLocator(string id)
@@ -130,6 +141,8 @@ public class LocatorsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>นำเข้าตำแหน่งจำนวนมากจาก Excel (.xlsx/.xls)</summary>
+    /// <param name="file">ไฟล์ Excel ที่มีข้อมูลตำแหน่ง</param>
     [HttpPost("upload")]
     [Authorize(Roles = "Admin,ProdLead")]
     [RequestSizeLimit(10_000_000)]
@@ -177,7 +190,7 @@ public class LocatorsController : ControllerBase
                     if (string.IsNullOrEmpty(site) || string.IsNullOrEmpty(cabinet) || string.IsNullOrEmpty(shelf))
                         continue;
 
-                    // Map Thai zone names to English
+                    // แปลงชื่อโซนภาษาไทยเป็นอังกฤษ
                     type = type.ToLower() switch {
                         "คลัง" or "store" or "storage" => "Store",
                         "ผลิต" or "production" => "Production",

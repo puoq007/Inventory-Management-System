@@ -1,15 +1,17 @@
 @page "/login"
 @layout AuthLayout
+@using frontend.Services
 @inject NavigationManager NavManager
 @inject AuthService Auth
-@inject HttpClient Http
+@inject ApiClientService Api
+@inject LanguageService Lang
 
 <form @onsubmit="ProcessLogin">
     <div class="mb-6">
-        <label for="employeeid" class="block text-sm font-medium text-slate-300 mb-2">Employee ID</label>
+        <label for="employeeid" class="block text-sm font-medium text-slate-300 mb-2">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
         <div class="relative">
             <input @ref="_employeeIdInput" @bind="_employeeId" @bind:event="oninput" type="text" id="employeeid" inputmode="numeric" pattern="[0-9]*" maxlength="10" 
-                   class="block w-full rounded-xl bg-slate-900 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red sm:text-base py-3 px-4 border transition-colors" placeholder="Enter ID and press Return" />
+                   class="block w-full rounded-xl bg-slate-900 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red sm:text-base py-3 px-4 border transition-colors" placeholder="@Lang.T("กรอกรหัสพนักงาน...", "Enter Employee ID...")" />
             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                 <span class="text-slate-500 text-sm">⏎</span>
             </div>
@@ -20,9 +22,14 @@
 </form>
 
 @code {
+    /// <summary>รหัสพนักงานที่ผู้ใช้กรอก</summary>
     private string _employeeId = "";
+    /// <summary>Reference สำหรับช่องกรอกรหัสพนักงานเพื่อใช้ทำ Focus</summary>
     private ElementReference _employeeIdInput;
 
+    /// <summary>
+    /// ล้างข้อมูลการล็อกอินเดิมและตั้งค่า Focus ไปที่ช่องกรอกรหัสพนักงาน
+    /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -39,24 +46,28 @@
 
 
 
+    /// <summary>
+    /// ประมวลผลการล็อกอินขั้นตอนแรก:
+    /// 1. ถ้าพบ Employee ID ในระบบ -> ไปหน้ากรอกรหัสผ่าน
+    /// 2. ถ้าไม่พบ -> เข้าใช้งานในฐานะ Guest (ไม่ต้องใช้รหัสผ่าน)
+    /// </summary>
     private async Task ProcessLogin()
     {
         // 1. numeric only (max 10) - achieved by HTML attributes and we could validate here
         var numericId = new string(_employeeId.Where(char.IsDigit).ToArray());
         if (numericId.Length == 0) return;
 
-        var response = await Http.GetAsync($"api/users/{numericId}");
+        var response = await Api.GetAsync($"api/users/{numericId}");
         
         if (response.IsSuccessStatusCode)
         {
-            // found -> password required
+            // พบข้อมูลพนักงาน -> ต้องกรอกรหัสผ่านต่อ
             Auth.PendingEmployeeId = numericId;
             NavManager.NavigateTo("/login/password");
         }
         else
         {
-            // not found -> guest -> direct to home
-            // Guest does NOT require password
+            // ไม่พบข้อมูล -> เข้าใช้งานแบบ Guest (ไม่ต้องใช้รหัสผ่าน)
             await Auth.SetAuthAsync(numericId, "Guest", "Guest User");
             NavManager.NavigateTo("/");
         }
