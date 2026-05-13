@@ -225,7 +225,7 @@ public partial class Locators : ComponentBase
         var colShelf  = isThai ? "ชั้น"          : "Shelf";
         var colType   = isThai ? "ประเภท"        : "Type";
         var footer    = isThai
-            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            ? $"แมทเทล กรุงเทพ จำกัด &nbsp;|&nbsp; ระบบจัดการ JIG &nbsp;|&nbsp; {date}"
             : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
 
         var data = GetFilteredExportData().ToList();

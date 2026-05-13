@@ -44,6 +44,8 @@ public partial class ScanOut : ComponentBase
         public DateTime Timestamp { get; set; }
         public bool IsError { get; set; }
         public string ErrorMessage { get; set; } = "";
+        public string? TransactionId { get; set; }
+        public bool IsCancelled { get; set; } = false;
     }
 
     /// <summary>ตรวจสอบสิทธิ์และโหลดรายการตำแหน่ง</summary>
@@ -226,14 +228,19 @@ public partial class ScanOut : ComponentBase
 
                 _successMessage = $"{actionText}: {jigId}";
                 
-                // เพิ่มเข้าประวัติ Session
+                // เพิ่มเข้าประวัติ Session พร้อม TransactionId
+                string? txnId = null;
+                if (responseContent.TryGetProperty("txnId", out var txnIdProp))
+                    txnId = txnIdProp.GetString();
+
                 _sessionHistory.Insert(0, new ScanSessionItem
                 {
                     JigId = jigId,
                     Action = (actionTypeReturned == "Transfer") ? "Transfer" : modeString,
                     Location = destName,
                     Timestamp = DateTime.Now,
-                    IsError = false
+                    IsError = false,
+                    TransactionId = txnId
                 });
 
                 _manualJigId = "";
@@ -336,6 +343,69 @@ public partial class ScanOut : ComponentBase
     {
         if (string.IsNullOrWhiteSpace(val)) return val?.Trim();
         return new string(val.Where(c => !char.IsWhiteSpace(c)).ToArray());
+    }
+
+    private string? _cancellingId = null;
+
+    /// <summary>ยกเลิกรายการที่เพิ่งสแกนจากประวัติ Session</summary>
+    private async Task CancelScanTransaction(ScanSessionItem item)
+    {
+        if (string.IsNullOrEmpty(item.TransactionId) || item.IsCancelled) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction",
+            Lang.T("ยืนยันการยกเลิก?", "Confirm Cancel?"),
+            Lang.T($"ต้องการยกเลิกรายการ {item.JigId} หรือไม่?", $"Cancel transaction for {item.JigId}?"),
+            Lang.T("ยืนยัน", "Yes, Cancel It"),
+            "warning"
+        );
+
+        if (!confirmed) return;
+
+        try
+        {
+            _cancellingId = item.TransactionId;
+            StateHasChanged();
+
+            var response = await Api.PostAsJsonAsync($"api/transactions/cancel/{item.TransactionId}", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                item.IsCancelled = true;
+                _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = Lang.T("ยกเลิกสำเร็จ!", "Cancelled!"),
+                    text = Lang.T($"ยกเลิกรายการ {item.JigId} และกลับสถานะสำเร็จ", $"Transaction for {item.JigId} cancelled and status reverted"),
+                    icon = "success",
+                    timer = 2500,
+                    showConfirmButton = false
+                });
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = Lang.T("ไม่สำเร็จ!", "Error!"),
+                    text = error,
+                    icon = "error",
+                    confirmButtonColor = "#ef4444"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Error",
+                text = ex.Message,
+                icon = "error"
+            });
+        }
+        finally
+        {
+            _cancellingId = null;
+            StateHasChanged();
+        }
     }
 
     public ValueTask DisposeAsync()

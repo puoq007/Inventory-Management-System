@@ -171,3 +171,26 @@ public class Jig
     /// <summary>วันเวลาที่อัปเดตล่าสุด</summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
+
+/// <summary>
+/// Snapshot สถานะจิกก่อนทำรายการ — เก็บค่า Status, Condition, LocatorId ก่อนเปลี่ยนแปลง
+/// เพื่อให้ยกเลิกรายการได้แม่นยำ 100%
+/// </summary>
+public class JigStateSnapshot
+{
+    /// <summary>รหัสอ้างอิง (Primary Key)</summary>
+    [Key]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    /// <summary>รหัสธุรกรรมที่เกี่ยวข้อง — เชื่อมกับ TransactionRow.Id</summary>
+    public string TransactionId { get; set; } = "";
+    /// <summary>รหัสจิกภายใน — เชื่อมกับ Jig.Uid</summary>
+    public string JigUid { get; set; } = "";
+    /// <summary>สถานะจิกก่อนทำรายการ</summary>
+    public string PreviousStatus { get; set; } = "";
+    /// <summary>สภาพจิกก่อนทำรายการ</summary>
+    public string PreviousCondition { get; set; } = "";
+    /// <summary>รหัสตำแหน่งจัดเก็บก่อนทำรายการ</summary>
+    public string? PreviousLocatorId { get; set; }
+    /// <summary>วันเวลาที่บันทึก Snapshot</summary>
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+}

@@ -19,14 +19,23 @@ namespace backend.Controllers
             _context = context;
         }
 
-        /// <summary>ดึงรายการธุรกรรมแบบแบ่งหน้า (Pagination)</summary>
+        /// <summary>ดึงรายการธุรกรรมแบบแบ่งหน้า (Pagination) พร้อมข้อมูลตำแหน่งก่อนหน้าจาก Snapshot</summary>
         [HttpGet]
         public async Task<ActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var query = _context.Transactions.OrderByDescending(t => t.Timestamp);
             var total = await query.CountAsync();
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            return Ok(new { total, page, pageSize, items });
+
+            // ดึง Snapshot เพื่อเอาตำแหน่งก่อนหน้า (Source) เป็น Dictionary<TransactionId, PreviousLocatorId>
+            var txnIds = items.Select(t => t.Id).ToList();
+            var snapshots = await _context.JigStateSnapshots
+                .Where(s => txnIds.Contains(s.TransactionId))
+                .ToListAsync();
+
+            var sources = snapshots.ToDictionary(s => s.TransactionId, s => s.PreviousLocatorId ?? "");
+
+            return Ok(new { total, page, pageSize, items, sources });
         }
 
         /// <summary>สร้างรายการธุรกรรมโดยตรง</summary>
@@ -67,10 +76,7 @@ namespace backend.Controllers
             string actionType = (jig.Status == "InUse") ? "Transfer" : "CheckOut";
             string msg = (actionType == "Transfer") ? "Transferred successfully" : "Checked out successfully";
 
-            jig.Status = "InUse";
-            jig.LocatorId = string.IsNullOrEmpty(request.LocatorId) ? request.Destination : request.LocatorId; 
-            jig.UpdatedAt = DateTime.UtcNow;
-
+            // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
@@ -80,10 +86,24 @@ namespace backend.Controllers
                 Timestamp = DateTime.Now
             };
 
+            var snapshot = new JigStateSnapshot
+            {
+                TransactionId = txn.Id,
+                JigUid = jig.Uid,
+                PreviousStatus = jig.Status,
+                PreviousCondition = jig.Condition,
+                PreviousLocatorId = jig.LocatorId
+            };
+            _context.JigStateSnapshots.Add(snapshot);
+
+            jig.Status = "InUse";
+            jig.LocatorId = string.IsNullOrEmpty(request.LocatorId) ? request.Destination : request.LocatorId; 
+            jig.UpdatedAt = DateTime.UtcNow;
+
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = msg, actionType, jig });
+            return Ok(new { message = msg, actionType, jig, txnId = txn.Id });
         }
 
         /// <summary>ส่งจิกไปล้าง — เปลี่ยนสถานะเป็น Cleaning, สภาพ NeedsCleaning</summary>
@@ -96,11 +116,7 @@ namespace backend.Controllers
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
-            jig.Status = "Cleaning";
-            jig.Condition = "NeedsCleaning";
-            jig.LocatorId = request.LocatorId; // รหัสสถานีล้าง
-            jig.UpdatedAt = DateTime.UtcNow;
-
+            // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
@@ -110,10 +126,25 @@ namespace backend.Controllers
                 Timestamp = DateTime.Now
             };
 
+            var snapshot = new JigStateSnapshot
+            {
+                TransactionId = txn.Id,
+                JigUid = jig.Uid,
+                PreviousStatus = jig.Status,
+                PreviousCondition = jig.Condition,
+                PreviousLocatorId = jig.LocatorId
+            };
+            _context.JigStateSnapshots.Add(snapshot);
+
+            jig.Status = "Cleaning";
+            jig.Condition = "NeedsCleaning";
+            jig.LocatorId = request.LocatorId;
+            jig.UpdatedAt = DateTime.UtcNow;
+
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Checked in to cleaning successfully", jig });
+            return Ok(new { message = "Checked in to cleaning successfully", jig, txnId = txn.Id });
         }
 
         /// <summary>คืนจิกเข้าตู้เก็บ — เปลี่ยนสถานะเป็น Available, สภาพ Good</summary>
@@ -126,11 +157,7 @@ namespace backend.Controllers
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
-            jig.Status = "Available";
-            jig.Condition = "Good";
-            jig.LocatorId = request.LocatorId; // รหัสตำแหน่งจัดเก็บ
-            jig.UpdatedAt = DateTime.UtcNow;
-
+            // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
@@ -140,10 +167,25 @@ namespace backend.Controllers
                 Timestamp = DateTime.Now
             };
 
+            var snapshot = new JigStateSnapshot
+            {
+                TransactionId = txn.Id,
+                JigUid = jig.Uid,
+                PreviousStatus = jig.Status,
+                PreviousCondition = jig.Condition,
+                PreviousLocatorId = jig.LocatorId
+            };
+            _context.JigStateSnapshots.Add(snapshot);
+
+            jig.Status = "Available";
+            jig.Condition = "Good";
+            jig.LocatorId = request.LocatorId;
+            jig.UpdatedAt = DateTime.UtcNow;
+
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Returned to store successfully", jig });
+            return Ok(new { message = "Returned to store successfully", jig, txnId = txn.Id });
         }
 
         /// <summary>โมเดล Request สำหรับการสแกนเบิก/คืน/ล้าง</summary>
@@ -197,10 +239,7 @@ namespace backend.Controllers
                     return BadRequest("Invalid Issue Type");
             }
 
-            jig.Status = newStatus;
-            jig.Condition = newCondition;
-            jig.UpdatedAt = DateTime.UtcNow;
-
+            // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
@@ -210,10 +249,94 @@ namespace backend.Controllers
                 Timestamp = DateTime.Now
             };
 
+            var snapshot = new JigStateSnapshot
+            {
+                TransactionId = txn.Id,
+                JigUid = jig.Uid,
+                PreviousStatus = jig.Status,
+                PreviousCondition = jig.Condition,
+                PreviousLocatorId = jig.LocatorId
+            };
+            _context.JigStateSnapshots.Add(snapshot);
+
+            jig.Status = newStatus;
+            jig.Condition = newCondition;
+            jig.UpdatedAt = DateTime.UtcNow;
+
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Issue reported successfully", jig });
+        }
+
+        /// <summary>
+        /// ยกเลิกรายการธุรกรรม — กลับสถานะจิกจาก Snapshot ที่บันทึกไว้ก่อนทำรายการ
+        /// อนุญาตเฉพาะรายการล่าสุดของจิกตัวนั้นเท่านั้น
+        /// </summary>
+        [HttpPost("cancel/{id}")]
+        public async Task<IActionResult> CancelTransaction(string id)
+        {
+            // 1. ค้นหา Transaction ที่ต้องการยกเลิก
+            var txn = await _context.Transactions.FindAsync(id);
+            if (txn == null) return NotFound("Transaction not found");
+
+            // ไม่อนุญาตให้ยกเลิก CancelTransaction ซ้ำ
+            if (txn.Action == "CancelTransaction")
+                return BadRequest("ไม่สามารถยกเลิกรายการที่เป็น Cancel ได้");
+
+            // 2. ตรวจสอบว่าเป็นรายการล่าสุดของจิกตัวนี้หรือไม่
+            var latestTxn = await _context.Transactions
+                .Where(t => t.JigUid == txn.JigUid && t.Action != "CancelTransaction")
+                .OrderByDescending(t => t.Timestamp)
+                .FirstOrDefaultAsync();
+
+            if (latestTxn == null || latestTxn.Id != id)
+                return BadRequest("สามารถยกเลิกได้เฉพาะรายการล่าสุดของจิกตัวนี้เท่านั้น");
+
+            // 3. ค้นหาจิก
+            var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Uid == txn.JigUid);
+            if (jig == null) return NotFound("Jig not found");
+
+            // 4. ค้นหา Snapshot สถานะก่อนหน้า (แม่นยำ 100%)
+            var snapshot = await _context.JigStateSnapshots
+                .FirstOrDefaultAsync(s => s.TransactionId == id);
+
+            if (snapshot != null)
+            {
+                // กลับสถานะจาก Snapshot — ค่าตรงทุกตัว
+                jig.Status = snapshot.PreviousStatus;
+                jig.Condition = snapshot.PreviousCondition;
+                jig.LocatorId = snapshot.PreviousLocatorId;
+            }
+            else
+            {
+                // Fallback: ไม่มี Snapshot (Transaction เก่าก่อนมีระบบ Snapshot) → กลับเป็น Default
+                jig.Status = "Available";
+                jig.Condition = "Good";
+                jig.LocatorId = null;
+            }
+
+            jig.UpdatedAt = DateTime.UtcNow;
+
+            // 5. สร้าง Transaction ใหม่ประเภท CancelTransaction
+            var cancelTxn = new TransactionRow
+            {
+                JigUid = txn.JigUid,
+                Action = "CancelTransaction",
+                Destination = $"Cancelled: {txn.Action} → {txn.Destination}",
+                User = txn.User,
+                Timestamp = DateTime.Now
+            };
+            _context.Transactions.Add(cancelTxn);
+
+            // 6. ลบ Transaction ที่ถูกยกเลิก + ลบ Snapshot
+            _context.Transactions.Remove(txn);
+            if (snapshot != null)
+                _context.JigStateSnapshots.Remove(snapshot);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "ยกเลิกรายการสำเร็จ", jig, cancelledAction = txn.Action });
         }
 
         /// <summary>ทำความสะอาดข้อมูลธุรกรรมก่อนบันทึก</summary>

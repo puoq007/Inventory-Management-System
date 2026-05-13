@@ -28,11 +28,14 @@ public partial class History : ComponentBase
     private List<TransactionRow> _allTransactions = new();
     private List<Jig> _allJigs = new();
     private List<UserAccount> _allUsers = new();
+    private List<Locator> _allLocators = new();
+    private Dictionary<string, string> _transactionSources = new();
 
     private string _actionFilter = "All";
     private string _roleFilter = "All";
     private bool _showActionFilter = false;
     private bool _showRoleFilter = false;
+    private string? _cancellingId = null;
 
     private DateTime? _exportDateFrom = null;
     private DateTime? _exportDateTo = null;
@@ -95,16 +98,28 @@ public partial class History : ComponentBase
     {
         try
         {
+            // โหลด Transactions, Jigs และ Locators (ทุก Role เข้าถึงได้)
             var txnsTask = Api.GetFromJsonAsync<TransactionPagedResponse>($"api/transactions?page=1&pageSize=500");
             var jigsTask = Api.GetFromJsonAsync<List<Jig>>("api/jigs");
-            var usersTask = Api.GetFromJsonAsync<List<UserAccount>>("api/users");
+            var locsTask = Api.GetFromJsonAsync<List<Locator>>("api/locators");
 
-            await Task.WhenAll(txnsTask, jigsTask, usersTask);
+            await Task.WhenAll(txnsTask, jigsTask, locsTask);
 
             var txnResult = await txnsTask;
             _allTransactions = txnResult?.Items ?? new List<TransactionRow>();
+            _transactionSources = txnResult?.Sources ?? new Dictionary<string, string>();
             _allJigs = await jigsTask ?? new List<Jig>();
-            _allUsers = await usersTask ?? new List<UserAccount>();
+            _allLocators = await locsTask ?? new List<Locator>();
+
+            // โหลด Users แยก — เฉพาะ Admin เท่านั้นที่เข้าถึง api/users ได้
+            try
+            {
+                _allUsers = await Api.GetFromJsonAsync<List<UserAccount>>("api/users") ?? new List<UserAccount>();
+            }
+            catch
+            {
+                _allUsers = new List<UserAccount>();
+            }
 
             FilterData();
         }
@@ -166,8 +181,137 @@ public partial class History : ComponentBase
         "ReportIssue" => "แจ้งพบปัญหา",
         "Scrapped" => "จำหน่ายออก",
         "Transfer" => "โอนย้าย",
+        "CancelTransaction" => "ยกเลิกรายการ",
         _ => action
     };
+
+    /// <summary>ดึงแค่ ID แบบสั้น (GeneratedId) มาแสดง</summary>
+    private string GetLocatorDisplayName(string? destinationOrId)
+    {
+        if (string.IsNullOrEmpty(destinationOrId)) return "";
+        
+        // พยายามหาจาก ID หรือ Name (เพราะข้อมูลเก่าใน DB อาจเก็บเป็นชื่อเต็ม)
+        var loc = _allLocators.FirstOrDefault(l => 
+            l.Id == destinationOrId || 
+            l.Name == destinationOrId || 
+            l.GetGeneratedId() == destinationOrId);
+            
+        if (loc != null) return loc.GetGeneratedId();
+        
+        // ถ้าไม่ตรงกับตาราง Locators เลย ให้แสดงค่าเดิมไปก่อน
+        return destinationOrId;
+    }
+
+    /// <summary>สร้างข้อความแสดงการเปลี่ยนตำแหน่ง เช่น "MBK1-ZONE1 → MBK1-ZONE2"</summary>
+    private string GetLocationChangeText(TransactionRow txn)
+    {
+        if (txn.Action == "CancelTransaction")
+        {
+            // ตัวอย่าง: "Cancelled: CheckOut → MBK1 Cabinet Shelf ZONE3"
+            var dest = txn.Destination;
+            string separator = dest.Contains("→") ? "→" : (dest.Contains("->") ? "->" : null);
+            
+            if (separator != null)
+            {
+                var parts = dest.Split(separator);
+                var actionPart = parts[0].Trim(); 
+                var locPart = parts[1].Trim();
+                
+                var shortLoc = GetLocatorDisplayName(locPart);
+                return $"{actionPart} → {shortLoc}";
+            }
+            return dest;
+        }
+
+        var source = _transactionSources.TryGetValue(txn.Id, out var src) ? src : "";
+        var sourceName = GetLocatorDisplayName(source);
+        var destName = GetLocatorDisplayName(txn.Destination);
+
+        // ถ้า Destination ไม่ใช่ Locator ID → ใช้ค่าเดิม (เช่น "Storage", "Cleaning Station")
+        if (string.IsNullOrEmpty(destName)) destName = txn.Destination;
+
+        if (!string.IsNullOrEmpty(sourceName) && !string.IsNullOrEmpty(destName))
+            return $"{sourceName} → {destName}";
+        if (!string.IsNullOrEmpty(destName))
+            return destName;
+        return "";
+    }
+
+    /// <summary>ตรวจสอบว่า Transaction นี้เป็นรายการล่าสุดของจิกตัวนั้นและสแกนไม่เกิน 30 นาที (ข้าม CancelTransaction)</summary>
+    private bool IsLatestTransaction(TransactionRow txn)
+    {
+        if (txn.Action == "CancelTransaction" || txn.Action == "Scrapped") return false;
+
+        // ตรวจสอบว่ารายการนี้สแกนไม่เกิน 30 นาที
+        if ((DateTime.Now - txn.Timestamp).TotalMinutes > 30) return false;
+
+        var latest = _allTransactions
+            .Where(t => t.JigUid == txn.JigUid && t.Action != "CancelTransaction")
+            .OrderByDescending(t => t.Timestamp)
+            .FirstOrDefault();
+        return latest != null && latest.Id == txn.Id;
+    }
+
+    /// <summary>ยกเลิกรายการธุรกรรม — เรียก API แล้วรีโหลดข้อมูล</summary>
+    private async Task CancelTransaction(string transactionId)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction",
+            Lang.T("ยืนยันการยกเลิก?", "Confirm Cancel?"),
+            Lang.T("ต้องการยกเลิกรายการนี้และกลับสถานะจิกไปยังสถานะก่อนหน้าหรือไม่?", "Do you want to cancel this transaction and revert the jig to its previous state?"),
+            Lang.T("ยืนยัน ยกเลิกรายการ", "Yes, Cancel It"),
+            "warning"
+        );
+
+        if (!confirmed) return;
+
+        try
+        {
+            _cancellingId = transactionId;
+            StateHasChanged();
+
+            var response = await Api.PostAsJsonAsync($"api/transactions/cancel/{transactionId}", new { });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = Lang.T("สำเร็จ!", "Success!"),
+                    text = Lang.T("ยกเลิกรายการและกลับสถานะจิกสำเร็จ", "Transaction cancelled and jig status reverted successfully"),
+                    icon = "success",
+                    timer = 2500,
+                    showConfirmButton = false
+                });
+
+                // รีโหลดข้อมูลทั้งหมด
+                await LoadData();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = Lang.T("ไม่สำเร็จ!", "Error!"),
+                    text = error,
+                    icon = "error",
+                    confirmButtonColor = "#ef4444"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Error",
+                text = ex.Message,
+                icon = "error"
+            });
+        }
+        finally
+        {
+            _cancellingId = null;
+            StateHasChanged();
+        }
+    }
 
     /// <summary>สร้าง HTML Report แล้ว Export เป็น PDF — รองรับตัวกรองช่วงวันที่</summary>
     private async Task ExportPdf()
@@ -208,7 +352,8 @@ public partial class History : ComponentBase
                 "Transfer"          => "badge-purple",
                 _                   => "badge-gray"
             };
-            return $"<tr><td>{timeStr}</td><td><strong>{jigId}</strong></td><td>{specName}</td><td><span class='badge {badgeClass}'>{actionLabel}</span></td><td>{txn.User}</td></tr>";
+            var locText = GetLocationChangeText(txn);
+            return $"<tr><td>{timeStr}</td><td><strong>{jigId}</strong></td><td>{specName}</td><td><span class='badge {badgeClass}'>{actionLabel}</span></td><td>{locText}</td><td>{txn.User}</td></tr>";
         }));
 
         // ค่า Label ตามภาษา
@@ -219,9 +364,10 @@ public partial class History : ComponentBase
         var colJigId    = isThai ? "รหัสจิก"     : "Jig ID";
         var colSpec     = isThai ? "ชื่อ Smart Code" : "Smart Code Name";
         var colAction   = isThai ? "การดำเนินการ" : "Action";
+        var colLoc      = isThai ? "ตำแหน่ง"     : "Location";
         var colUser     = isThai ? "ผู้ใช้งาน"   : "User";
         var footer      = isThai
-            ? $"แมทเทล แบงคอก จำกัด &nbsp;|&nbsp; ระบบจัดการจิก &nbsp;|&nbsp; {date}"
+            ? $"แมทเทล กรุงเทพ จำกัด &nbsp;|&nbsp; ระบบจัดการ JIG &nbsp;|&nbsp; {date}"
             : $"Mattel Bangkok Limited &nbsp;|&nbsp; Jig Inventory Management System &nbsp;|&nbsp; {date}";
 
         var html = $@"
@@ -243,6 +389,7 @@ public partial class History : ComponentBase
       <th>{colJigId}</th>
       <th>{colSpec}</th>
       <th>{colAction}</th>
+      <th>{colLoc}</th>
       <th>{colUser}</th>
     </tr>
   </thead>
@@ -259,8 +406,8 @@ public partial class History : ComponentBase
     {
         var isThai = Lang.Current == "TH";
         var headers = isThai
-            ? "วันเวลา,รหัสจิก,Smart Code,การดำเนินการ,ผู้ใช้งาน"
-            : "Timestamp,Jig ID,Smart Code,Action,User";
+            ? "วันเวลา,รหัสจิก,Smart Code,การดำเนินการ,ตำแหน่ง,ผู้ใช้งาน"
+            : "Timestamp,Jig ID,Smart Code,Action,Location,User";
 
         var exportData = _allTransactions.AsEnumerable();
         if (_exportDateFrom.HasValue) exportData = exportData.Where(t => t.Timestamp.Date >= _exportDateFrom.Value.Date);
@@ -273,7 +420,8 @@ public partial class History : ComponentBase
             var jigId = jig?.Id ?? txn.JigUid;
             var specName = jig?.SmartCodeName ?? "";
             var actionLabel = isThai ? GetActionThai(txn.Action) : txn.Action;
-            return $"\"{txn.Timestamp:dd/MM/yyyy HH:mm:ss}\",\"{T(jigId)}\",\"{specName}\",\"{actionLabel}\",\"{txn.User}\"";
+            var locText = GetLocationChangeText(txn);
+            return $"\"{txn.Timestamp:dd/MM/yyyy HH:mm:ss}\",\"{T(jigId)}\",\"{specName}\",\"{actionLabel}\",\"{locText}\",\"{txn.User}\"";
         });
 
         var csv = headers + "\n" + string.Join("\n", rows);
@@ -295,13 +443,14 @@ public partial class History : ComponentBase
         }
     }
 
-    /// <summary>โมเดลสำหรับรับผลลัพธ์รายการธุรกรรมแบบแบ่งหน้า</summary>
+    /// <summary>โมเดลสำหรับรับผลลัพธ์รายการธุรกรรมแบบแบ่งหน้า พร้อม Source</summary>
     private class TransactionPagedResponse
     {
         public int Total { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }
         public List<TransactionRow> Items { get; set; } = new();
+        public Dictionary<string, string> Sources { get; set; } = new();
     }
 
 }

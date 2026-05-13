@@ -23,6 +23,8 @@ public class AppDbContext : DbContext
     public DbSet<PartMaster> PartMasters { get; set; } = null!;
     /// <summary>ตารางเชื่อมจิก-ชิ้นส่วน (Many-to-Many)</summary>
     public DbSet<JigPartMapping> JigPartMappings { get; set; } = null!;
+    /// <summary>ตาราง Snapshot สถานะจิกก่อนทำรายการ — ใช้สำหรับยกเลิกรายการ</summary>
+    public DbSet<JigStateSnapshot> JigStateSnapshots { get; set; } = null!;
 
 
     /// <summary>
@@ -43,6 +45,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<JigPartMapping>().HasKey(m => m.Id);
         modelBuilder.Entity<JigPartMapping>().HasIndex(m => new { m.ToolNo, m.PartNumber }).IsUnique();
 
+        modelBuilder.Entity<JigStateSnapshot>().HasKey(s => s.Id);
+        modelBuilder.Entity<JigStateSnapshot>().HasIndex(s => s.TransactionId);
 
     }
 }
