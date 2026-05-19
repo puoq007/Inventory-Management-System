@@ -67,3 +67,272 @@ html {
 label.ims-btn-action {
   margin-bottom: 0;
 }
+
+/* ============================================================
+   THEME TOGGLE: Light Theme (ทีมขาว) overrides
+   Applied via .theme-light on <html> element by ThemeService
+   ============================================================ */
+.theme-light {
+  color-scheme: light;
+}
+
+/* --- Main background surfaces --- */
+.theme-light .min-h-\[100dvh\].bg-slate-900,
+.theme-light .min-h-screen.bg-slate-900 {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #1e293b !important; /* slate-800 */
+}
+
+/* Navbar */
+.theme-light nav.bg-slate-800 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important; /* slate-200 */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+/* --- Cards, dropdowns, modals --- */
+.theme-light .bg-slate-900 {
+  background-color: #f8fafc !important; /* slate-50 */
+}
+.theme-light .bg-slate-800 {
+  background-color: #ffffff !important;
+}
+.theme-light .bg-slate-700 {
+  background-color: #f1f5f9 !important; /* slate-100 */
+}
+.theme-light .bg-slate-900\/40,
+.theme-light .bg-slate-900\/50,
+.theme-light .bg-slate-900\/80,
+.theme-light .bg-slate-800\/50 {
+  background-color: #e2e8f0 !important; /* slate-200 */
+}
+
+/* Active NavLink specific override for Light Mode */
+.theme-light nav .bg-slate-900\/50,
+.theme-light nav .bg-slate-900 {
+  background-color: #e2e8f0 !important; /* Highlight background for active tab */
+  color: #0f172a !important; /* High contrast black text */
+  font-weight: 700 !important; /* Make it BOLD */
+}
+
+/* --- Borders --- */
+.theme-light .border-slate-700,
+.theme-light .border-slate-700\/50 {
+  border-color: #e2e8f0 !important; /* slate-200 */
+}
+.theme-light .border-slate-800 {
+  border-color: #cbd5e1 !important; /* slate-300 */
+}
+
+/* --- Hover backgrounds --- */
+.theme-light .hover\:bg-slate-700:hover,
+.theme-light .hover\:bg-slate-800:hover,
+.theme-light .hover\:bg-slate-900:hover {
+  background-color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* --- Text colors --- */
+.theme-light .text-slate-100 { color: #0f172a !important; } /* 900 */
+.theme-light .text-slate-200 { color: #0f172a !important; } /* 900 */
+.theme-light .text-slate-300 { color: #1e293b !important; } /* 800 */
+.theme-light .text-slate-400 { color: #334155 !important; } /* 700 */
+.theme-light .text-slate-500 { color: #475569 !important; } /* 600 */
+.theme-light .text-slate-700 { color: #64748b !important; } /* 500 */
+
+/* --- Accent text colors (Darker for light background) --- */
+.theme-light .text-blue-400, .theme-light .text-blue-500 { color: #1d4ed8 !important; } /* blue-700 */
+.theme-light .text-emerald-400, .theme-light .text-emerald-500 { color: #047857 !important; } /* emerald-700 */
+.theme-light .text-rose-400, .theme-light .text-rose-500 { color: #be123c !important; } /* rose-700 */
+.theme-light .text-purple-400, .theme-light .text-purple-500 { color: #6d28d9 !important; } /* purple-700 */
+.theme-light .text-amber-400, .theme-light .text-amber-500 { color: #b45309 !important; } /* amber-700 */
+.theme-light .text-red-400, .theme-light .text-red-500 { color: #b91c1c !important; } /* red-700 */
+.theme-light .text-indigo-400, .theme-light .text-indigo-500 { color: #4338ca !important; } /* indigo-700 */
+
+/* --- Accent backgrounds (Lighter for badges) --- */
+.theme-light .bg-blue-900\/30, .theme-light .bg-blue-900\/40 { background-color: #dbeafe !important; } /* blue-100 */
+.theme-light .bg-emerald-900\/30, .theme-light .bg-emerald-900\/40 { background-color: #d1fae5 !important; } /* emerald-100 */
+.theme-light .bg-rose-900\/30, .theme-light .bg-rose-900\/40 { background-color: #ffe4e6 !important; } /* rose-100 */
+.theme-light .bg-purple-900\/30, .theme-light .bg-purple-900\/40 { background-color: #f3e8ff !important; } /* purple-100 */
+.theme-light .bg-purple-900\/50 { background-color: #e9d5ff !important; } /* purple-200 */
+.theme-light .bg-amber-900\/30, .theme-light .bg-amber-900\/40 { background-color: #fef3c7 !important; } /* amber-100 */
+.theme-light .bg-red-900\/30, .theme-light .bg-red-900\/40 { background-color: #fee2e2 !important; } /* red-100 */
+.theme-light .bg-indigo-900\/50 { background-color: #e0e7ff !important; } /* indigo-100 */
+
+/* --- Accent borders (For hover states and cards) --- */
+.theme-light .border-red-900\/40 { border-color: #fca5a5 !important; } /* red-300 */
+.theme-light .border-blue-900\/40 { border-color: #bfdbfe !important; } /* blue-300 */
+.theme-light .border-emerald-900\/40 { border-color: #a7f3d0 !important; } /* emerald-300 */
+.theme-light .border-rose-900\/40 { border-color: #fecdd3 !important; } /* rose-300 */
+.theme-light .border-purple-900\/40 { border-color: #e9d5ff !important; } /* purple-300 */
+.theme-light .border-amber-900\/40 { border-color: #fde68a !important; } /* amber-300 */
+
+.theme-light .hover\:border-blue-800:hover { border-color: #3b82f6 !important; } /* blue-500 */
+.theme-light .hover\:border-emerald-800:hover { border-color: #10b981 !important; } /* emerald-500 */
+.theme-light .hover\:border-rose-800:hover { border-color: #f43f5e !important; } /* rose-500 */
+
+/* White text on colored bg (keep readable) */
+.theme-light .bg-mattel-red .text-white,
+.theme-light button.bg-mattel-red,
+.theme-light a.bg-mattel-red,
+.theme-light label.bg-emerald-700,
+.theme-light button.bg-emerald-700 {
+  color: #ffffff !important;
+}
+/* Ensure icons inside these buttons stay white */
+.theme-light label.bg-emerald-700 *,
+.theme-light button.bg-emerald-700 * {
+  color: #ffffff !important;
+}
+
+/* --- THEME SWITCHER TOGGLE --- */
+.theme-light .hover\:bg-slate-700:hover  { background-color: #f1f5f9 !important; }
+.theme-light .hover\:bg-slate-800:hover  { background-color: #e2e8f0 !important; }
+.theme-light .hover\:bg-slate-900:hover  { background-color: #cbd5e1 !important; }
+.theme-light .hover\:text-white:hover    { color: #0f172a !important; }
+
+/* Active nav link underline stays Mattel Red — no change needed */
+
+/* --- Input fields --- */
+.theme-light input.bg-slate-900,
+.theme-light select.bg-slate-900,
+.theme-light textarea.bg-slate-900 {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* --- Login page card --- */
+.theme-light .bg-slate-900.flex.flex-col.justify-center,
+.theme-light .min-h-screen.bg-slate-900.flex {
+  background-color: #f1f5f9 !important;
+}
+
+/* --- Dividers --- */
+.theme-light .divide-slate-700 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+/* --- Session warning banner stays amber — no change needed --- */
+
+/* ============================================================
+   THEME TOGGLE SWITCH — redesigned
+   Single animated toggle switch with icon + label
+   ============================================================ */
+
+/* --- Wrapper used by AuthLayout (fixed position) --- */
+.theme-switcher-wrap {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 100;
+}
+
+/* --- The toggle switch itself --- */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Icon label (🌙 / ☀️) */
+.theme-switch__icon {
+  font-size: 15px;
+  line-height: 1;
+  transition: opacity 0.2s ease, transform 0.3s ease;
+  display: block;
+}
+
+/* The track (pill shape) */
+.theme-switch__track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #334155;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: background 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
+}
+.theme-light .theme-switch__track {
+  background: #bfdbfe; /* blue-200 */
+  border-color: #93c5fd; /* blue-300 */
+}
+
+/* The knob (circle) */
+.theme-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+}
+/* When Light theme is active — knob slides to right */
+.theme-switch--light .theme-switch__track::after {
+  transform: translateX(20px);
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Text label next to switch */
+.theme-switch__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+  min-width: 30px;
+}
+.theme-light .theme-switch__label {
+  color: #475569;
+}
+
+/* Frosted glass backdrop for the auth page toggle */
+.theme-switcher-wrap .theme-switch-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 10px;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.theme-light .theme-switcher-wrap .theme-switch-card {
+  background: rgba(255,255,255,0.75);
+  border-color: rgba(148,163,184,0.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* Navbar inline variant (no frosted card) */
+.theme-switch--navbar {
+  gap: 6px;
+}
+.theme-switch--navbar .theme-switch__track {
+  width: 38px;
+  height: 20px;
+}
+.theme-switch--navbar .theme-switch__track::after {
+  width: 14px;
+  height: 14px;
+}
+.theme-switch--navbar.theme-switch--light .theme-switch__track::after {
+  transform: translateX(18px);
+}
+

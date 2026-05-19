@@ -1,8 +1,24 @@
 @inherits LayoutComponentBase
 @inject LanguageService Lang
+@inject ThemeService Theme
 @using frontend.Services
+@implements IDisposable
 
 <div class="min-h-screen bg-slate-900 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+
+    <!-- Theme Toggle — fixed top right (position controlled via CSS .theme-switcher-wrap) -->
+    <div class="theme-switcher-wrap" style="position:fixed;top:1.25rem;right:1.25rem;z-index:100;">
+        <div class="theme-switch-card">
+            <span class="theme-switch__icon">@(Theme.IsLight ? "☀️" : "🌙")</span>
+            <div class="theme-switch @(Theme.IsLight ? "theme-switch--light" : "")"
+                 @onclick="Theme.ToggleTheme"
+                 title="@Lang.T("สลับธีม", "Toggle theme")">
+                <div class="theme-switch__track"></div>
+            </div>
+            <span class="theme-switch__label">@Lang.T(Theme.IsLight ? "ขาว" : "ดำ", Theme.IsLight ? "Light" : "Dark")</span>
+        </div>
+    </div>
+
     <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-700">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-extrabold text-slate-100 tracking-tight">
@@ -10,7 +26,29 @@
             </h1>
             <p class="mt-2 text-sm text-slate-400">@Lang.T("เข้าสู่ระบบเพื่อใช้งาน", "Sign in to your account")</p>
         </div>
-        
+
         @Body
     </div>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += StateHasChanged;
+        Theme.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Theme.InitializeAsync();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= StateHasChanged;
+        Theme.OnChange -= StateHasChanged;
+    }
+}
+

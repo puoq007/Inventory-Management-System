@@ -11,5 +11,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ApiClientService>();
 builder.Services.AddScoped<LanguageService>();
+builder.Services.AddScoped<ThemeService>();
+
 
 await builder.Build().RunAsync();

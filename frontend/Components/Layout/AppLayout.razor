@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
 @inject LanguageService Lang
+@inject ThemeService Theme
 @implements IDisposable
 @using frontend.Services
 @inject AuthService Auth
@@ -20,19 +21,19 @@
 
                     <!-- Desktop Navigation Links -->
                     <div class="hidden md:flex items-center space-x-2 h-full">
-                        <NavLink class="inline-flex items-center px-5 py-3 text-[20px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/" Match="NavLinkMatch.All">@Lang.T("แดชบอร์ด", "Dashboard")</NavLink>
-                        <NavLink class="inline-flex items-center px-5 py-3 text-[20px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/current-status">@Lang.T("สถานะปัจจุบัน", "Current Status")</NavLink>
+                        <NavLink class="inline-flex items-center px-5 py-3 text-base font-medium border-b-2 border-transparent text-slate-200 hover:text-white transition-colors h-full" ActiveClass="!font-bold !border-mattel-red text-white bg-slate-900/50" href="/" Match="NavLinkMatch.All">@Lang.T("แดชบอร์ด", "Dashboard")</NavLink>
+                        <NavLink class="inline-flex items-center px-5 py-3 text-base font-medium border-b-2 border-transparent text-slate-200 hover:text-white transition-colors h-full" ActiveClass="!font-bold !border-mattel-red text-white bg-slate-900/50" href="/current-status">@Lang.T("สถานะปัจจุบัน", "Current Status")</NavLink>
                         @if (_role == "Admin" || _role == "ProdLead" || _role == "Operator") {
-                            <NavLink class="inline-flex items-center px-5 py-3 text-[20px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/scan-out">@Lang.T("เบิก/คืนจิก", "Scan In/Out")</NavLink>
+                            <NavLink class="inline-flex items-center px-5 py-3 text-base font-medium border-b-2 border-transparent text-slate-200 hover:text-white transition-colors h-full" ActiveClass="!font-bold !border-mattel-red text-white bg-slate-900/50" href="/scan-out">@Lang.T("เบิก/คืน", "Scan In/Out")</NavLink>
                         }
                         @if (_role != "Guest") {
-                            <NavLink class="inline-flex items-center px-5 py-3 text-[20px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full" ActiveClass="!border-mattel-red text-white bg-slate-900/50" href="/history">@Lang.T("ประวัติการใช้งาน", "History")</NavLink>
+                            <NavLink class="inline-flex items-center px-5 py-3 text-base font-medium border-b-2 border-transparent text-slate-200 hover:text-white transition-colors h-full" ActiveClass="!font-bold !border-mattel-red text-white bg-slate-900/50" href="/history">@Lang.T("ประวัติการใช้งาน", "History")</NavLink>
                         }
 
                         @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
                         {
                             <div class="relative h-full flex items-center" @onmouseenter="() => _isManagementMenuOpen = true" @onmouseleave="() => _isManagementMenuOpen = false">
-                                <button class="inline-flex items-center px-5 py-3 text-[20px] font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full @(_isManagementMenuOpen ? "text-white !border-mattel-red bg-slate-900/50" : "")">
+                                <button class="inline-flex items-center px-5 py-3 text-base font-medium border-b-2 border-transparent text-slate-300 hover:text-white transition-colors h-full @(_isManagementMenuOpen ? "text-white !border-mattel-red bg-slate-900/50" : "")">
                                     @Lang.T("การจัดการ", "Management")
                                     <svg class="ml-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
@@ -41,12 +42,12 @@
                                     <div class="absolute top-full left-0 bg-slate-800 border-x border-b border-slate-700 rounded-b-lg shadow-xl py-2 z-50 whitespace-nowrap">
                                         @if (_role == "Admin")
                                         {
-                                            <NavLink class="block px-5 py-2.5 text-[20px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/users">@Lang.T("จัดการผู้ใช้งาน", "User Management")</NavLink>
+                                            <NavLink class="block px-5 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/users">@Lang.T("การจัดการผู้ใช้งาน", "User Management")</NavLink>
                                         }
                                         @if (_role == "Admin" || _role == "Engineer" || _role == "ProdLead")
                                         {
-                                            <NavLink class="block px-5 py-2.5 text-[20px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/register-jig">@Lang.T("จัดการจิก", "Jigs Management")</NavLink>
-                                            <NavLink class="block px-5 py-2.5 text-[20px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/locators">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</NavLink>
+                                            <NavLink class="block px-5 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/register-jig">@Lang.T("การจัดการจิ๊ก", "Jigs Management")</NavLink>
+                                            <NavLink class="block px-5 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors" ActiveClass="font-bold text-mattel-red bg-slate-900/50" href="/jigother/locators">@Lang.T("ตำแหน่งจัดเก็บ", "Locators")</NavLink>
                                         }
                                     </div>
                                 }
@@ -58,6 +59,15 @@
                 <!-- Right: Icons, Profile, Language -->
                 <div class="hidden md:flex items-center space-x-6 h-full">
                     
+                    <!-- Theme Toggle Switch (Desktop) -->
+                    <div class="theme-switch theme-switch--navbar @(Theme.IsLight ? "theme-switch--light" : "")"
+                         @onclick="Theme.ToggleTheme"
+                         title="@Lang.T("สลับธีม", "Toggle theme")">
+                        <span class="theme-switch__icon">@(Theme.IsLight ? "☀️" : "🌙")</span>
+                        <div class="theme-switch__track"></div>
+                        <span class="theme-switch__label">@Lang.T(Theme.IsLight ? "ขาว" : "ดำ", Theme.IsLight ? "Light" : "Dark")</span>
+                    </div>
+
                     <div class="flex items-center space-x-2 text-[13px] uppercase tracking-wider font-bold">
                         <button @onclick='() => Lang.SetLanguage("EN")' 
                                 class='transition-colors px-1 @(Lang.Current == "EN" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
@@ -110,6 +120,13 @@
                                 class='transition-colors px-1.5 py-1 @(Lang.Current == "TH" ? "text-mattel-red" : "text-slate-500 hover:text-slate-300")'>
                             TH
                         </button>
+                    </div>
+                    <!-- Mobile: Theme Toggle Switch -->
+                    <div class="theme-switch theme-switch--navbar @(Theme.IsLight ? "theme-switch--light" : "")"
+                         @onclick="Theme.ToggleTheme"
+                         title="@Lang.T("สลับธีม", "Toggle theme")">
+                        <span class="theme-switch__icon">@(Theme.IsLight ? "☀️" : "🌙")</span>
+                        <div class="theme-switch__track"></div>
                     </div>
                     <button @onclick="ToggleMenu" class="p-2 text-slate-300 focus:outline-none hover:bg-slate-700 rounded transition duration-200">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -206,6 +223,7 @@
     protected override void OnInitialized()
     {
         Lang.OnChange += StateHasChanged;
+        Theme.OnChange += StateHasChanged;
         // Check token expiry every 60 seconds
         _sessionTimer = new System.Threading.Timer(async _ =>
         {
@@ -252,6 +270,7 @@
     public void Dispose()
     {
         Lang.OnChange -= StateHasChanged;
+        Theme.OnChange -= StateHasChanged;
         _sessionTimer?.Dispose();
     }
 
@@ -279,6 +298,7 @@
             }
 
             await Lang.InitializeAsync();
+            await Theme.InitializeAsync();
         }
         catch
         {

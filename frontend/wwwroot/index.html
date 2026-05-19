@@ -8,7 +8,7 @@
     <base href="/" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css?v=1772814275" />
-    <link rel="stylesheet" href="css/layout-responsive.css" />
+    <link rel="stylesheet" href="css/layout-responsive.css?v=4" />
     <link rel="icon" type="image/png" href="images/mattel.png" />
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -29,18 +29,30 @@
             padding: 1rem;
         }
         #blazor-error-ui {
-            display: none;
-            position: fixed;
+            background: lightyellow;
             bottom: 0;
+            box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+            display: none;
             left: 0;
-            right: 0;
-            z-index: 9999;
-            background: #7f1d1d;
-            color: #fecaca;
-            padding: 0.75rem 1rem;
-            text-align: center;
-            font-family: system-ui, sans-serif;
-            font-size: 0.875rem;
+            padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+        #blazor-error-ui .dismiss {
+            cursor: pointer;
+            position: absolute;
+            right: 0.75rem;
+            top: 0.5rem;
+        }
+        /* Mobile-friendly blazor error UI */
+        @media (max-width: 640px) {
+            #blazor-error-ui {
+                padding: 0.75rem 1rem;
+                text-align: center;
+                font-family: system-ui, sans-serif;
+                font-size: 0.875rem;
+            }
         }
         #blazor-error-ui.visible { display: block; }
 
@@ -52,6 +64,65 @@
         input[type="password"]::-webkit-credentials-auto-fill-button {
             display: none;
         }
+
+        /* LIGHT THEME OVERRIDES (Injected to bypass cache) */
+        .theme-light body, .theme-light .min-h-screen.bg-slate-900, .theme-light .min-h-\[100dvh\].bg-slate-900 { background-color: #f1f5f9 !important; color: #1e293b !important; }
+        .theme-light .bg-slate-900 { background-color: #f8fafc !important; }
+        .theme-light .bg-slate-800 { background-color: #ffffff !important; }
+        .theme-light nav.bg-slate-800 { background-color: #ffffff !important; border-color: #e2e8f0 !important; }
+        
+        .theme-light .text-slate-100 { color: #0f172a !important; }
+        .theme-light .text-slate-200 { color: #0f172a !important; }
+        .theme-light .text-slate-300 { color: #1e293b !important; }
+        .theme-light .text-slate-400 { color: #334155 !important; }
+        .theme-light .text-slate-500 { color: #475569 !important; }
+        .theme-light .text-slate-700 { color: #64748b !important; }
+        
+        .theme-light .text-blue-400, .theme-light .text-blue-500 { color: #1d4ed8 !important; }
+        .theme-light .text-emerald-400, .theme-light .text-emerald-500 { color: #047857 !important; }
+        .theme-light .text-rose-400, .theme-light .text-rose-500 { color: #be123c !important; }
+        .theme-light .text-purple-400, .theme-light .text-purple-500 { color: #6d28d9 !important; }
+        .theme-light .text-amber-400, .theme-light .text-amber-500 { color: #b45309 !important; }
+        .theme-light .text-red-400, .theme-light .text-red-500 { color: #b91c1c !important; }
+        .theme-light .text-indigo-400, .theme-light .text-indigo-500 { color: #4338ca !important; }
+        
+        .theme-light .bg-blue-900\/30, .theme-light .bg-blue-900\/40 { background-color: #dbeafe !important; }
+        .theme-light .bg-emerald-900\/30, .theme-light .bg-emerald-900\/40 { background-color: #d1fae5 !important; }
+        .theme-light .bg-rose-900\/30, .theme-light .bg-rose-900\/40 { background-color: #ffe4e6 !important; }
+        .theme-light .bg-purple-900\/30, .theme-light .bg-purple-900\/40 { background-color: #f3e8ff !important; }
+        .theme-light .bg-purple-900\/50 { background-color: #e9d5ff !important; }
+        .theme-light .bg-amber-900\/30, .theme-light .bg-amber-900\/40 { background-color: #fef3c7 !important; }
+        .theme-light .bg-red-900\/30, .theme-light .bg-red-900\/40 { background-color: #fee2e2 !important; }
+        .theme-light .bg-indigo-900\/50 { background-color: #e0e7ff !important; }
+        
+        .theme-light .hover\:bg-slate-700:hover, .theme-light .hover\:bg-slate-800:hover, .theme-light .hover\:bg-slate-900:hover { background-color: #f1f5f9 !important; }
+        
+        .theme-light .border-red-900\/40 { border-color: #fca5a5 !important; }
+        .theme-light .border-blue-900\/40 { border-color: #bfdbfe !important; }
+        .theme-light .border-emerald-900\/40 { border-color: #a7f3d0 !important; }
+        .theme-light .border-rose-900\/40 { border-color: #fecdd3 !important; }
+        .theme-light .border-purple-900\/40 { border-color: #e9d5ff !important; }
+        .theme-light .border-amber-900\/40 { border-color: #fde68a !important; }
+        
+        .theme-light label.bg-emerald-700, .theme-light button.bg-emerald-700 { color: #ffffff !important; }
+        .theme-light label.bg-emerald-700 *, .theme-light button.bg-emerald-700 * { color: #ffffff !important; }
+        
+        /* THEME TOGGLE SWITCH */
+        .theme-switcher-wrap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 100; }
+        .theme-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+        .theme-switch__icon { font-size: 15px; line-height: 1; transition: opacity 0.2s, transform 0.3s; display: block; }
+        .theme-switch__track { position: relative; width: 44px; height: 24px; background: #334155; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); transition: 0.3s; flex-shrink: 0; }
+        .theme-light .theme-switch__track { background: #bfdbfe; border-color: #93c5fd; }
+        .theme-switch__track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #94a3b8; box-shadow: 0 1px 3px rgba(0,0,0,0.4); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s; }
+        .theme-switch--light .theme-switch__track::after { transform: translateX(20px); background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+        .theme-switch__label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; transition: 0.2s; white-space: nowrap; min-width: 30px; }
+        .theme-light .theme-switch__label { color: #475569; }
+        .theme-switcher-wrap .theme-switch-card { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 10px; background: rgba(15,23,42,0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); transition: 0.3s; }
+        .theme-light .theme-switcher-wrap .theme-switch-card { background: rgba(255,255,255,0.75); border-color: rgba(148,163,184,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .theme-switch--navbar { gap: 6px; }
+        .theme-switch--navbar .theme-switch__track { width: 38px; height: 20px; }
+        .theme-switch--navbar .theme-switch__track::after { width: 14px; height: 14px; }
+        .theme-switch--navbar.theme-switch--light .theme-switch__track::after { transform: translateX(18px); }
     </style>
 </head>
 
