@@ -12,3 +12,5 @@
 appsettings.*.json
 
 db_backup/
+
+.fake

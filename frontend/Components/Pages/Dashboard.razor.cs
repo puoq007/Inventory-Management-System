@@ -19,6 +19,8 @@ public partial class Dashboard : ComponentBase
 
     private string _role = "";
     private bool _isLoading = true;
+    private bool _isRendered = false;
+    private bool _needsChartRefresh = false;
     private int _totalJigs = 0;
     private int _availableJigs = 0;
     private int _inUseCount = 0;
@@ -40,12 +42,14 @@ public partial class Dashboard : ComponentBase
 
 
     /// <summary>อัปเดต UI และ Chart เมื่อเปลี่ยนภาษา</summary>
-    private async void OnLanguageChanged()
+    private void OnLanguageChanged()
     {
-        await InvokeAsync(async () =>
+        InvokeAsync(() =>
         {
-            StateHasChanged();
-            await RenderChart();
+            // ถ้า Chart ถูก render แล้ว ให้ตั้ง flag เพื่อให้ OnAfterRenderAsync จัดการ re-render Chart
+            if (_isRendered)
+                _needsChartRefresh = true;
+            StateHasChanged(); // Triggers OnAfterRenderAsync → canvas is guaranteed in DOM there
         });
     }
 
@@ -76,8 +80,20 @@ public partial class Dashboard : ComponentBase
             await LoadData();
             _isLoading = false;
             StateHasChanged();
-            
-            await Task.Delay(100);
+            // ไม่ต้อง render Chart ที่นี่ — รอ OnAfterRenderAsync รอบถัดไป
+            // (หลัง StateHasChanged() Blazor จะ render DOM ใหม่ แล้วเรียก OnAfterRenderAsync อีกครั้ง
+            //  ตอนนั้น canvas จึงอยู่ใน DOM แน่นอน)
+        }
+        else if (!_isLoading && !_isRendered)
+        {
+            // Render ครั้งแรกหลัง _isLoading = false → canvas อยู่ใน DOM แล้ว
+            _isRendered = true;
+            await RenderChart();
+        }
+        else if (_needsChartRefresh)
+        {
+            // เปลี่ยนภาษา → อัปเดต label ใน Chart
+            _needsChartRefresh = false;
             await RenderChart();
         }
     }
@@ -258,7 +274,14 @@ public partial class Dashboard : ComponentBase
         var labelIn = Lang.T("คืนเข้าตู้", "Store");
         var labelClean = Lang.T("ส่งล้าง", "Cleaning");
 
-        await JSRuntime.InvokeVoidAsync("initActivityChart", "activityChart", labels, _checkOutCounts, _checkInCounts, _cleaningCounts, labelOut, labelIn, labelClean);
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("initActivityChart", "activityChart", labels, _checkOutCounts, _checkInCounts, _cleaningCounts, labelOut, labelIn, labelClean);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Dashboard] RenderChart JS error (non-fatal): {ex.Message}");
+        }
     }
 
     /// <summary>จัดรูปแบบวันที่ตามภาษาที่เลือก (ไทย/อังกฤษ)</summary>
