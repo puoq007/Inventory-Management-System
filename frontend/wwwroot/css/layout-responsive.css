@@ -12,6 +12,7 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── Standard mobile ≤ 768px ── */
 @media (max-width: 767.98px) {
   .ims-table-scroll table th,
   .ims-table-scroll table td {
@@ -19,6 +20,153 @@ html {
     padding-right: 0.625rem;
   }
 }
+
+/* ══════════════════════════════════════════════════
+   ZEBRA TC52 / 360px small screen support
+   ══════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+
+  /* ── Page outer padding ── */
+  .max-w-\[1500px\] {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* ── Page content area ── */
+  .p-4, .p-6, .p-8 {
+    padding: 0.625rem !important;
+  }
+
+  /* ── Headings ── */
+  .text-3xl { font-size: 1.25rem !important; line-height: 1.75rem !important; }
+  .text-2xl { font-size: 1.1rem !important; }
+
+  /* ── Tables: compact cells ── */
+  .ims-table-scroll table th,
+  .ims-table-scroll table td {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Override large min-widths set inline on columns */
+  .ims-table-scroll table th[class*="min-w-"],
+  .ims-table-scroll table td[class*="min-w-"] {
+    min-width: 0 !important;
+  }
+
+  /* ── Key column widths on 360px ── */
+  /* JIG ID column: narrow */
+  .ims-table-scroll table th:first-child,
+  .ims-table-scroll table td:first-child {
+    min-width: 80px !important;
+    max-width: 90px !important;
+  }
+  /* Specification column: take remaining space, wrap text */
+  .ims-table-scroll table th:nth-child(2),
+  .ims-table-scroll table td:nth-child(2) {
+    min-width: 120px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  /* Status / Condition: compact badge */
+  .ims-table-scroll table th:nth-child(3),
+  .ims-table-scroll table td:nth-child(3),
+  .ims-table-scroll table th:nth-child(4),
+  .ims-table-scroll table td:nth-child(4) {
+    min-width: 70px !important;
+  }
+
+  /* ── Remove extra whitespace-nowrap on small screens ── */
+  .ims-table-scroll td.whitespace-nowrap {
+    white-space: normal !important;
+  }
+
+  /* ── Search/filter bar: stack vertically ── */
+  .ims-table-scroll + div,
+  .flex.flex-col.md\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* ── Buttons full-width on 360px ── */
+  .ims-btn-action {
+    width: 100% !important;
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  /* ── Navbar height reduce ── */
+  nav .h-20 { height: 3.5rem !important; }
+  nav .h-full { height: 3.5rem !important; }
+  nav img[alt="Mattel"] { height: 40px !important; }
+
+  /* ── Pagination compact ── */
+  .flex.items-center.justify-between.px-6 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+
+  /* ── PageSizeSelector compact ── */
+  select.py-1 { padding: 0.25rem !important; font-size: 0.75rem !important; }
+
+  /* ══ MODALS on 360px ══ */
+  /* Backdrop: ensure padding doesn't shrink the modal */
+  .fixed.z-50 {
+    padding: 0.5rem !important;
+  }
+
+  /* Modal card: constrain to viewport */
+  .fixed.z-50 > div {
+    width: 100% !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: 90dvh !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+  }
+
+  /* Override max-w-* inside modals */
+  .fixed.z-50 .max-w-lg,
+  .fixed.z-50 .max-w-md,
+  .fixed.z-50 .max-w-sm,
+  .fixed.z-50 .max-w-xl,
+  .fixed.z-50 .max-w-2xl {
+    max-width: calc(100vw - 1rem) !important;
+  }
+
+  /* Date range grid: stack vertically on 360px */
+  .fixed.z-50 .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modal action buttons: reduce size */
+  .fixed.z-50 button {
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.75rem !important;
+  }
+
+  /* Modal heading */
+  .fixed.z-50 h3 {
+    font-size: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Form labels inside modal */
+  .fixed.z-50 label {
+    font-size: 0.7rem !important;
+  }
+
+  /* Selects and inputs inside modal */
+  .fixed.z-50 select,
+  .fixed.z-50 input:not([type="checkbox"]) {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.5rem !important;
+  }
+}
+
 
 .ims-scan-confirm {
   width: 100%;
