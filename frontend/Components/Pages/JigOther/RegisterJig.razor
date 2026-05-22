@@ -68,11 +68,27 @@
         </div>
         @if (_selectedJigIds.Any())
         {
-            <div class="flex items-end">
+            <div class="flex items-end gap-2">
                 <button type="button" @onclick="PrintSelectedQRs" class="px-5 py-2.5 bg-slate-700 text-slate-200 font-medium text-sm rounded-xl hover:bg-slate-600 transition-colors inline-flex items-center justify-center gap-2 border border-slate-600 shrink-0 w-full md:w-auto">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    @Lang.T($"พิมพ์ QR ที่เลือก ({_selectedJigIds.Count})", $"Print QR ({_selectedJigIds.Count})")
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    @Lang.T($"พิมพ์ QR ({_selectedJigIds.Count})", $"Print QR ({_selectedJigIds.Count})")
                 </button>
+                <div class="inline-flex items-stretch rounded-xl overflow-hidden border border-emerald-600 shrink-0 shadow-lg" title="Export SVG Sheet for Mimaki UV Printer">
+                    <div class="px-3 py-2.5 bg-emerald-700 flex items-center gap-1.5 text-white text-sm font-medium border-r border-emerald-500 whitespace-nowrap select-none">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        SVG
+                    </div>
+                    <button type="button" @onclick='() => ExportSVGSheets(300)'
+                            class="svg-printer-btn px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold border-r border-emerald-500 whitespace-nowrap"
+                            title="Mimaki UJF-3042 MkII — 300×420mm bed (30 labels/sheet)">
+                        3042
+                    </button>
+                    <button type="button" @onclick='() => ExportSVGSheets(600)'
+                            class="svg-printer-btn px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold whitespace-nowrap"
+                            title="Mimaki UJF-6042 MkII — 600×420mm bed (60 labels/sheet)">
+                        6042
+                    </button>
+                </div>
             </div>
         }
         <div class="flex items-end gap-3 shrink-0">
@@ -146,6 +162,10 @@
                                     <button @onclick="() => PrintQR(jig)" class="text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1" title="Print QR Sticker (2.5cm)">
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                                         QR
+                                    </button>
+                                    <button @onclick="() => ExportSingleSVG(jig)" class="text-emerald-300 hover:text-white bg-emerald-900/30 hover:bg-emerald-700 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1" title="Download SVG Label (100×40mm)">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        SVG
                                     </button>
                                     @if (_userRole == "Admin" || _userRole == "Engineer")
                                     {

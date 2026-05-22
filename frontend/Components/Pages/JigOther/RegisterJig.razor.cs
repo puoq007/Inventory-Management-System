@@ -579,8 +579,7 @@ public partial class RegisterJig : ComponentBase
         var extractedStr = ExtractStepNumber(joinedSteps);
         _editingJig.StepPrint = extractedStr == "-" ? "" : extractedStr;
 
-        if (string.IsNullOrWhiteSpace(_editingJig.Id)) { _modalError = "ID Required"; return; }
-        if (string.IsNullOrWhiteSpace(_editingJig.ToolNo)) { _modalError = "Tool No Required for Product Mapping"; return; }
+        if (string.IsNullOrWhiteSpace(_editingJig.ToolNo)) { _modalError = Lang.T("กรุณากรอก Tool No. (ใช้สร้างรหัส JIG อัตโนมัติ)", "Tool No is required (used to auto-generate Jig ID)"); return; }
         
         // เติมค่า Part Number อัตโนมัติจาก mapping ตัวแรก (สำหรับแสดงผลบนตาราง)
         _editingJig.PartNumber = _compatiblePartsModel.FirstOrDefault()?.PartNumber ?? "";
@@ -844,6 +843,27 @@ public partial class RegisterJig : ComponentBase
     }
 
     /// <summary>
+    /// Export ป้าย QR Code เดี่ยวของจิกเป็นไฟล์ SVG (100×40mm) — ตั้งชื่อว่า label_[ID].svg
+    /// </summary>
+    /// <param name="jig">จิกที่ต้องการ export ป้าย SVG</param>
+    private async Task ExportSingleSVG(Jig jig)
+    {
+        var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Low);
+        var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+        var data = new {
+            id        = jig.Id,
+            date      = jig.Date,
+            toolNo    = jig.ToolNo,
+            stepPrint = ExtractStepNumber(jig.StepPrint),
+            heightJig = jig.HeightJig,
+            feed      = jig.Feed,
+            scan      = jig.Scan,
+            jigType   = jig.JigType
+        };
+        await JSRuntime.InvokeVoidAsync("exportSingleSVG", svgStr, data);
+    }
+
+    /// <summary>
     /// พิมพ์ QR Code แบบ Batch สำหรับจิกที่ถูก Checkbox เลือกไว้ แล้วล้างการเลือกทั้งหมด
     /// </summary>
     private async Task PrintSelectedQRs()
@@ -869,6 +889,36 @@ public partial class RegisterJig : ComponentBase
             });
         }
         await JSRuntime.InvokeVoidAsync("printQRs", qrList);
+        _selectedJigIds.Clear();
+    }
+
+    /// <summary>
+    /// Export ป้าย QR Code ที่เลือกเป็นไฟล์ SVG — รองรับ Mimaki UJF-3042 MkII (bed 300mm) และ UJF-6042 MkII (bed 600mm)
+    /// Label ขนาด 100×40mm | 3042 → 30 ใบ/sheet | 6042 → 60 ใบ/sheet
+    /// </summary>
+    /// <param name="bedWidth">ความกว้าง Print Bed: 300 สำหรับ 3042, 600 สำหรับ 6042</param>
+    private async Task ExportSVGSheets(int bedWidth = 300)
+    {
+        if (!_selectedJigIds.Any()) return;
+        var qrList = new List<object>();
+        foreach (var uid in _selectedJigIds)
+        {
+            var jig = _allJigs.FirstOrDefault(j => j.Uid == uid);
+            if (jig == null) continue;
+            var qr = QrCode.EncodeText(jig.Id, QrCode.Ecc.Low);
+            var svgStr = qr.ToSvgString(4, "#000000", "#ffffff");
+            qrList.Add(new {
+                id        = jig.Id,
+                svg       = svgStr,
+                date      = jig.Date,
+                stepPrint = ExtractStepNumber(jig.StepPrint),
+                heightJig = jig.HeightJig,
+                feed      = jig.Feed,
+                scan      = jig.Scan,
+                jigType   = jig.JigType
+            });
+        }
+        await JSRuntime.InvokeVoidAsync("exportSVGSheets", qrList, bedWidth);
         _selectedJigIds.Clear();
     }
 

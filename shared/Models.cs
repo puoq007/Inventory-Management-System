@@ -121,8 +121,7 @@ public class Jig
     [Key]
     public string Uid { get; set; } = Guid.NewGuid().ToString();
     
-    /// <summary>รหัสจิกที่แสดงผล (Unique, แก้ไขได้) — ใช้สำหรับ QR Code และค้นหา</summary>
-    [Required]
+    /// <summary>รหัสจิกที่แสดงผล (Unique, แก้ไขได้) — สร้างอัตโนมัติจาก ToolNo ถ้าไม่ระบุ</summary>
     public string Id { get; set; } = string.Empty;
     
     // --- ข้อมูล Smart Code (ประกอบรวมเป็นชื่อจิกอัตโนมัติ) ---

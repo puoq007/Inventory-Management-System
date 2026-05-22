@@ -484,3 +484,22 @@ label.ims-btn-action {
   transform: translateX(18px);
 }
 
+
+/* ── SVG Printer split-button hover states ──────────────────────────────────
+   Written in plain CSS so it works in ALL themes regardless of Tailwind purge
+   or theme-light overrides that may block hover:bg-* / hover:text-* classes.
+   ────────────────────────────────────────────────────────────────────────── */
+.svg-printer-btn {
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.1s ease;
+  position: relative;
+}
+.svg-printer-btn:hover {
+  background-color: #ffffff !important;
+  color: #065f46 !important;
+}
+.svg-printer-btn:active {
+  background-color: #a7f3d0 !important;  /* emerald-200 */
+  color: #064e3b !important;
+  transform: scale(0.95);
+}

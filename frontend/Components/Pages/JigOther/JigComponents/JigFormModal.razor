@@ -15,13 +15,12 @@
             <EditForm Model="EditingJig" OnValidSubmit="SaveJig">
                 <div class="flex flex-col gap-4">
                     
-                    <!-- Primary Info -->
                     <div class="pb-3 border-b border-slate-700">
                         <h3 class="text-sm font-bold text-slate-200 mb-2">@Lang.T("ข้อมูลหลัก", "Primary Info")</h3>
                         <div class="grid grid-cols-1 gap-3">
                             <div>
-                                <label class="block text-xs font-semibold mb-1">@Lang.T("รหัส JIG", "Jig ID") <span class="text-red-500">*</span></label>
-                                <input type="text" @bind="EditingJig.Id" required disabled="@IsEditMode" class="w-full px-3 py-1.5 border border-slate-700 rounded-lg focus:ring-1 focus:ring-mattel-red text-sm bg-slate-900 text-slate-200 disabled:opacity-50 cursor-not-allowed" placeholder="e.g. JIG-0001" />
+                                <label class="block text-xs font-semibold mb-1">@Lang.T("รหัส JIG", "Jig ID") <span class="text-slate-500 font-normal">@Lang.T("(สร้างอัตโนมัติจาก Tool No.)", "(Auto-generated from Tool No.)")</span></label>
+                                <input type="text" @bind="EditingJig.Id" disabled="@true" class="w-full px-3 py-1.5 border border-slate-700 rounded-lg focus:ring-1 focus:ring-mattel-red text-sm bg-slate-900 text-slate-200 disabled:opacity-50 cursor-not-allowed" placeholder="@Lang.T("เช่น HTB42-01 (สร้างอัตโนมัติ)", "e.g. HTB42-01 (auto-generated)")" />
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-blue-400 mb-1">@Lang.T("ตัวอย่าง Smart Code", "Smart Code Preview")</label>

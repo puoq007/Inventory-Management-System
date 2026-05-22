@@ -27,17 +27,16 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ประเภทโซน *", "Zone Type *")</label>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("ประเภทสถานที่ *", "Zone Type *")</label>
                     <select @bind="Locator.Type" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
-                        <option value="Production">@Lang.T("โซนผลิต (Production)", "Production Zone")</option>
-                        <option value="Cleaning">@Lang.T("จุดทำความสะอาด (Cleaning)", "Cleaning Zone")</option>
-                        <option value="Store">@Lang.T("ชั้นจัดเก็บ (Storage)", "Storage Zone")</option>
+                        <option value="Production">@Lang.T("โซนผลิต", "Production Zone")</option>
+                        <option value="Cleaning">@Lang.T("จุดทำความสะอาด", "Cleaning Zone")</option>
+                        <option value="Store">@Lang.T("ชั้นจัดเก็บ", "Storage Zone")</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("กลุ่ม (Site)", "Site")</label>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("สถานที่ (Site)", "Site")</label>
                     <select @bind="Locator.Site" class="w-full px-3 py-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg focus:ring-mattel-red focus:border-mattel-red sm:text-sm">
-                        <option value="">-- @Lang.T("เลือก Site", "Select Site") --</option>
                         <option value="1">MBK1</option>
                         <option value="2">Mintech</option>
                     </select>

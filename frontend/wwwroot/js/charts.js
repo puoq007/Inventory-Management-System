@@ -111,7 +111,7 @@ var cssTemplate =
     '.hole-left  { left: 1.25mm;  top: 1.75mm; }' +
     '.hole-right { right: 1.25mm; bottom: 1.75mm; }' +
     '.plate { position: absolute; top: 3.5mm; left: 6.5mm; width: 87mm; height: 33mm; display: flex; flex-direction: row; align-items: center; gap: 2.5mm; }' +
-    '.plate-qr { width: 29mm; height: 29mm; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }' +
+    '.plate-qr { width: 29mm; height: 29mm; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 3mm; }' +
     '.plate-qr svg { width: 29mm; height: 29mm; display: block; }' +
     '.plate-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.7mm; min-width: 0; padding-left: 2mm; }' +
     '.plate-id { font-size: 11pt; font-weight: 900; color: #000; line-height: 1.1; letter-spacing: -0.3px; margin-bottom: 0.5mm; }' +
@@ -162,6 +162,158 @@ window.printQRs = function (qrDataList) {
         '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();window.close();},600);}<\/scr' + 'ipt>' +
         '</body></html>');
     wnd.document.close();
+};
+
+// ─── SVG Sheet Export — supports Mimaki UJF-3042 MkII (300×420mm) & UJF-6042 MkII (600×420mm)
+// Label: 100×40mm | 3042 → 3col×10row=30/sheet | 6042 → 6col×10row=60/sheet
+window.exportSVGSheets = function (qrDataList, bedW) {
+    if (!qrDataList || qrDataList.length === 0) return;
+
+    var BED_W = bedW === 600 ? 600 : 300;   // 3042=300mm, 6042=600mm
+    var BED_H = 420;                         // ທั้ง  2 รุ่น แนวนอนเหมือนกัน
+    var MODEL = BED_W === 600 ? 'UJF-6042 MkII' : 'UJF-3042 MkII';
+    var LBL_W = 100, LBL_H = 40;
+    var COLS = Math.floor(BED_W / LBL_W);    // 3042 → 3 | 6042 → 6
+    var ROWS = Math.floor(BED_H / LBL_H);    // 10
+    var PER_PAGE = COLS * ROWS;              // 3042 → 30 | 6042 → 60
+
+    function escXml(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Extract inner paths from QR SVG string and scale to 29x29mm
+    function extractQrPaths(svgHtml) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(svgHtml, 'image/svg+xml');
+        var svgEl = doc.querySelector('svg');
+        if (!svgEl) return '';
+        var vb = (svgEl.getAttribute('viewBox') || '0 0 100 100').split(/[\s,]+/);
+        var vbW = parseFloat(vb[2]) || 100;
+        var vbH = parseFloat(vb[3]) || 100;
+        var QR_MM = 29;
+        var sx = (QR_MM / vbW).toFixed(6);
+        var sy = (QR_MM / vbH).toFixed(6);
+        var qrY = ((LBL_H - QR_MM) / 2 + 3).toFixed(2);  // +3mm เลื่อนลงให้ center ตรงกับ text block
+        return '<g transform="translate(6,' + qrY + ') scale(' + sx + ',' + sy + ')">' + svgEl.innerHTML + '</g>';
+    }
+
+    function buildLabel(data, x, y) {
+        var dateStr  = cleanDate(data.date);
+        var textX    = 38;
+        var ID_FS    = 4.5;
+        var ROW_FS   = 2.4;
+        return [
+            '<g transform="translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ')">',
+            '<rect width="' + LBL_W + '" height="' + LBL_H + '" fill="white"/>',
+            extractQrPaths(data.svg),
+            '<text x="' + textX + '" y="12" font-family="Arial,Helvetica,sans-serif" font-size="' + ID_FS + '" font-weight="900" fill="#000">' + escXml(data.id) + '</text>',
+            '<text x="' + textX + '" y="18" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">DATE: ' + escXml(dateStr) + '</text>',
+            '<text x="' + textX + '" y="23" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">STEP PRINT: ' + escXml(data.stepPrint || '-') + '</text>',
+            '<text x="' + textX + '" y="28" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">HEIGHT JIG: ' + escXml(data.heightJig || '-') + '</text>',
+            '<text x="' + textX + '" y="33" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">FEED: ' + escXml(data.feed || '-') + '   SCAN: ' + escXml(data.scan || '-') + '</text>',
+            '<text x="' + textX + '" y="38" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">JIG TYPE: ' + escXml(data.jigType || '-') + '</text>',
+            '</g>'
+        ].join('\n');
+    }
+
+    // Split into sheets of 30
+    var sheets = [];
+    for (var i = 0; i < qrDataList.length; i += PER_PAGE) {
+        sheets.push(qrDataList.slice(i, i + PER_PAGE));
+    }
+
+    sheets.forEach(function (items, shIdx) {
+        var labelsXml = '';
+        items.forEach(function (item, idx) {
+            var col = idx % COLS;
+            var row = Math.floor(idx / COLS);
+            labelsXml += buildLabel(item, col * LBL_W, row * LBL_H) + '\n';
+        });
+
+        var svgContent = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<!-- Mimaki ' + MODEL + ' | ' + BED_W + 'x' + BED_H + 'mm | ' + items.length + ' labels on sheet ' + (shIdx + 1) + ' -->',
+            '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"',
+            '     width="' + BED_W + 'mm" height="' + BED_H + 'mm"',
+            '     viewBox="0 0 ' + BED_W + ' ' + BED_H + '" version="1.1">',
+            '  <title>Jig Plates Sheet ' + (shIdx + 1) + ' — ' + MODEL + '</title>',
+            '  <rect width="' + BED_W + '" height="' + BED_H + '" fill="white"/>',
+            labelsXml,
+            '</svg>'
+        ].join('\n');
+
+        var blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement('a');
+        a.href   = url;
+        var prefix = BED_W === 600 ? '6042' : '3042';
+        a.download = sheets.length > 1
+            ? prefix + '_sheet' + (shIdx + 1) + '_of' + sheets.length + '.svg'
+            : prefix + '_sheet1.svg';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        setTimeout(function () { a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, shIdx * 900);
+    });
+};
+
+// ─── Export single jig label as standalone SVG (100×40mm) ─────────────────
+window.exportSingleSVG = function (svgHtml, data) {
+    var LBL_W = 100, LBL_H = 40;
+    var QR_MM = 29;
+
+    function escXml(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function extractQrPaths(html) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'image/svg+xml');
+        var svgEl = doc.querySelector('svg');
+        if (!svgEl) return '';
+        var vb = (svgEl.getAttribute('viewBox') || '0 0 100 100').split(/[\s,]+/);
+        var vbW = parseFloat(vb[2]) || 100;
+        var vbH = parseFloat(vb[3]) || 100;
+        var sx = (QR_MM / vbW).toFixed(6);
+        var sy = (QR_MM / vbH).toFixed(6);
+        var qrY = ((LBL_H - QR_MM) / 2 + 3).toFixed(2);
+        return '<g transform="translate(6,' + qrY + ') scale(' + sx + ',' + sy + ')">' + svgEl.innerHTML + '</g>';
+    }
+
+    var dateStr = cleanDate(data.date);
+    var textX = 38, ID_FS = 4.5, ROW_FS = 2.4;
+
+    var labelContent = [
+        '<rect width="' + LBL_W + '" height="' + LBL_H + '" fill="white"/>',
+        extractQrPaths(svgHtml),
+        '<text x="' + textX + '" y="12" font-family="Arial,Helvetica,sans-serif" font-size="' + ID_FS + '" font-weight="900" fill="#000">' + escXml(data.id) + '</text>',
+        '<text x="' + textX + '" y="18" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">DATE: ' + escXml(dateStr) + '</text>',
+        '<text x="' + textX + '" y="23" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">STEP PRINT: ' + escXml(data.stepPrint || '-') + '</text>',
+        '<text x="' + textX + '" y="28" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">HEIGHT JIG: ' + escXml(data.heightJig || '-') + '</text>',
+        '<text x="' + textX + '" y="33" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">FEED: ' + escXml(data.feed || '-') + '   SCAN: ' + escXml(data.scan || '-') + '</text>',
+        '<text x="' + textX + '" y="38" font-family="Arial,Helvetica,sans-serif" font-size="' + ROW_FS + '" fill="#000">JIG TYPE: ' + escXml(data.jigType || '-') + '</text>'
+    ].join('\n');
+
+    var svgContent = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!-- Jig Label | 100x40mm | ID: ' + data.id + ' -->',
+        '<svg xmlns="http://www.w3.org/2000/svg"',
+        '     width="100mm" height="40mm"',
+        '     viewBox="0 0 ' + LBL_W + ' ' + LBL_H + '" version="1.1">',
+        '  <title>' + escXml(data.id) + '</title>',
+        labelContent,
+        '</svg>'
+    ].join('\n');
+
+    var blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'label_' + data.id.replace(/[^a-zA-Z0-9_\-]/g, '_') + '.svg';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 };
 
 // ─── Locator QR helpers ───────────────────────────────────────────────────

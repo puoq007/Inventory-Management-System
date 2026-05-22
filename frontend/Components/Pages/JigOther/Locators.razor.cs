@@ -271,7 +271,7 @@ public partial class Locators : ComponentBase
     {
         _isEditMode = false;
         _originalLocatorId = null;
-        _editingLocator = new Locator();
+        _editingLocator = new Locator { Site = "1" };
         _errorMessage = "";
         _showModal = true;
     }
