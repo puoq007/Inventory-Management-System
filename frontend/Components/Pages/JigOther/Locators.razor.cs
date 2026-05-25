@@ -352,7 +352,7 @@ public partial class Locators : ComponentBase
     /// <param name="loc">ตำแหน่งที่ต้องการลบ</param>
     private async Task DeleteLocator(Locator loc)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Delete Locator", $"Are you sure you want to delete locator {loc.Id}?", "Yes, delete", "error");
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", Lang.T("ลบตำแหน่ง", "Delete Locator"), Lang.T($"คุณต้องการลบตำแหน่ง '{loc.Id}' ใช่หรือไม่?", $"Are you sure you want to delete locator '{loc.Id}'?"), Lang.T("ใช่, ลบเลย", "Yes, delete"), "error", Lang.T("ยกเลิก", "Cancel"));
         if (!confirmed) return;
 
         var response = await Api.DeleteAsync($"api/locators/{loc.Id}");

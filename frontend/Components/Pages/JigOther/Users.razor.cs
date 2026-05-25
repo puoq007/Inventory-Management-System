@@ -264,8 +264,8 @@ public partial class Users : ComponentBase
     /// </summary>
     private async Task SaveUser()
     {
-        var actionName = _isEditMode ? "Edit User" : "Add User";
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", actionName, "Are you sure you want to save this user?", "Yes, save", "question");
+        var actionName = _isEditMode ? Lang.T("แก้ไขผู้ใช้", "Edit User") : Lang.T("เพิ่มผู้ใช้", "Add User");
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", actionName, Lang.T("คุณต้องการบันทึกข้อมูลผู้ใช้นี้ใช่หรือไม่?", "Are you sure you want to save this user?"), Lang.T("ใช่, บันทึก", "Yes, save"), "question", Lang.T("ยกเลิก", "Cancel"));
         if (!confirmed) return;
 
         if (string.IsNullOrWhiteSpace(_editingUser.EmployeeId) || string.IsNullOrWhiteSpace(_editingUser.Name))
@@ -303,7 +303,7 @@ public partial class Users : ComponentBase
     /// <param name="user">ผู้ใช้ที่ต้องการลบ</param>
     private async Task DeleteUser(UserAccount user)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", "Delete User", $"Are you sure you want to remove user {user.Name}?", "Yes, delete", "error");
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", Lang.T("ลบผู้ใช้", "Delete User"), Lang.T($"คุณต้องการลบผู้ใช้ '{user.Name}' ใช่หรือไม่?", $"Are you sure you want to remove user '{user.Name}'?"), Lang.T("ใช่, ลบเลย", "Yes, delete"), "error", Lang.T("ยกเลิก", "Cancel"));
         if (!confirmed) return;
 
         var response = await Api.DeleteAsync($"api/users/{user.EmployeeId}");

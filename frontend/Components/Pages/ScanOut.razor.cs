@@ -356,7 +356,8 @@ public partial class ScanOut : ComponentBase
             Lang.T("ยืนยันการยกเลิก?", "Confirm Cancel?"),
             Lang.T($"ต้องการยกเลิกรายการ {item.JigId} หรือไม่?", $"Cancel transaction for {item.JigId}?"),
             Lang.T("ยืนยัน", "Yes, Cancel It"),
-            "warning"
+            "warning",
+            Lang.T("ไม่", "Cancel")
         );
 
         if (!confirmed) return;

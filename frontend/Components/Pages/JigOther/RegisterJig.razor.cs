@@ -643,7 +643,8 @@ public partial class RegisterJig : ComponentBase
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction", 
             Lang.T("ยืนยันการลบ", "Confirm Delete"), 
             Lang.T($"คุณต้องการลบจิก '{jig.Id}' ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้", $"Delete jig '{jig.Id}'? This action cannot be undone."), 
-            Lang.T("ใช่, ลบเลย", "Yes, delete"), "warning");
+            Lang.T("ใช่, ลบเลย", "Yes, delete"), "warning",
+            Lang.T("ยกเลิก", "Cancel"));
         if (!confirmed) return;
         if ((await Api.DeleteAsync($"api/jigs/{jig.Uid}")).IsSuccessStatusCode) await LoadData();
     }

@@ -259,7 +259,8 @@ public partial class History : ComponentBase
             Lang.T("ยืนยันการยกเลิก?", "Confirm Cancel?"),
             Lang.T("ต้องการยกเลิกรายการนี้และกลับสถานะจิกไปยังสถานะก่อนหน้าหรือไม่?", "Do you want to cancel this transaction and revert the jig to its previous state?"),
             Lang.T("ยืนยัน ยกเลิกรายการ", "Yes, Cancel It"),
-            "warning"
+            "warning",
+            Lang.T("ไม่", "Cancel")
         );
 
         if (!confirmed) return;

@@ -1,7 +1,7 @@
 console.log("Jig Inventory JS Initializing...");
 
 // ─── SweetAlert2 confirm ───────────────────────────────────────────────────
-window.confirmAction = function (title, text, confirmBtnStr, icon) {
+window.confirmAction = function (title, text, confirmBtnStr, icon, cancelBtnStr) {
     return Swal.fire({
         title: title || 'Are you sure?',
         text: text || "You won't be able to revert this!",
@@ -9,7 +9,8 @@ window.confirmAction = function (title, text, confirmBtnStr, icon) {
         showCancelButton: true,
         confirmButtonColor: '#2563eb',
         cancelButtonColor: '#94a3b8',
-        confirmButtonText: confirmBtnStr || 'Yes'
+        confirmButtonText: confirmBtnStr || 'Yes',
+        cancelButtonText: cancelBtnStr || 'Cancel'
     }).then(function (result) {
         return result.isConfirmed;
     });
