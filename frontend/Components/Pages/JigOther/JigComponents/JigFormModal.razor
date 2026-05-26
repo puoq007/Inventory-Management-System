@@ -35,20 +35,20 @@
                     <div class="pb-3 border-b border-slate-700">
                         <h3 class="text-sm font-bold text-slate-200 mb-2">@Lang.T("ข้อมูลจำเพาะ (Specifications)", "Specifications")</h3>
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="EditingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
+                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("รหัสเครื่องมือ (Tool No.)", "Tool No.")</label><input type="text" @bind="EditingJig.ToolNo" @bind:event="oninput" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ลำดับการพิมพ์ (Step Print)", "Step Print")</label>
                                 <div class="flex flex-col gap-2">
-                                    <select class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200" @onchange="OnAddStep">
+                                    <select class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200" @onchange="OnAddStep">
                                         <option value="">-- Add Step --</option>
                                         @foreach (var opt in StepPrintOptions) { <option value="@opt">@opt</option> }
                                     </select>
-                                    <div class="flex flex-wrap gap-2 mt-2">
+                                    <div class="flex flex-wrap gap-1.5">
                                         @foreach (var step in SelectedSteps)
                                         {
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-xl">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/50">
                                                 @step
-                                                <button type="button" @onclick="() => OnRemoveStep.InvokeAsync(step)" class="ml-2 text-blue-400 hover:text-blue-600 transition-colors">✕</button>
+                                                <button type="button" @onclick="() => OnRemoveStep.InvokeAsync(step)" class="ml-1.5 text-blue-400 hover:text-red-400 transition-colors text-[10px]">✕</button>
                                             </span>
                                         }
                                     </div>
@@ -56,38 +56,38 @@
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ประเภทชิ้นส่วน (Part Type)", "Part Type")</label>
-                                <select @bind="EditingJig.PartType" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200">
-                                    <option value="">-- Select --</option>
-                                    @foreach (var opt in PartTypeOptions) { <option value="@opt">@opt</option> }
-                                </select>
+                                <input list="partTypeList" @bind="EditingJig.PartType" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200 combo-dropdown" placeholder="-- Select or type --" />
+                                <datalist id="partTypeList">
+                                    @foreach (var opt in PartTypeOptions) { <option value="@opt" /> }
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("วันที่ (Date)", "Date")</label>
-                                <input type="date" value="@(SelectedDate?.ToString("yyyy-MM-dd"))" @onchange="OnDateChanged" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm h-[30px] bg-slate-900 text-slate-200" />
+                                <input type="date" value="@(SelectedDate?.ToString("yyyy-MM-dd"))" @onchange="OnDateChanged" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" />
                             </div>
-                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="EditingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
-                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="EditingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
-                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="EditingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
+                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ฟีด (Feed)", "Feed")</label><input type="text" @bind="EditingJig.Feed" @bind:event="oninput" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
+                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("สแกน (Scan)", "Scan")</label><input type="text" @bind="EditingJig.Scan" @bind:event="oninput" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
+                            <div><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("จำนวน / การพิมพ์ (Q'ty / Print)", "Q'ty / Print")</label><input type="text" @bind="EditingJig.QtyPrint" @bind:event="oninput" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ความสูง JIG (Height Jig)", "Height Jig")</label>
-                                <select @bind="EditingJig.HeightJig" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200">
-                                    <option value="">-- Select --</option>
+                                <input list="heightJigList" @bind="EditingJig.HeightJig" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200 combo-dropdown" placeholder="-- Select or type --" />
+                                <datalist id="heightJigList">
                                     @foreach (var opt in HeightJigOptions) { <option value="@opt">@{ if(opt == "HMR Plywood" || opt == "MDF Plywood") { @opt } else { @(opt + " mm") } }</option> }
-                                </select>
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ประเภท JIG (Jig Type)", "Jig Type")</label>
-                                <select @bind="EditingJig.JigType" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200">
-                                    <option value="">-- Select --</option>
-                                    @foreach (var opt in JigTypeOptions) { <option value="@opt">@opt</option> }
-                                </select>
+                                <input list="jigTypeList" @bind="EditingJig.JigType" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200 combo-dropdown" placeholder="-- Select or type --" />
+                                <datalist id="jigTypeList">
+                                    @foreach (var opt in JigTypeOptions) { <option value="@opt" /> }
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("กระบวนการ (Process)", "Process")</label>
-                                <select @bind="EditingJig.Process" class="w-full px-2 py-1 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200">
-                                    <option value="">-- Select --</option>
-                                    @foreach (var opt in ProcessOptions) { <option value="@opt">@opt</option> }
-                                </select>
+                                <input list="processList" @bind="EditingJig.Process" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200 combo-dropdown" placeholder="-- Select or type --" />
+                                <datalist id="processList">
+                                    @foreach (var opt in ProcessOptions) { <option value="@opt" /> }
+                                </datalist>
                             </div>
                         </div>
                     </div>
@@ -102,12 +102,12 @@
                             <input type="text" value="@NewPartInput" @onchange="OnPartInputChanged" @onkeydown="OnPartKeyDown" onkeypress="return event.keyCode != 13;" placeholder="e.g. P-1234" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" autocomplete="off" />
                             @if (CompatiblePartsModel.Any())
                             {
-                                <div class="flex flex-wrap gap-2 mt-2">
+                                <div class="flex flex-wrap gap-1.5 mt-2">
                                     @foreach (var part in CompatiblePartsModel)
                                     {
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-700 shadow-xl">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">
                                             @part.PartNumber
-                                            <button type="button" @onclick="() => OnRemovePartNumber.InvokeAsync(part.PartNumber)" class="ml-2 text-slate-400 hover:text-red-500 transition-colors">✕</button>
+                                            <button type="button" @onclick="() => OnRemovePartNumber.InvokeAsync(part.PartNumber)" class="ml-1.5 text-slate-400 hover:text-red-500 transition-colors text-[10px]">✕</button>
                                         </span>
                                     }
                                 </div>
@@ -117,13 +117,13 @@
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("ตำแหน่งปัจจุบัน", "Locator")</label>
-                                <select @bind="EditingJig.LocatorId" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200">
-                                    <option value="">-- @Lang.T("ไม่มีตำแหน่ง", "No Location") --</option>
+                                <input list="locatorList" @bind="EditingJig.LocatorId" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-800 text-slate-200 combo-dropdown" placeholder="-- @Lang.T("ไม่มีตำแหน่ง", "No Location") --" />
+                                <datalist id="locatorList">
                                     @foreach (var loc in AllLocators)
                                     {
                                         <option value="@loc.Id">@loc.Name</option>
                                     }
-                                </select>
+                                </datalist>
                             </div>
                             <div class="col-span-1"><label class="block text-[10px] font-semibold text-slate-400 mb-0.5 uppercase">@Lang.T("เวอร์ชัน (Rev.)", "Rev.")</label><input type="text" @bind="EditingJig.Rev" class="w-full px-2 py-1.5 border border-slate-700 rounded focus:border-mattel-red text-sm bg-slate-900 text-slate-200" /></div>
                         </div>

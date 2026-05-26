@@ -41,23 +41,29 @@ public class ExcelImportService
 
         while (reader.Read())
         {
-            if (!isHeaderFound)
+            // ตรวจสอบว่าเป็นบรรทัด Header หรือไม่ (สังเกตจากคำสำคัญในช่องต่างๆ)
+            bool isHeaderRow = false;
+            for (int i = 0; i < Math.Min(15, reader.FieldCount); i++)
             {
-                // ค้นหา Header แบบยืดหยุ่นจากทุกคอลัมน์ เพื่อรองรับ Template Excel ที่หลากหลาย
+                var val = reader.GetValue(i)?.ToString()?.Trim().ToLowerInvariant();
+                if (val == "month" || val == "item" || val == "part number" || val == "part typ" || val == "tool number" || val == "toynumber" || val == "partno" || val == "date" || val == "วัน/เดือน/ปี" || val == "วันเดือนปี" || (val != null && val.Contains("working instruction")))
+                {
+                    isHeaderRow = true;
+                    break;
+                }
+            }
+
+            if (isHeaderRow)
+            {
+                // สะสม Headers 
                 for (int i = 0; i < reader.FieldCount; i++)
                 {
                     var raw = reader.GetValue(i)?.ToString()?.Trim();
                     if (string.IsNullOrEmpty(raw)) continue;
                     
-                    // มาตรฐานชื่อคอลัมน์โดยลบจุดและช่องว่าง (ตัวอย่าง: "Tool No." → "toolno")
                     var std = raw.Replace(".", "").Replace(" ", "").ToLower();
                     if (!colMap.ContainsKey(std)) colMap[std] = new List<int>();
-                    colMap[std].Add(i);
-                }
-
-                if (colMap.ContainsKey("toynumber") || colMap.ContainsKey("toolno"))
-                {
-                    isHeaderFound = true;
+                    if (!colMap[std].Contains(i)) colMap[std].Add(i);
                 }
                 continue;
             }
@@ -65,7 +71,6 @@ public class ExcelImportService
             try
             {
                 // ฟังก์ชันช่วย: ดึงค่าจาก Excel โดยจับคู่ชื่อคอลัมน์แบบ Fuzzy
-                // ตรวจสอบชื่อหลักก่อน แล้ว Fallback ไปชื่อทางเลือก (ตัวอย่าง: "toynumber" หรือ "toyno")
                 string GetVal(string key, int occurrence = 0) {
                     var std = key.Replace(".", "").Replace(" ", "").ToLower();
                     
@@ -73,18 +78,25 @@ public class ExcelImportService
                         if (occurrence < indices.Count) return reader.GetValue(indices[occurrence])?.ToString()?.Trim() ?? "";
                     }
                     
-                    var altKeys = new Dictionary<string, string> {
-                        { "toynumber", "toyno" },
-                        { "partnumber", "partno" },
-                        { "toolno", "toolnumber" }
+                    var altKeys = new Dictionary<string, string[]> {
+                        { "toynumber", new[] { "toyno" } },
+                        { "partnumber", new[] { "partno" } },
+                        { "toolno", new[] { "toolnumber", "notool" } },
+                        { "parttype", new[] { "parttyp" } },
+                        { "jigtype", new[] { "jigtyp" } },
+                        { "date", new[] { "วัน/เดือน/ปี", "วันเดือนปี" } }
                     };
                     
                     foreach (var alt in altKeys) {
-                        if (std == alt.Key && colMap.TryGetValue(alt.Value, out var altIndices)) {
-                            if (occurrence < altIndices.Count) return reader.GetValue(altIndices[occurrence])?.ToString()?.Trim() ?? "";
+                        if (std == alt.Key) {
+                            foreach (var fallback in alt.Value) {
+                                if (colMap.TryGetValue(fallback, out var altIndices) && occurrence < altIndices.Count) 
+                                    return reader.GetValue(altIndices[occurrence])?.ToString()?.Trim() ?? "";
+                            }
                         }
-                        if (std == alt.Value && colMap.TryGetValue(alt.Key, out var primaryIndices)) {
-                            if (occurrence < primaryIndices.Count) return reader.GetValue(primaryIndices[occurrence])?.ToString()?.Trim() ?? "";
+                        else if (alt.Value.Contains(std)) {
+                            if (colMap.TryGetValue(alt.Key, out var primaryIndices) && occurrence < primaryIndices.Count) 
+                                return reader.GetValue(primaryIndices[occurrence])?.ToString()?.Trim() ?? "";
                         }
                     }
                     
@@ -103,6 +115,8 @@ public class ExcelImportService
                 if (string.IsNullOrEmpty(jigType)) jigType = GetVal("Part Type", 1); 
                 
                 var date = FormatExcelDate(GetVal("Date"));
+                if (string.IsNullOrEmpty(date)) date = FormatExcelDate(GetVal("วัน/เดือน/ปี"));
+                if (string.IsNullOrEmpty(date)) date = FormatExcelDate(GetVal("วันเดือนปี"));
                 var feed = GetVal("Feed");
                 var scan = GetVal("Scan");
                 var qtyPrint = GetVal("Qty / Print");
@@ -145,25 +159,26 @@ public class ExcelImportService
                     existing.PartNumber = partNumber;
                     existing.Rev = rev;
                     existing.SmartCodeName = smartCode;
+                    // ถ้ารหัสเดิมเป็นแบบเก่า (JIG-) ให้สร้างรหัสใหม่ตามลอจิกใหม่
+                    if (existing.Id.StartsWith("JIG-"))
+                    {
+                        var prefix = _jigService.ExtractIdPrefix(existing);
+                        if (!nextSuffixMap.ContainsKey(prefix))
+                        {
+                            nextSuffixMap[prefix] = await _jigService.GetMaxSuffixFromDb(prefix);
+                        }
+                        nextSuffixMap[prefix]++;
+                        existing.Id = $"{prefix}-{nextSuffixMap[prefix]:D2}";
+                    }
+
                     _jigService.SanitizeJig(existing);
                     existing.UpdatedAt = DateTime.UtcNow;
                     updated++;
                 }
                 else
                 {
-                    if (!nextSuffixMap.ContainsKey(toolNo ?? ""))
-                    {
-                        nextSuffixMap[toolNo ?? ""] = await _jigService.GetMaxSuffixFromDb(toolNo ?? "");
-                    }
-                    nextSuffixMap[toolNo ?? ""]++;
-
-                    var newId = string.IsNullOrWhiteSpace(toolNo) 
-                        ? "JIG-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper() 
-                        : $"{toolNo}-{nextSuffixMap[toolNo]:D2}";
-
                     var newJig = new Jig
                     {
-                        Id = newId,
                         SmartCodeName = smartCode,
                         ToolNo = toolNo,
                         StepPrint = stepPrint,
@@ -182,6 +197,15 @@ public class ExcelImportService
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
+
+                    var prefix = _jigService.ExtractIdPrefix(newJig);
+                    if (!nextSuffixMap.ContainsKey(prefix))
+                    {
+                        nextSuffixMap[prefix] = await _jigService.GetMaxSuffixFromDb(prefix);
+                    }
+                    nextSuffixMap[prefix]++;
+
+                    newJig.Id = $"{prefix}-{nextSuffixMap[prefix]:D2}";
                     _context.Jigs.Add(newJig);
                     _jigService.SanitizeJig(newJig);
                     inserted++;

@@ -82,8 +82,8 @@ public partial class RegisterJig : ComponentBase
         var match = _stepPrintOptions.FirstOrDefault(o => o.StartsWith(num + " "));
         return match ?? num;
     }
-    private readonly string[] _partTypeOptions = { "Body", "Wing", "Window", "Interior", "Chassis", "Bumper", "Wheel", "Face", "Grill", "Teeth", "Tail", "Spoiler", "Tender" };
-    private readonly string[] _jigTypeOptions = { "Plywood", "Stack", "Flip", "Spoiler", "Hybrid", "BBQ", "Plywood Flag", "JIG Wheel" };
+    private List<string> _partTypeOptions = new List<string> { "Body", "Wing", "Window", "Interior", "Chassis", "Bumper", "Wheel", "Face", "Grill", "Teeth", "Tail", "Spoiler", "Tender" };
+    private List<string> _jigTypeOptions = new List<string> { "Plywood", "Stack", "Flip", "Spoiler", "Hybrid", "BBQ", "Plywood Flag", "JIG Wheel" };
     private readonly string[] _processOptions = { "PIM", "PL", "VUM", "HSP", "RB", "LQ", "TP", "AS" };
     private readonly string[] _heightJigOptions = { "40", "45", "50", "75", "80", "90", "HMR Plywood", "MDF Plywood" };
 
@@ -142,6 +142,15 @@ public partial class RegisterJig : ComponentBase
             _allJigs = await jigsTask ?? new();
             _allLocators = await locsTask ?? new();
             
+            // เพิ่มตัวเลือกที่ไม่มีในรายการเริ่มต้น เข้าไปใน Dropdown แบบไดนามิก
+            var existingPartTypes = _allJigs.Where(j => !string.IsNullOrWhiteSpace(j.PartType)).Select(j => j.PartType!.Trim()).Distinct();
+            foreach (var pt in existingPartTypes) { if (!_partTypeOptions.Contains(pt)) _partTypeOptions.Add(pt); }
+            _partTypeOptions.Sort();
+            
+            var existingJigTypes = _allJigs.Where(j => !string.IsNullOrWhiteSpace(j.JigType)).Select(j => j.JigType!.Trim()).Distinct();
+            foreach (var jt in existingJigTypes) { if (!_jigTypeOptions.Contains(jt)) _jigTypeOptions.Add(jt); }
+            _jigTypeOptions.Sort();
+
             FilterData();
         }
         catch (Exception ex) { _globalError = ex.Message; }
@@ -370,10 +379,11 @@ public partial class RegisterJig : ComponentBase
         _removeExistingImage = false;
         _selectedDate = null;
 
-        // แปลงวันที่เพื่อแสดงบนปฏิทิน
+        // แปลงวันที่เพื่อแสดงบนปฏิทิน — รองรับหลายรูปแบบ
         if (!string.IsNullOrEmpty(_editingJig.Date))
         {
-            if (DateTime.TryParseExact(_editingJig.Date, "dd/MM/yy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d))
+            var dateFormats = new[] { "dd/MM/yyyy", "dd/MM/yy", "d/M/yyyy", "d/M/yy", "yyyy-MM-dd", "MM/dd/yyyy" };
+            if (DateTime.TryParseExact(_editingJig.Date, dateFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d))
                 _selectedDate = d;
         }
 

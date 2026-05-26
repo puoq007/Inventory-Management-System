@@ -18,15 +18,41 @@ public class JigService
     }
 
     /// <summary>
-    /// สร้างรหัสจิกถัดไปจาก ToolNo — ตัวอย่าง: ถ้า T123-01 มีอยู่แล้ว จะสร้าง T123-02
+    /// สร้างรหัสจิกถัดไปจาก Prefix (ค่าเริ่มต้นคือ Tool Prefix เช่น JBM10)
     /// </summary>
-    public async Task<string> GenerateNextJigId(string? toolNo)
+    public async Task<string> GenerateNextJigId(string? prefix)
     {
-        if (string.IsNullOrWhiteSpace(toolNo)) 
-            return "JIG-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+        if (string.IsNullOrWhiteSpace(prefix)) 
+            prefix = "TOOL";
             
-        int nextNum = (await GetMaxSuffixFromDb(toolNo)) + 1;
-        return $"{toolNo}-{nextNum:D2}";
+        int nextNum = (await GetMaxSuffixFromDb(prefix)) + 1;
+        return $"{prefix}-{nextNum:D2}";
+    }
+
+    /// <summary>
+    /// ดึง Prefix สำหรับสร้าง ID จากข้อมูลจิก โดยให้ความสำคัญกับ ToolNo (เช่น HTM39, BK043)
+    /// </summary>
+    public string ExtractIdPrefix(Jig jig)
+    {
+        // ลำดับความสำคัญ: ToolNo → PartNumber → PartType → "TOOL"
+        if (!string.IsNullOrWhiteSpace(jig.ToolNo))
+            return CleanAllSpaces(jig.ToolNo)?.ToUpper() ?? "TOOL";
+
+        if (!string.IsNullOrWhiteSpace(jig.PartNumber))
+        {
+            var p = jig.PartNumber.Trim();
+            if (p.Contains("-"))
+            {
+                var prefix = p.Split('-')[0];
+                return CleanAllSpaces(prefix)?.ToUpper() ?? "TOOL";
+            }
+            return CleanAllSpaces(p)?.ToUpper() ?? "TOOL";
+        }
+
+        if (!string.IsNullOrWhiteSpace(jig.PartType))
+            return CleanAllSpaces(jig.PartType)?.ToUpper() ?? "TOOL";
+
+        return "TOOL";
     }
 
     /// <summary>ดึงหมายเลขลำดับสูงสุดที่มีอยู่ในฐานข้อมูลสำหรับ ToolNo ที่ระบุ</summary>

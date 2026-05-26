@@ -124,7 +124,8 @@ public class JigsController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(jig.Id))
         {
-            jig.Id = await _jigService.GenerateNextJigId(jig.ToolNo);
+            var prefix = _jigService.ExtractIdPrefix(jig);
+            jig.Id = await _jigService.GenerateNextJigId(prefix);
         }
         
         if (string.IsNullOrWhiteSpace(jig.SmartCodeName))
