@@ -43,7 +43,7 @@ window.exportPdf = async function (title, htmlContent, fileName) {
             r.readAsDataURL(blob);
         });
         logoHtml = '<img src="' + b64 + '" class="logo-img" alt="Mattel" />';
-    } catch (e) {}
+    } catch (e) { }
 
     var safeHtml = htmlContent.replace("<div class='logo-text'>MATTEL</div>", logoHtml);
     var printWnd = window.open('', '_blank', 'width=900,height=700');
@@ -111,10 +111,10 @@ var cssTemplate =
     '.hole-left, .hole-right { position: absolute; width: 3.5mm; height: 3.5mm; border-radius: 50%; border: 0.4mm solid #bbb; background: white; z-index: 10; }' +
     '.hole-left  { left: 1.25mm;  top: 1.75mm; }' +
     '.hole-right { right: 1.25mm; bottom: 1.75mm; }' +
-    '.plate { position: absolute; top: 3.5mm; left: 6.5mm; width: 87mm; height: 33mm; display: flex; flex-direction: row; align-items: center; gap: 2.5mm; }' +
-    '.plate-qr { width: 29mm; height: 29mm; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 3mm; }' +
-    '.plate-qr svg { width: 29mm; height: 29mm; display: block; }' +
-    '.plate-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.7mm; min-width: 0; padding-left: 2mm; }' +
+    '.plate { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: row; align-items: center; gap: 2.5mm; }' +
+    '.plate-qr { width: 33mm; height: 33mm; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }' +
+    '.plate-qr svg { width: 33mm; height: 33mm; display: block; }' +
+    '.plate-info { display: flex; flex-direction: column; justify-content: center; gap: 0.7mm; min-width: 0; padding-left: 2mm; }' +
     '.plate-id { font-size: 11pt; font-weight: 900; color: #000; line-height: 1.1; letter-spacing: -0.3px; margin-bottom: 0.5mm; }' +
     '.plate-row { font-size: 6pt; font-weight: 400; color: #000; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
     '.plate-inline { display: flex; gap: 3mm; }';
@@ -165,18 +165,17 @@ window.printQRs = function (qrDataList) {
     wnd.document.close();
 };
 
-// ─── SVG Sheet Export — supports Mimaki UJF-3042 MkII (300×420mm) & UJF-6042 MkII (600×420mm)
-// Label: 100×40mm | 3042 → 3col×10row=30/sheet | 6042 → 6col×10row=60/sheet
+// ─── SVG Sheet Export — supports Mimaki UJF-3042 MkII (300×420mm)
+// Label: 100×40mm | 3042 → 3col×10row=30/sheet
 window.exportSVGSheets = function (qrDataList, bedW) {
     if (!qrDataList || qrDataList.length === 0) return;
 
-    var BED_W = bedW === 600 ? 600 : 300;   // 3042=300mm, 6042=600mm
-    var BED_H = 420;                         // ທั้ง  2 รุ่น แนวนอนเหมือนกัน
-    var MODEL = BED_W === 600 ? 'UJF-6042 MkII' : 'UJF-3042 MkII';
+    var BED_W = bedW === 600 ? 600 : 300;
+    var BED_H = 420;
     var LBL_W = 100, LBL_H = 40;
-    var COLS = Math.floor(BED_W / LBL_W);    // 3042 → 3 | 6042 → 6
-    var ROWS = Math.floor(BED_H / LBL_H);    // 10
-    var PER_PAGE = COLS * ROWS;              // 3042 → 30 | 6042 → 60
+    var COLS = Math.floor(BED_W / LBL_W);
+    var ROWS = Math.floor(BED_H / LBL_H);
+    var PER_PAGE = COLS * ROWS;
 
     function escXml(s) {
         return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -199,10 +198,10 @@ window.exportSVGSheets = function (qrDataList, bedW) {
     }
 
     function buildLabel(data, x, y) {
-        var dateStr  = cleanDate(data.date);
-        var textX    = 38;
-        var ID_FS    = 4.5;
-        var ROW_FS   = 2.4;
+        var dateStr = cleanDate(data.date);
+        var textX = 38;
+        var ID_FS = 4.5;
+        var ROW_FS = 2.4;
         return [
             '<g transform="translate(' + x.toFixed(2) + ',' + y.toFixed(2) + ')">',
             '<rect width="' + LBL_W + '" height="' + LBL_H + '" fill="white"/>',
@@ -244,13 +243,10 @@ window.exportSVGSheets = function (qrDataList, bedW) {
         ].join('\n');
 
         var blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-        var url  = URL.createObjectURL(blob);
-        var a    = document.createElement('a');
-        a.href   = url;
-        var prefix = BED_W === 600 ? '6042' : '3042';
-        a.download = sheets.length > 1
-            ? prefix + '_sheet' + (shIdx + 1) + '_of' + sheets.length + '.svg'
-            : prefix + '_sheet1.svg';
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'QRcode_Jig.svg';
         a.style.display = 'none';
         document.body.appendChild(a);
         setTimeout(function () { a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, shIdx * 900);
@@ -306,9 +302,9 @@ window.exportSingleSVG = function (svgHtml, data) {
     ].join('\n');
 
     var blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href   = url;
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
     a.download = 'label_' + data.id.replace(/[^a-zA-Z0-9_\-]/g, '_') + '.svg';
     a.style.display = 'none';
     document.body.appendChild(a);
