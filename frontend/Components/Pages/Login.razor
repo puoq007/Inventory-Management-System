@@ -8,7 +8,8 @@
 
 <form @onsubmit="ProcessLogin">
     <div class="mb-6">
-        <label for="employeeid" class="block text-sm font-medium text-slate-300 mb-2">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
+        <label for="employeeid" class="block text-sm font-medium text-slate-300 mb-1">@Lang.T("รหัสพนักงาน", "Employee ID")</label>
+        <p class="text-xs text-slate-400 mb-2">@Lang.T("ตัวอย่าง: 1111, 9000, 9023", "Example: 1111, 9000, 9023")</p>
         <div class="relative">
             <input @ref="_employeeIdInput" @bind="_employeeId" @bind:event="oninput" type="text" id="employeeid" inputmode="numeric" pattern="[0-9]*" maxlength="10" 
                    class="block w-full rounded-xl bg-slate-900 border-slate-700 text-slate-100 shadow-sm focus:border-mattel-red focus:ring-mattel-red sm:text-base py-3 px-4 border transition-colors" placeholder="@Lang.T("กรอกรหัสพนักงาน...", "Enter Employee ID...")" />

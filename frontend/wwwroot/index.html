@@ -365,7 +365,7 @@
     <script>
         // Apply theme to loading screen BEFORE Blazor renders (prevents flash)
         (function () {
-            var theme = localStorage.getItem('theme') || 'Dark';
+            var theme = localStorage.getItem('theme') || 'Light';
             var isLight = (theme === 'Light' || theme === 'light');
             if (isLight) {
                 document.documentElement.classList.add('theme-light');

@@ -123,6 +123,7 @@ public partial class CurrentStatus : ComponentBase
         "Broken" => "ชำรุดเสียหาย",
         "Lost" => "สูญหาย",
         "Issues" => "พบปัญหาทั้งหมด",
+        "Other" => "อื่นๆ",
         _ => condition
     };
 
@@ -357,7 +358,13 @@ public partial class CurrentStatus : ComponentBase
             }
             else
             {
-                // แสดง Error ให้ผู้ใช้ (ถ้าต้องการ)
+                var error = await res.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Error",
+                    text = $"ไม่สามารถแจ้งปัญหาได้: {error}",
+                    icon = "error"
+                });
             }
         }
         catch

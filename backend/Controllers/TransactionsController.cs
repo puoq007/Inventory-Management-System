@@ -235,6 +235,10 @@ namespace backend.Controllers
                     newStatus = "Lost";
                     newCondition = "Lost";
                     break;
+                case "Other":
+                    newStatus = "Evaluation";
+                    newCondition = "Other";
+                    break;
                 default:
                     return BadRequest("Invalid Issue Type");
             }

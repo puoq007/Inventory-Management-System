@@ -87,60 +87,44 @@ else
     <!-- Details Sections -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Broken / Scrapped Focus -->
-        @if (_role != "Guest")
-        {
-            <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-6">
-                <div class="flex items-center justify-between mb-4 group cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?condition=Issues")'>
-                    <h2 class="text-lg font-bold text-slate-100 group-hover:text-red-700 transition-colors flex items-center">
-                        <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
-                        </svg>
-                        @Lang.T("รายการที่ต้องดำเนินการ (พบปัญหา)", "Action Required (Issues)")
-                    </h2>
-                    <svg class="w-5 h-5 text-slate-400 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                </div>
-                
-                @if (_actionRequiredCount > 0)
-                {
-                    <div class="space-y-3">
-                        @foreach (var jig in _allJigs.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost").Take(5))
-                        {
-                            <div class="flex items-center justify-between p-3 bg-red-900/30 rounded-xl border border-red-900/40 cursor-pointer hover:bg-red-900/40 transition-colors" @onclick='() => NavManager.NavigateTo($"/current-status?condition=Issues")'>
-                                <div class="flex gap-3 items-center">
-                                    <div class="w-8 h-8 rounded-full bg-red-900/40 flex items-center justify-center text-red-400 shadow-xl border border-red-900/40">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> 
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-slate-200">@jig.Id</div>
-                                        <div class="text-xs text-red-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
-                                            @Lang.T(GetConditionThai(jig.Condition), jig.Condition)
-                                        </div>
+        <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-6">
+            <div class="flex items-center justify-between mb-4 group cursor-pointer" @onclick='() => NavManager.NavigateTo("/current-status?condition=Issues")'>
+                <h2 class="text-lg font-bold text-slate-100 group-hover:text-red-700 transition-colors flex items-center">
+                    <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                    </svg>
+                    @Lang.T("รายการที่ต้องดำเนินการ (พบปัญหา)", "Action Required (Issues)")
+                </h2>
+                <svg class="w-5 h-5 text-slate-400 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </div>
+            
+            @if (_actionRequiredCount > 0)
+            {
+                <div class="space-y-3">
+                    @foreach (var jig in _allJigs.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost").Take(5))
+                    {
+                        <div class="flex items-center justify-between p-3 bg-red-900/30 rounded-xl border border-red-900/40 cursor-pointer hover:bg-red-900/40 transition-colors" @onclick='() => NavManager.NavigateTo($"/current-status?condition=Issues")'>
+                            <div class="flex gap-3 items-center">
+                                <div class="w-8 h-8 rounded-full bg-red-900/40 flex items-center justify-center text-red-400 shadow-xl border border-red-900/40">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> 
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-slate-200">@jig.Id</div>
+                                    <div class="text-xs text-red-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+                                        @Lang.T(GetConditionThai(jig.Condition), jig.Condition)
                                     </div>
                                 </div>
-                                <div class="text-[10px] text-slate-400 font-medium">@FormatDate(jig.UpdatedAt)</div>
                             </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-slate-400 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-6 flex flex-col justify-center text-center">
-                <div class="w-16 h-16 bg-blue-900/40 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 tracking-wider">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <div class="text-[10px] text-slate-400 font-medium">@FormatDate(jig.UpdatedAt)</div>
+                        </div>
+                    }
                 </div>
-                <h2 class="text-xl font-bold text-slate-100 mb-2">@Lang.T("ยินดีต้อนรับ!", "Welcome!")</h2>
-                <p class="text-slate-400 text-sm">@Lang.T("คุณกำลังอยู่ในโหมดอ่านอย่างเดียวในฐานะผู้เยี่ยมชม คุณสามารถดูสถานะปัจจุบันของจิกที่มีอยู่ได้", "You are currently in <strong>Read-Only Mode</strong> as a Guest. You can view the current status of existing physical jigs.")</p>
-                <div class="mt-6 pt-6 border-t border-slate-700">
-                    <a href="/login" class="px-4 py-2 bg-mattel-red text-white font-medium rounded-lg hover:bg-mattel-hover transition-colors inline-block text-sm">@Lang.T("ลงชื่อเข้าใช้เพื่อดำเนินการต่อ", "Sign In to Continue")</a>
-                </div>
-            </div>
-        }
+            }
+            else
+            {
+                <div class="text-slate-400 text-sm py-4 italic text-center">@Lang.T("ไม่มีปัญหาที่ต้องดำเนินการในขณะนี้", "No current issues requiring action.")</div>
+            }
+        </div>
 
         <!-- Recent Transactions -->
         <div class="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-6">

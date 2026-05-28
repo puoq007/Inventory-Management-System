@@ -10,7 +10,7 @@ namespace frontend.Services
         private readonly IJSRuntime _js;
 
         /// <summary>ธีมปัจจุบัน: "Dark" หรือ "Light"</summary>
-        public string Current { get; private set; } = "Dark";
+        public string Current { get; private set; } = "Light";
 
         /// <summary>true เมื่อธีมปัจจุบันเป็น Light — ใช้ใน Razor template แทน Current == "Light"</summary>
         public bool IsLight => Current == "Light";

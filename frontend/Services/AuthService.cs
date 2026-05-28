@@ -46,6 +46,13 @@ public class AuthService
         var emp  = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_employee");
         var role = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_role");
         var name = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "auth_name");
+        
+        if (string.IsNullOrEmpty(role))
+        {
+            role = "Guest";
+            name = "Guest User";
+        }
+        
         return (emp, role, name);
     }
 
