@@ -93,11 +93,18 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
-app.UseStaticFiles();
+// Configure static files to serve Blazor WASM framework files (.dat, .blat, etc.)
+var staticFileOptions = new StaticFileOptions
+{
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream"
+};
+app.UseStaticFiles(staticFileOptions);
 app.UseCors("AllowAll");
 app.UseIpRateLimiting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapFallbackToFile("index.html");  // Blazor WASM SPA fallback — ถ้าไม่ใช่ API ให้ส่ง index.html
 
 app.Run();

@@ -227,7 +227,7 @@
     private string GetImageSrc(string imageUrl)
     {
         if (string.IsNullOrEmpty(imageUrl)) return "";
-        if (imageUrl.StartsWith("/")) return $"http://localhost:5105{imageUrl}";
+        if (imageUrl.StartsWith("/")) return imageUrl;
         return imageUrl;
     }
 }

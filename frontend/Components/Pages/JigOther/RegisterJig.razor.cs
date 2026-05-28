@@ -497,7 +497,7 @@ public partial class RegisterJig : ComponentBase
         if (string.IsNullOrEmpty(imageUrl)) return "";
         // ถ้าเป็น path สัมพัทธ์ เช่น /uploads/xxx.jpg ให้เติม URL ของ Backend นำหน้า
         if (imageUrl.StartsWith("/"))
-            return $"http://localhost:5105{imageUrl}";
+            return imageUrl;
         return imageUrl;
     }
 
