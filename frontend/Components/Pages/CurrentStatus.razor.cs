@@ -108,7 +108,6 @@ public partial class CurrentStatus : ComponentBase
     {
         "Available" => "พร้อมใช้งาน",
         "InUse" => "กำลังใช้งาน",
-        "InTransit" => "กำลังขนย้าย",
         "Cleaning" => "กำลังทำความสะอาด",
         "Evaluation" => "รอประเมินสภาพ",
         "Lost" => "สูญหาย",
@@ -133,7 +132,6 @@ public partial class CurrentStatus : ComponentBase
     {
         "Available" => "bg-emerald-900/40 text-emerald-400 border-emerald-800",
         "InUse" => "bg-blue-900/40 text-blue-400 border-blue-800",
-        "InTransit" => "bg-orange-900/40 text-orange-400 border-orange-800",
         "Cleaning" => "bg-amber-900/40 text-amber-400 border-amber-800",
         "Evaluation" => "bg-purple-900/40 text-purple-400 border-purple-800",
         "Lost" => "bg-slate-700 text-slate-400 border-slate-600",
@@ -243,7 +241,7 @@ public partial class CurrentStatus : ComponentBase
 
         if (_conditionFilter == "Issues")
         {
-            query = query.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost" || j.Condition == "Other");
+            query = query.Where(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost");
         }
         else if (_conditionFilter != "All")
         {

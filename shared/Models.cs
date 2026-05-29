@@ -159,7 +159,7 @@ public class Jig
     public string? ImageUrl { get; set; }
 
     // --- สถานะและตำแหน่ง ---
-    /// <summary>สถานะจิก: Available (พร้อมใช้), InUse (ใช้งาน), InTransit (กำลังขนย้าย), Cleaning (กำลังล้าง), Evaluation (ประเมิน), Lost (สูญหาย), Scrapped (จำหน่าย)</summary>
+    /// <summary>สถานะจิก: Available (พร้อมใช้), InUse (ใช้งาน), Evaluation (ประเมิน), Scrapped (จำหน่าย)</summary>
     public string Status { get; set; } = "Available";
     /// <summary>สภาพจิก: Good (ดี), NeedsCleaning (ต้องล้าง), Broken (ชำรุด)</summary>
     public string Condition { get; set; } = "Good";

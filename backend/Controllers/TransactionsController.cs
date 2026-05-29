@@ -59,65 +59,7 @@ namespace backend.Controllers
             return NoContent();
         }
         /// <summary>
-        /// ขนย้ายจิกแบบ Batch — สแกนจิกหลายตัวเข้า "ตะกร้า" แล้วยืนยันทีเดียว
-        /// เปลี่ยนสถานะจิกทุกตัวเป็น InTransit, LocatorId = null
-        /// </summary>
-        [HttpPost("transfer-out")]
-        public async Task<IActionResult> TransferOut([FromBody] TransferOutRequest request)
-        {
-            if (request.JigIds == null || request.JigIds.Length == 0)
-                return BadRequest("ต้องระบุอย่างน้อย 1 Jig ID");
-
-            var successCount = 0;
-            var failedIds = new List<string>();
-            var txnIds = new List<string>();
-
-            foreach (var rawId in request.JigIds)
-            {
-                var jigId = CleanAllSpaces(rawId)?.ToUpperInvariant();
-                if (string.IsNullOrEmpty(jigId)) { failedIds.Add(rawId ?? "(empty)"); continue; }
-
-                var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
-                if (jig == null) { failedIds.Add(jigId); continue; }
-                if (jig.Status == "InTransit") { failedIds.Add($"{jigId} (already InTransit)"); continue; }
-                if (jig.Status == "Evaluation" || jig.Status == "Lost") { failedIds.Add($"{jigId} ({jig.Status})"); continue; }
-
-                // สร้าง Transaction + Snapshot
-                var txn = new TransactionRow
-                {
-                    JigUid = jig.Uid,
-                    Action = "TransferOut",
-                    Destination = "InTransit",
-                    User = request.User ?? "Unknown",
-                    Timestamp = DateTime.Now
-                };
-
-                var snapshot = new JigStateSnapshot
-                {
-                    TransactionId = txn.Id,
-                    JigUid = jig.Uid,
-                    PreviousStatus = jig.Status,
-                    PreviousCondition = jig.Condition,
-                    PreviousLocatorId = jig.LocatorId
-                };
-
-                jig.Status = "InTransit";
-                jig.LocatorId = null;
-                jig.UpdatedAt = DateTime.UtcNow;
-
-                _context.JigStateSnapshots.Add(snapshot);
-                _context.Transactions.Add(txn);
-                txnIds.Add(txn.Id);
-                successCount++;
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"ขนย้ายสำเร็จ {successCount} รายการ", successCount, failedIds, txnIds });
-        }
-
-        /// <summary>
-        /// เบิกจิกออกไปสายการผลิต — ถ้าจิกอยู่ InUse จะเป็น Transfer, ถ้า InTransit จะเป็น TransferIn
+        /// เบิกจิกออกไปสายการผลิต — ถ้าจิกอยู่ InUse อยู่แล้วจะเป็น Transfer แทน
         /// </summary>
         [HttpPost("checkout")]
         public async Task<IActionResult> CheckOut([FromBody] ScanRequest request)
@@ -131,12 +73,8 @@ namespace backend.Controllers
             if (jig.Status == "Cleaning" || jig.Status == "Evaluation" || jig.Status == "Lost")
                 return BadRequest($"ไม่สามารถทำรายการได้ สถานะปัจจุบันของจิ๊กคือ '{jig.Status}'");
 
-            string actionType = jig.Status == "InTransit" ? "TransferIn" 
-                              : jig.Status == "InUse" ? "Transfer" 
-                              : "CheckOut";
-            string msg = actionType == "TransferIn" ? "รับขนย้ายสำเร็จ" 
-                       : actionType == "Transfer" ? "Transferred successfully" 
-                       : "Checked out successfully";
+            string actionType = (jig.Status == "InUse") ? "Transfer" : "CheckOut";
+            string msg = (actionType == "Transfer") ? "Transferred successfully" : "Checked out successfully";
 
             // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
@@ -168,8 +106,7 @@ namespace backend.Controllers
             return Ok(new { message = msg, actionType, jig, txnId = txn.Id });
         }
 
-        /// <summary>ส่งจิกไปล้าง — เปลี่ยนสถานะเป็น Cleaning, สภาพ NeedsCleaning (รองรับ InTransit → TransferIn)
-        /// </summary>
+        /// <summary>ส่งจิกไปล้าง — เปลี่ยนสถานะเป็น Cleaning, สภาพ NeedsCleaning</summary>
         [HttpPost("checkin")]
         public async Task<IActionResult> CheckIn([FromBody] ScanRequest request)
         {
@@ -179,13 +116,11 @@ namespace backend.Controllers
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
-            string actionType = jig.Status == "InTransit" ? "TransferIn" : "CheckInToCleaning";
-
             // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
-                Action = actionType,
+                Action = "CheckInToCleaning",
                 Destination = "Cleaning Station",
                 User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
@@ -209,12 +144,10 @@ namespace backend.Controllers
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            var msg = actionType == "TransferIn" ? "รับขนย้ายสำเร็จ (ส่งล้าง)" : "Checked in to cleaning successfully";
-            return Ok(new { message = msg, actionType, jig, txnId = txn.Id });
+            return Ok(new { message = "Checked in to cleaning successfully", jig, txnId = txn.Id });
         }
 
-        /// <summary>คืนจิกเข้าตู้เก็บ — เปลี่ยนสถานะเป็น Available, สภาพ Good (รองรับ InTransit → TransferIn)
-        /// </summary>
+        /// <summary>คืนจิกเข้าตู้เก็บ — เปลี่ยนสถานะเป็น Available, สภาพ Good</summary>
         [HttpPost("returntostore")]
         public async Task<IActionResult> ReturnToStore([FromBody] ScanRequest request)
         {
@@ -224,13 +157,11 @@ namespace backend.Controllers
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
 
-            string actionType = jig.Status == "InTransit" ? "TransferIn" : "ReturnToStore";
-
             // บันทึก Snapshot สถานะก่อนเปลี่ยน
             var txn = new TransactionRow
             {
                 JigUid = jig.Uid,
-                Action = actionType,
+                Action = "ReturnToStore",
                 Destination = "Storage",
                 User = request.User ?? "Unknown",
                 Timestamp = DateTime.Now
@@ -254,8 +185,7 @@ namespace backend.Controllers
             _context.Transactions.Add(txn);
             await _context.SaveChangesAsync();
 
-            var msg = actionType == "TransferIn" ? "รับขนย้ายสำเร็จ (เก็บเข้าตู้)" : "Returned to store successfully";
-            return Ok(new { message = msg, actionType, jig, txnId = txn.Id });
+            return Ok(new { message = "Returned to store successfully", jig, txnId = txn.Id });
         }
 
         /// <summary>โมเดล Request สำหรับการสแกนเบิก/คืน/ล้าง</summary>
@@ -265,13 +195,6 @@ namespace backend.Controllers
             public string User { get; set; } = "";
             public string? Destination { get; set; }
             public string? LocatorId { get; set; }
-        }
-
-        /// <summary>โมเดล Request สำหรับการขนย้ายแบบ Batch (ตะกร้า)</summary>
-        public class TransferOutRequest
-        {
-            public string[] JigIds { get; set; } = Array.Empty<string>();
-            public string User { get; set; } = "";
         }
 
         /// <summary>โมเดล Request สำหรับการแจ้งปัญหา</summary>
@@ -294,9 +217,6 @@ namespace backend.Controllers
 
             var jig = await _context.Jigs.FirstOrDefaultAsync(j => j.Id == jigId);
             if (jig == null) return NotFound($"Jig '{jigId}' not found");
-
-            if (jig.Status == "InTransit")
-                return BadRequest("ไม่สามารถแจ้งปัญหาจิ๊กที่กำลังขนย้ายได้ กรุณารับจิ๊กก่อน");
 
             string newStatus;
             string newCondition;
