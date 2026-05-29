@@ -386,10 +386,26 @@
         <a href="#" onclick="location.reload();return false" style="color:#fecaca;margin-left:0.5rem;">Reload</a>
     </div>
 
+    <div id="mobile-error-log" style="display:none; position:absolute; top:0; left:0; width:100%; min-height:100px; background:red; color:white; z-index:9999; padding:20px; font-size:12px;"></div>
+
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var el = document.getElementById('mobile-error-log');
+            el.style.display = 'block';
+            el.innerHTML += "Error: " + msg + "<br/>Line: " + lineNo + "<br/>Col: " + columnNo + "<br/>";
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function (event) {
+            var el = document.getElementById('mobile-error-log');
+            el.style.display = 'block';
+            el.innerHTML += "Promise Error: " + (event.reason && event.reason.message ? event.reason.message : event.reason) + "<br/>";
+        });
+    </script>
+
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="js/charts.js"></script>
+    <script src="js/charts.js?v=7"></script>
 </body>
 
 </html>

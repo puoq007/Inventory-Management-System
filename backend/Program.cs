@@ -94,8 +94,15 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 // Configure static files to serve Blazor WASM framework files (.dat, .blat, etc.)
+var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+provider.Mappings[".wasm"] = "application/wasm";
+provider.Mappings[".dat"] = "application/octet-stream";
+provider.Mappings[".blat"] = "application/octet-stream";
+provider.Mappings[".dll"] = "application/octet-stream";
+
 var staticFileOptions = new StaticFileOptions
 {
+    ContentTypeProvider = provider,
     ServeUnknownFileTypes = true,
     DefaultContentType = "application/octet-stream"
 };

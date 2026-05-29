@@ -31,9 +31,16 @@ public partial class ScanOut : ComponentBase
     private List<Locator>? _locators;
     private List<ScanSessionItem> _sessionHistory = new();
 
-    private bool IsInputDisabled => _isProcessing || string.IsNullOrEmpty(_selectedLocatorId);
+    // --- Transfer Cart Mode ---
+    private bool _isTransferMode = false;
+    private List<TransferCartItem> _transferCart = new();
+    private bool _isConfirmingTransfer = false;
 
-    private string InputPlaceholder => string.IsNullOrEmpty(_selectedLocatorId) ? Lang.T("เลือกสถานที่ก่อน...", "Select Location first...") : Lang.T("สแกนคิวอาร์โค้ดที่นี่...", "Scan QR Code here...");
+    private bool IsInputDisabled => _isProcessing || (_isTransferMode ? false : string.IsNullOrEmpty(_selectedLocatorId));
+
+    private string InputPlaceholder => _isTransferMode
+        ? Lang.T("สแกนจิกเข้าตะกร้าขนย้าย...", "Scan Jig into transfer cart...")
+        : (string.IsNullOrEmpty(_selectedLocatorId) ? Lang.T("เลือกสถานที่ก่อน...", "Select Location first...") : Lang.T("สแกนคิวอาร์โค้ดที่นี่...", "Scan QR Code here..."));
 
     /// <summary>โมเดลบันทึกการสแกนแต่ละรายการใน Session ปัจจุบัน</summary>
     public class ScanSessionItem
@@ -46,6 +53,13 @@ public partial class ScanOut : ComponentBase
         public string ErrorMessage { get; set; } = "";
         public string? TransactionId { get; set; }
         public bool IsCancelled { get; set; } = false;
+    }
+
+    /// <summary>โมเดลรายการในตะกร้าขนย้าย</summary>
+    public class TransferCartItem
+    {
+        public string JigId { get; set; } = "";
+        public DateTime AddedAt { get; set; } = DateTime.Now;
     }
 
     /// <summary>ตรวจสอบสิทธิ์และโหลดรายการตำแหน่ง</summary>
@@ -96,6 +110,126 @@ public partial class ScanOut : ComponentBase
         StateHasChanged();
     }
 
+    /// <summary>สลับโหมดปกติ ↔ ขนย้าย</summary>
+    private void ToggleTransferMode()
+    {
+        _isTransferMode = !_isTransferMode;
+        _errorMessage = "";
+        _successMessage = "";
+        _manualJigId = "";
+        if (!_isTransferMode)
+        {
+            _transferCart.Clear();
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>ลบรายการออกจากตะกร้าขนย้าย</summary>
+    private void RemoveFromCart(TransferCartItem item)
+    {
+        _transferCart.Remove(item);
+        StateHasChanged();
+    }
+
+    /// <summary>ล้างตะกร้าขนย้ายทั้งหมด</summary>
+    private void ClearTransferCart()
+    {
+        _transferCart.Clear();
+        _errorMessage = "";
+        _successMessage = "";
+        StateHasChanged();
+    }
+
+    /// <summary>ยืนยันขนย้ายทั้งหมด — เรียก API transfer-out แบบ Batch</summary>
+    private async Task ConfirmTransfer()
+    {
+        if (_transferCart.Count == 0) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirmAction",
+            Lang.T("ยืนยันการขนย้าย?", "Confirm Transfer?"),
+            Lang.T($"ต้องการขนย้ายจิก {_transferCart.Count} รายการหรือไม่?", $"Transfer {_transferCart.Count} jig(s)?"),
+            Lang.T("ยืนยัน", "Yes, Transfer"),
+            "warning",
+            Lang.T("ยกเลิก", "Cancel")
+        );
+
+        if (!confirmed) return;
+
+        try
+        {
+            _isConfirmingTransfer = true;
+            StateHasChanged();
+
+            var request = new
+            {
+                JigIds = _transferCart.Select(c => c.JigId).ToArray(),
+                User = _currentUser
+            };
+
+            var response = await Api.PostAsJsonAsync("api/transactions/transfer-out", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                var successCount = result.GetProperty("successCount").GetInt32();
+
+                // เพิ่มเข้าประวัติ Session
+                foreach (var item in _transferCart)
+                {
+                    _sessionHistory.Insert(0, new ScanSessionItem
+                    {
+                        JigId = item.JigId,
+                        Action = "TransferOut",
+                        Location = "InTransit",
+                        Timestamp = DateTime.Now,
+                        IsError = false
+                    });
+                }
+
+                _transferCart.Clear();
+                _successMessage = ""; // Clear banner, rely on Swal
+
+                // แสดง failed items ถ้ามี
+                if (result.TryGetProperty("failedIds", out var failedArr) && failedArr.GetArrayLength() > 0)
+                {
+                    var failedList = string.Join(", ", failedArr.EnumerateArray().Select(f => f.GetString()));
+                    _errorMessage = Lang.T($"ไม่สำเร็จ: {failedList}", $"Failed: {failedList}");
+                }
+
+                _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = Lang.T("ขนย้ายสำเร็จ!", "Transfer Complete!"),
+                    text = Lang.T($"ขนย้ายสำเร็จ {successCount} รายการ", $"{successCount} jig(s) transferred"),
+                    icon = "success",
+                    timer = 2500,
+                    showConfirmButton = false
+                });
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _errorMessage = $"ไม่สำเร็จ: {error}";
+
+                _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Error!",
+                    text = error,
+                    icon = "error",
+                    confirmButtonColor = "#ef4444"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isConfirmingTransfer = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task HandleLocationKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrEmpty(_selectedLocatorId))
@@ -104,12 +238,12 @@ public partial class ScanOut : ComponentBase
         }
     }
 
-    /// <summary>ตั้งค่า Focus ตามลำดับ — ถ้ายังไม่เลือกตำแหน่งจะ Focus ที่ช่องค้นหา, ถ้าเลือกแล้วจะ Focus ที่ช่องสแกนจิก</summary>
+    /// <summary>ตั้งค่า Focus ตามลำดับ — ถ้ายังไม่เลือกตำแหน่ง (และไม่ใช่โหมดขนย้าย) จะ Focus ที่ช่องค้นหา, มิฉะนั้นจะ Focus ที่ช่องสแกนจิก</summary>
     private async Task SetFocusAsync()
     {
         try
         {
-            if (string.IsNullOrEmpty(_selectedLocatorId))
+            if (!_isTransferMode && string.IsNullOrEmpty(_selectedLocatorId))
             {
                 if (_locationSearchRef.Context != null)
                 {
@@ -140,7 +274,106 @@ public partial class ScanOut : ComponentBase
         {
             _errorMessage = "Please enter a Jig ID";
             return;
-        }await ProcessScan(_manualJigId.Trim());
+        }
+
+        if (_isTransferMode)
+        {
+            await AddToTransferCart(_manualJigId.Trim());
+        }
+        else
+        {
+            await ProcessScan(_manualJigId.Trim());
+        }
+    }
+
+    /// <summary>เพิ่มจิกเข้าตะกร้าขนย้าย — ตรวจสอบซ้ำและตรวจสอบว่าจิกมีอยู่จริง</summary>
+    private async Task AddToTransferCart(string jigId)
+    {
+        jigId = CleanAllSpaces(jigId)?.ToUpperInvariant() ?? "";
+        if (string.IsNullOrEmpty(jigId)) return;
+
+        // ตรวจสอบซ้ำ
+        if (_transferCart.Any(c => c.JigId == jigId))
+        {
+            _errorMessage = Lang.T($"จิก {jigId} อยู่ในตะกร้าแล้ว", $"Jig {jigId} is already in the cart");
+            _manualJigId = "";
+            StateHasChanged();
+            await Task.Delay(50);
+            await SetFocusAsync();
+
+            _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = Lang.T("ซ้ำ!", "Duplicate!"),
+                text = Lang.T($"จิก {jigId} อยู่ในตะกร้าแล้ว", $"Jig {jigId} is already in the cart"),
+                icon = "warning",
+                timer = 2000,
+                showConfirmButton = false,
+                toast = true,
+                position = "top-end"
+            });
+            return;
+        }
+
+        // ตรวจสอบว่าจิกมีอยู่จริงผ่าน API
+        try
+        {
+            var jigs = await Api.GetFromJsonAsync<List<shared.Models.Jig>>("api/jigs");
+            var jig = jigs?.FirstOrDefault(j => string.Equals(CleanAllSpaces(j.Id), jigId, StringComparison.OrdinalIgnoreCase));
+
+            if (jig == null)
+            {
+                _errorMessage = Lang.T($"ไม่พบจิก {jigId} ในระบบ", $"Jig {jigId} not found");
+                _manualJigId = "";
+                StateHasChanged();
+                await Task.Delay(50);
+                await SetFocusAsync();
+                return;
+            }
+
+            if (jig.Status == "InTransit")
+            {
+                _errorMessage = Lang.T($"จิก {jigId} กำลังขนย้ายอยู่แล้ว", $"Jig {jigId} is already InTransit");
+                _manualJigId = "";
+                StateHasChanged();
+                await Task.Delay(50);
+                await SetFocusAsync();
+                return;
+            }
+
+            if (jig.Status == "Evaluation" || jig.Status == "Lost")
+            {
+                _errorMessage = Lang.T($"ไม่สามารถขนย้ายจิก {jigId} ได้ (สถานะ: {jig.Status})", $"Cannot transfer jig {jigId} (Status: {jig.Status})");
+                _manualJigId = "";
+                StateHasChanged();
+                await Task.Delay(50);
+                await SetFocusAsync();
+                return;
+            }
+
+            _transferCart.Add(new TransferCartItem { JigId = jigId, AddedAt = DateTime.Now });
+            _errorMessage = "";
+            _successMessage = ""; // Clear banner, rely on Swal toast
+
+            _ = JSRuntime.InvokeVoidAsync("Swal.fire", new
+            {
+                title = Lang.T("เพิ่มแล้ว!", "Added!"),
+                text = $"{jigId}",
+                icon = "success",
+                timer = 1500,
+                showConfirmButton = false,
+                toast = true,
+                position = "top-end"
+            });
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+
+        _manualJigId = "";
+        StateHasChanged();
+        await Task.Delay(50);
+        await SetFocusAsync();
     }
 
     /// <summary>

@@ -318,20 +318,21 @@ var locatorCss =
     '@page { size: A4; margin: 15mm; }' +
     '* { box-sizing: border-box; -webkit-print-color-adjust: exact; }' +
     'body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; background: white; }' +
-    '.cards-grid { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }' +
-    '.card { display: inline-flex; align-items: center; gap: 20px; border: 2px solid #ccc; border-radius: 12px; padding: 20px 24px; break-inside: avoid; max-width: 100%; }' +
-    '.card .qr svg { width: 150px; height: 150px; flex-shrink: 0; }' +
-    '.card .info { display: flex; flex-direction: column; gap: 5px; white-space: normal; word-break: break-word; }' +
-    '.card .id { font-size: 20pt; font-weight: 900; color: #000; margin-bottom: 5px; }' +
-    '.card .row { font-size: 12pt; color: #111; font-weight: 600; }' +
-    '.card .label { color: #333; font-weight: 700; }';
+    '.cards-grid { display: flex; flex-wrap: wrap; gap: 15px; }' +
+    '.card { display: flex; flex-direction: row; align-items: center; gap: 15px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 15px 15px; break-inside: avoid; width: 330px; height: 160px; overflow: hidden; background: #fff; text-align: left; }' +
+    '.card .qr svg { width: 120px; height: 120px; flex-shrink: 0; }' +
+    '.card .info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }' +
+    '.card .id { font-size: 12pt; font-weight: 900; color: #0f172a; line-height: 1.1; word-wrap: break-word; margin-bottom: 4px; }' +
+    '.card .row { font-size: 10pt; color: #475569; font-weight: 500; line-height: 1.3; }' +
+    '.card .label { color: #1e293b; font-weight: 700; }';
 
 function locatorCardHtml(svgHtml, data) {
+    var siteName = data.site === "1" ? "MBK1" : (data.site === "2" ? "Mintech" : (data.site || '-'));
     return '<div class="card">' +
         '<div class="qr">' + svgHtml + '</div>' +
         '<div class="info">' +
         '<span class="id">' + data.id + '</span>' +
-        '<div class="row"><span class="label">Site: </span><strong>' + (data.site || '-') + '</strong></div>' +
+        '<div class="row"><span class="label">Site: </span>' + siteName + '</div>' +
         '<div class="row"><span class="label">Cabinet: </span>' + (data.cabinet || '-') + '</div>' +
         '<div class="row"><span class="label">Shelf: </span>' + (data.shelf || '-') + '</div>' +
         '<div class="row"><span class="label">Type: </span>' + (data.type || '-') + '</div>' +
@@ -366,11 +367,11 @@ var userBadgeCss =
     '* { box-sizing: border-box; -webkit-print-color-adjust: exact; }' +
     'body { margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; background: white; }' +
     '.cards-grid { display: flex; flex-wrap: wrap; gap: 10px; }' +
-    '.card { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; border-radius: 8px; padding: 10px 14px; width: 220px; break-inside: avoid; }' +
-    '.card .qr svg { width: 70px; height: 70px; }' +
-    '.card .info { display: flex; flex-direction: column; gap: 2px; }' +
-    '.card .id { font-size: 13pt; font-weight: 900; color: #000; }' +
-    '.card .row { font-size: 8pt; color: #111; font-weight: 600; }' +
+    '.card { display: flex; align-items: center; gap: 10px; border: 1px solid #ccc; border-radius: 8px; padding: 10px 14px; width: 220px; height: 95px; break-inside: avoid; overflow: hidden; }' +
+    '.card .qr svg { width: 70px; height: 70px; flex-shrink: 0; }' +
+    '.card .info { display: flex; flex-direction: column; gap: 2px; flex: 1; }' +
+    '.card .id { font-size: 13pt; font-weight: 900; color: #000; line-height: 1.1; }' +
+    '.card .row { font-size: 8pt; color: #111; font-weight: 600; line-height: 1.2; }' +
     '.card .label { color: #333; font-weight: 700; }';
 
 function userCardHtml(svgHtml, data) {

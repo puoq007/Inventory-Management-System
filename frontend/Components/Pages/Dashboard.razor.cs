@@ -24,6 +24,7 @@ public partial class Dashboard : ComponentBase
     private int _totalJigs = 0;
     private int _availableJigs = 0;
     private int _inUseCount = 0;
+    private int _inTransitCount = 0;
     private int _actionRequiredCount = 0;
     private int _monthlyTxnCount = 0;
     private double _utilizationRate = 0;
@@ -31,6 +32,7 @@ public partial class Dashboard : ComponentBase
     private int[] _checkOutCounts = new int[6];
     private int[] _checkInCounts = new int[6];
     private int[] _cleaningCounts = new int[6];
+    private int[] _transferCounts = new int[6];
     private DateTime _startOfWeek;
     
     private Dictionary<string, int> _topUsedJigs = new();
@@ -128,7 +130,8 @@ public partial class Dashboard : ComponentBase
         _totalJigs = _allJigs.Count;
         _availableJigs = _allJigs.Count(j => j.Status == "Available");
         _inUseCount = _allJigs.Count(j => j.Status == "InUse");
-        _actionRequiredCount = _allJigs.Count(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost");
+        _inTransitCount = _allJigs.Count(j => j.Status == "InTransit");
+        _actionRequiredCount = _allJigs.Count(j => j.Condition == "NeedsCleaning" || j.Condition == "Broken" || j.Condition == "Lost" || j.Condition == "Other");
         
         var thirtyDaysAgo = DateTime.Now.AddDays(-30);
         _monthlyTxnCount = _allTxns.Count(t => t.Timestamp >= thirtyDaysAgo);
@@ -164,6 +167,7 @@ public partial class Dashboard : ComponentBase
         _checkOutCounts = new int[6]; // Reset
         _checkInCounts = new int[6];
         _cleaningCounts = new int[6];
+        _transferCounts = new int[6];
         
         foreach (var txn in _allTxns)
         {
@@ -179,6 +183,8 @@ public partial class Dashboard : ComponentBase
                         _cleaningCounts[dayDiff]++;
                     else if (txn.Action == "CheckIn" || txn.Action == "ReturnToStore" || txn.Action == "ForceCheckIn")
                         _checkInCounts[dayDiff]++;
+                    else if (txn.Action == "TransferOut" || txn.Action == "TransferIn")
+                        _transferCounts[dayDiff]++;
                 }
             }
         }
@@ -273,10 +279,11 @@ public partial class Dashboard : ComponentBase
         var labelOut = Lang.T("ยืมออก", "Check Outs");
         var labelIn = Lang.T("คืนเข้าตู้", "Store");
         var labelClean = Lang.T("ส่งล้าง", "Cleaning");
+        var labelTransfer = Lang.T("ขนย้าย", "Transfer");
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("initActivityChart", "activityChart", labels, _checkOutCounts, _checkInCounts, _cleaningCounts, labelOut, labelIn, labelClean);
+            await JSRuntime.InvokeVoidAsync("initActivityChart", "activityChart", labels, _checkOutCounts, _checkInCounts, _cleaningCounts, labelOut, labelIn, labelClean, _transferCounts, labelTransfer);
         }
         catch (Exception ex)
         {

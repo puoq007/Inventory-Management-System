@@ -13,12 +13,44 @@
 
 <div class="h-full flex flex-col space-y-6">
     <div>
-        <h1 class="text-3xl font-bold tracking-tight text-slate-100">@Lang.T("เบิก/คืน จิก", "Scan In / Out")</h1>
-        <p class="text-slate-500 mt-1">@Lang.T("สแกนคิวอาร์โค้ดของจิกเพื่อทำรายการเบิกหรือคืน", "Scan a Jig QR code to check it in or out.")</p>
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-100">@Lang.T("เบิก/คืน จิก", "Scan In / Out")</h1>
+                <p class="text-slate-500 mt-1">@Lang.T("สแกนคิวอาร์โค้ดของจิกเพื่อทำรายการเบิกหรือคืน", "Scan a Jig QR code to check it in or out.")</p>
+            </div>
+            <button @onclick="ToggleTransferMode"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-sm
+                           @(_isTransferMode 
+                               ? "bg-orange-600 text-white hover:bg-orange-700 ring-2 ring-orange-500/50" 
+                               : "bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600")">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                @if (_isTransferMode)
+                {
+                    @Lang.T("ปิดโหมดขนย้าย", "Exit Transfer Mode")
+                }
+                else
+                {
+                    @Lang.T("โหมดขนย้าย", "Transfer Mode")
+                }
+            </button>
+        </div>
+
+        @if (_isTransferMode)
+        {
+            <div class="mt-3 bg-orange-900/30 border border-orange-800/50 rounded-lg px-4 py-2.5 flex items-center gap-2 text-orange-400 text-sm">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                @Lang.T("โหมดขนย้าย: สแกนจิกเข้าตะกร้า → กดยืนยัน → จิกจะเปลี่ยนเป็น 'กำลังขนย้าย'", "Transfer Mode: Scan jigs into cart → Confirm → Jigs become 'InTransit'")
+            </div>
+        }
     </div>
 
     @* Safelist for Tailwind JIT to ensure dynamic C# formatting classes are included in the build *@
-    <div class="hidden bg-blue-600 bg-amber-600 bg-emerald-600 bg-blue-50 bg-amber-50 bg-emerald-50 text-blue-900 text-amber-900 text-emerald-900 text-blue-600 text-amber-600 text-emerald-600 border-blue-200 border-amber-200 border-emerald-200 bg-blue-100 bg-amber-100 bg-emerald-100 text-blue-700 text-amber-700 text-emerald-700 hover:bg-blue-50 hover:bg-amber-50 hover:bg-emerald-50 hover:bg-blue-700 hover:bg-amber-700 hover:bg-emerald-700 focus:ring-blue-500 focus:ring-amber-500 focus:ring-emerald-500"></div>
+    @* Including orange for InTransit Transfer Cart *@
+    <div class="hidden bg-blue-600 bg-amber-600 bg-emerald-600 bg-blue-50 bg-amber-50 bg-emerald-50 text-blue-900 text-amber-900 text-emerald-900 text-blue-600 text-amber-600 text-emerald-600 border-blue-200 border-amber-200 border-emerald-200 bg-blue-100 bg-amber-100 bg-emerald-100 text-blue-700 text-amber-700 text-emerald-700 hover:bg-blue-50 hover:bg-amber-50 hover:bg-emerald-50 hover:bg-blue-700 hover:bg-amber-700 hover:bg-emerald-700 focus:ring-blue-500 focus:ring-amber-500 focus:ring-emerald-500 bg-orange-600 bg-orange-900/40 text-orange-400 border-orange-800 border-orange-900/40 bg-orange-50 text-orange-900 text-orange-600 border-orange-200 bg-orange-100 text-orange-700 hover:bg-orange-50 hover:bg-orange-700 focus:ring-orange-500"></div>
 
 
 
@@ -61,7 +93,8 @@
                 </svg>
                 @title
             </h3>
-            <div class="mb-4">
+            <div class="mb-4"
+                 style="@(_isTransferMode ? "display:none" : "")">
                 <label class="block text-sm font-medium text-slate-300 mb-1">@locLabel</label>
                 @if (_locators == null)
                 {
@@ -105,9 +138,95 @@
             </div>
         </div>
 
+        @* Transfer Cart — แสดงเมื่ออยู่โหมดขนย้ายและมีรายการในตะกร้า *@
+        @if (_isTransferMode)
+        {
+            <div class="w-full max-w-md mx-auto mt-4 bg-slate-800 rounded-xl shadow-xl border border-orange-800/50 overflow-hidden animate-fade-in min-w-0">
+                <div class="px-4 py-3 bg-orange-900/30 border-b border-orange-800/50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-orange-400 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+                            </svg>
+                            @Lang.T($"ตะกร้าขนย้าย ({_transferCart.Count} รายการ)", $"Transfer Cart ({_transferCart.Count} item(s))")
+                        </h3>
+                        @if (_transferCart.Any())
+                        {
+                            <button @onclick="ClearTransferCart" class="text-[10px] font-bold text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest">
+                                @Lang.T("ล้างตะกร้า", "Clear Cart")
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="max-h-60 overflow-y-auto ims-table-scroll">
+                    @if (!_transferCart.Any())
+                    {
+                        <div class="px-4 py-8 text-center text-slate-500 italic text-sm">
+                            @Lang.T("ยังไม่มีจิกในตะกร้า — สแกนเพื่อเพิ่ม", "Cart is empty — scan jigs to add")
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-800 sticky top-0 border-b border-slate-700 shadow-sm text-xs uppercase text-slate-400 z-10">
+                                <tr>
+                                    <th class="px-4 py-2 font-semibold w-10">#</th>
+                                    <th class="px-4 py-2 font-semibold">@Lang.T("รหัสจิก", "Jig ID")</th>
+                                    <th class="px-4 py-2 font-semibold w-20">@Lang.T("เวลา", "Time")</th>
+                                    <th class="px-3 py-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700">
+                                @foreach (var (item, idx) in _transferCart.Select((v, i) => (v, i)))
+                                {
+                                    <tr class="hover:bg-slate-700/50 transition-colors">
+                                        <td class="px-4 py-2.5 text-slate-500 text-xs">@(idx + 1)</td>
+                                        <td class="px-4 py-2.5 font-mono font-semibold text-orange-400">@item.JigId</td>
+                                        <td class="px-4 py-2.5 text-slate-400 text-xs">@item.AddedAt.ToString("HH:mm:ss")</td>
+                                        <td class="px-3 py-2.5 text-center">
+                                            <button @onclick="() => RemoveFromCart(item)"
+                                                    class="text-red-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-900/20"
+                                                    title="@Lang.T("ลบ", "Remove")">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                @if (_transferCart.Any())
+                {
+                    <div class="p-4 bg-slate-900 border-t border-orange-800/50">
+                        <button @onclick="ConfirmTransfer"
+                                disabled="@_isConfirmingTransfer"
+                                class="w-full py-3 rounded-lg font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
+                            @if (_isConfirmingTransfer)
+                            {
+                                <span class="inline-block animate-spin h-5 w-5 border-2 border-white rounded-full border-t-transparent"></span>
+                                @Lang.T("กำลังดำเนินการ...", "Processing...")
+                            }
+                            else
+                            {
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                @Lang.T($"ยืนยันขนย้าย ({_transferCart.Count} รายการ)", $"Confirm Transfer ({_transferCart.Count} items)")
+                            }
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
         @* Session History Log *@
-        <div class="w-full max-w-2xl mx-auto mt-4 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden animate-fade-in mb-10 min-w-0">
-            <div class="px-4 py-3 bg-slate-900 border-b border-slate-700">
+        @if (!_isTransferMode)
+        {
+            <div class="w-full max-w-2xl mx-auto mt-4 bg-slate-800 rounded-xl shadow-xl border border-slate-700 overflow-hidden animate-fade-in mb-10 min-w-0">
+                <div class="px-4 py-3 bg-slate-900 border-b border-slate-700">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">@Lang.T("ประวัติการทำรายการล่าสุด", "Recently Scanned / Activity")</h3>
                     <button @onclick="ClearSessionHistory" class="text-[10px] font-bold text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest">@Lang.T("ล้างประวัติ", "Clear")</button>
@@ -152,11 +271,15 @@
                                         else
                                         {
                                             <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
-                                                @(item.Action.Contains("Transfer") ? "bg-purple-900/40 text-purple-400 border border-purple-900/40" :
+                                                @(item.Action.Contains("TransferOut") ? "bg-orange-900/40 text-orange-400 border border-orange-900/40" :
+                                                  item.Action.Contains("TransferIn") ? "bg-teal-900/40 text-teal-400 border border-teal-900/40" :
+                                                  item.Action.Contains("Transfer") ? "bg-purple-900/40 text-purple-400 border border-purple-900/40" :
                                                   item.Action.Contains("Out") ? "bg-blue-900/40 text-blue-400 border border-blue-900/40" : 
                                                   item.Action.Contains("Clean") ? "bg-amber-900/40 text-amber-400 border border-amber-900/40" : 
                                                   "bg-emerald-900/40 text-emerald-400 border border-emerald-900/40")">
-                                                @(item.Action.Contains("Transfer") ? Lang.T("โอนย้ายไปที่:", "Transferred to:") :
+                                                @(item.Action.Contains("TransferOut") ? Lang.T("ขนย้ายออก", "Transfer Out") :
+                                                  item.Action.Contains("TransferIn") ? Lang.T("รับขนย้าย:", "Transfer In:") :
+                                                  item.Action.Contains("Transfer") ? Lang.T("โอนย้ายไปที่:", "Transferred to:") :
                                                   item.Action.Contains("Out") ? Lang.T("เบิกไปที่:", "Out to:") : 
                                                   item.Action.Contains("Clean") ? Lang.T("ส่งล้างที่:", "Cleaning at:") : 
                                                   Lang.T("เก็บที่:", "Stored at:")) @TranslateLocation(item.Location)
@@ -209,5 +332,6 @@
                 </a>
             </div>
         </div>
+        }
     </div>
 </div>
